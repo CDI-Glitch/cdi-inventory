@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     take: 100,
   });
 
-  return NextResponse.json(logs);
+  return NextResponse.json({ logs });
 }
 
 // POST — trigger full sync to Shopify
