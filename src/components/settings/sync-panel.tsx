@@ -8,7 +8,7 @@ interface SyncLog {
   status: string;
   error: string | null;
   attempts: number;
-  createdAt: string;
+  createdAt: Date | string;
   product: { sku: string; name: string };
   location: { name: string };
 }

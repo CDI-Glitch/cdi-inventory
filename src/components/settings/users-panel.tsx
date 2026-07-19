@@ -9,7 +9,7 @@ interface User {
   name: string;
   role: string;
   active: boolean;
-  createdAt: string;
+  createdAt: Date | string;
 }
 
 const ROLE_STYLES: Record<string, string> = {
