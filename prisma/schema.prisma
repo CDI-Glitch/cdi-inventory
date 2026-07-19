@@ -1,0 +1,223 @@
+// CDI Inventory Portal — Prisma Schema
+// Source of truth: cdi-docs/dev/inventory-constitution.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH ────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("viewer")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+// ─── CORE ────────────────────────────────────────────
+
+model Location {
+  id                String  @id @default(cuid())
+  name              String  @unique
+  shopifyLocationId String?
+  active            Boolean @default(true)
+
+  inventoryLogs      InventoryLog[]
+  salesRecords       SalesRecord[]
+  generatedMovements GeneratedMovement[]
+  incomingShipments  IncomingShipment[]
+  transfersFrom      Transfer[]          @relation("TransferFrom")
+  transfersTo        Transfer[]          @relation("TransferTo")
+  syncLogs           SyncLog[]
+}
+
+model Product {
+  id                     String   @id @default(cuid())
+  sku                    String   @unique
+  name                   String
+  category               String
+  unit                   String   @default("Each")
+  reorderPoint           Int      @default(10)
+  active                 Boolean  @default(true)
+  adminNotes             String?
+  shopifyInventoryItemId String?
+  shopifyVariantId       String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  inventoryLogs      InventoryLog[]
+  generatedMovements GeneratedMovement[]
+  bundleItems        BundleItem[]
+  incomingLines      IncomingLine[]
+  transfers          Transfer[]
+  syncLogs           SyncLog[]
+}
+
+// ─── INVENTORY ───────────────────────────────────────
+
+model InventoryLog {
+  id         String   @id @default(cuid())
+  productId  String
+  locationId String
+  type       String
+  delta      Int
+  reference  String?
+  enteredBy  String
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id])
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@index([productId, locationId])
+  @@index([createdAt])
+}
+
+// ─── SALES ───────────────────────────────────────────
+
+model SalesRecord {
+  id             String   @id @default(cuid())
+  recordId       String   @unique
+  date           DateTime
+  invoiceNo      String?
+  orderNo        String?
+  customer       String
+  saleType       String
+  itemCode       String
+  qty            Int      @default(1)
+  status         String   @default("quote")
+  staffNotes     String?
+  locationId     String
+  shopifyOrderId String?  @unique
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  location  Location            @relation(fields: [locationId], references: [id])
+  movements GeneratedMovement[]
+}
+
+model GeneratedMovement {
+  id            String   @id @default(cuid())
+  salesRecordId String
+  productId     String
+  locationId    String
+  reservedQty   Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  salesRecord SalesRecord @relation(fields: [salesRecordId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
+  location    Location    @relation(fields: [locationId], references: [id])
+
+  @@index([productId, locationId])
+}
+
+// ─── BUNDLES ─────────────────────────────────────────
+
+model BundleDefinition {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  productFamily String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  items BundleItem[]
+}
+
+model BundleItem {
+  id            String  @id @default(cuid())
+  bundleId      String
+  productId     String
+  qty           Int     @default(1)
+  componentRole String
+  required      Boolean @default(true)
+  sortOrder     Int
+  notes         String?
+
+  bundle  BundleDefinition @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product          @relation(fields: [productId], references: [id])
+}
+
+// ─── INCOMING (Master-Detail) ────────────────────────
+
+model IncomingShipment {
+  id           String    @id @default(cuid())
+  poRef        String    @unique
+  supplierName String
+  poNumber     String?
+  trackingNo   String?
+  eta          DateTime?
+  status       String    @default("pending")
+  locationId   String
+  notes        String?
+  createdBy    String    @default("system")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  location Location       @relation(fields: [locationId], references: [id])
+  lines    IncomingLine[]
+}
+
+model IncomingLine {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  productId   String
+  qtyOrdered  Int
+  qtyReceived Int      @default(0)
+  unitCost    Decimal?
+  notes       String?
+
+  shipment IncomingShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  product  Product          @relation(fields: [productId], references: [id])
+}
+
+// ─── TRANSFERS ───────────────────────────────────────
+
+model Transfer {
+  id             String    @id @default(cuid())
+  fromLocationId String
+  toLocationId   String
+  productId      String
+  qty            Int
+  status         String    @default("pending")
+  notes          String?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  fromLocation Location @relation("TransferFrom", fields: [fromLocationId], references: [id])
+  toLocation   Location @relation("TransferTo", fields: [toLocationId], references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
+}
+
+// ─── SHOPIFY SYNC ────────────────────────────────────
+
+model SyncLog {
+  id         String   @id @default(cuid())
+  productId  String
+  locationId String
+  sentQty    Int
+  status     String
+  error      String?
+  attempts   Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id])
+  location Location @relation(fields: [locationId], references: [id])
+}
+
+model ProcessedWebhook {
+  id             String   @id @default(cuid())
+  shopifyOrderId String   @unique
+  topic          String
+  processedAt    DateTime @default(now())
+}
