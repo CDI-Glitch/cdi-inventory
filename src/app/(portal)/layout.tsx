@@ -11,9 +11,9 @@ export default async function PortalLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#F8F9FB]">
       <Sidebar user={session.user as any} />
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+      <main className="flex-1 overflow-y-auto bg-white p-8">
         {children}
       </main>
     </div>

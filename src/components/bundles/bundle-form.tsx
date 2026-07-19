@@ -254,7 +254,7 @@ export function BundleForm({ products, bundle }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-md bg-[#839DC0] px-4 py-2 text-sm font-medium text-white hover:bg-[#6a88ad] disabled:opacity-50"
+          className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
         >
           {loading ? "Saving..." : isEdit ? "Save changes" : "Create bundle"}
         </button>

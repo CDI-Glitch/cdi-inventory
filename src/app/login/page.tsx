@@ -48,7 +48,7 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#839DC0] focus:border-[#839DC0]"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#839DC0] focus:border-[#839DC0]"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
             />
           </div>
           {error && (
@@ -70,9 +70,9 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors"
-            style={{ backgroundColor: loading ? "#a0b5cc" : "#839DC0" }}
-            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#6a88ad"; }}
-            onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#839DC0"; }}
+            style={{ backgroundColor: loading ? "#93aee8" : "#2563EB" }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#1D4ED8"; }}
+            onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#2563EB"; }}
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

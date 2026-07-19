@@ -19,7 +19,7 @@ export default async function BundlesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Bundles</h1>
         <Link
           href="/bundles/new"
-          className="rounded-md bg-[#839DC0] px-3 py-2 text-sm font-medium text-white hover:bg-[#6a88ad]"
+          className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
         >
           + New bundle
         </Link>
@@ -45,7 +45,7 @@ export default async function BundlesPage() {
               {bundles.map((b) => (
                 <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <Link href={`/bundles/${b.id}`} className="font-mono text-[#839DC0] hover:underline">
+                    <Link href={`/bundles/${b.id}`} className="font-mono text-[#2563EB] hover:underline">
                       {b.code}
                     </Link>
                   </td>

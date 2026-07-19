@@ -7,7 +7,7 @@ import { SalesStatusActions } from "@/components/sales/sales-status-actions";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
-  deposit_paid: "bg-blue-100 text-[#5d7da0]",
+  deposit_paid: "bg-blue-100 text-[#1D4ED8]",
   fully_paid: "bg-purple-100 text-purple-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
