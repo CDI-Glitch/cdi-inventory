@@ -39,6 +39,7 @@ export const INCOMING_STATUSES = [
   "in_transit",
   "arrived",
   "confirmed",
+  "cancelled",
 ] as const;
 export type IncomingStatus = (typeof INCOMING_STATUSES)[number];
 
@@ -67,11 +68,12 @@ export const VALID_TRANSITIONS: Record<SalesStatus, SalesStatus[]> = {
 };
 
 export const INCOMING_TRANSITIONS: Record<IncomingStatus, IncomingStatus[]> = {
-  pending: ["shipped", "cancelled" as IncomingStatus],
-  shipped: ["in_transit", "cancelled" as IncomingStatus],
-  in_transit: ["arrived"],
-  arrived: ["confirmed"],
+  pending: ["shipped", "cancelled"],
+  shipped: ["in_transit", "cancelled"],
+  in_transit: ["arrived", "cancelled"],
+  arrived: ["confirmed", "cancelled"],
   confirmed: [],
+  cancelled: [],
 };
 
 export const TRANSFER_TRANSITIONS: Record<TransferStatus, TransferStatus[]> = {

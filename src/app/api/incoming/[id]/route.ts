@@ -5,7 +5,7 @@ import { z } from "zod";
 import { INCOMING_TRANSITIONS, type IncomingStatus } from "@/lib/constants";
 
 const TransitionSchema = z.object({
-  status: z.enum(["pending", "shipped", "in_transit", "arrived", "confirmed"]),
+  status: z.enum(["pending", "shipped", "in_transit", "arrived", "confirmed", "cancelled"]),
 });
 
 export async function GET(

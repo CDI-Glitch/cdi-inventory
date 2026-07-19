@@ -10,6 +10,7 @@ const STATUS_STYLES: Record<string, string> = {
   in_transit: "bg-yellow-100 text-yellow-700",
   arrived: "bg-orange-100 text-orange-700",
   confirmed: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-600",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -18,6 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
   in_transit: "In transit",
   arrived: "Arrived",
   confirmed: "Confirmed",
+  cancelled: "Cancelled",
 };
 
 export default async function IncomingPage() {
