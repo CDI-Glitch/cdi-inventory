@@ -66,7 +66,7 @@ export function IncomingLinesEditor({ shipmentId, lines: initialLines }: Props) 
       <tbody>
         {lines.map((line) => (
           <tr key={line.id} className="border-b border-gray-100">
-            <td className="px-4 py-2 font-mono text-blue-600">{line.sku}</td>
+            <td className="px-4 py-2 font-mono text-[#839DC0]">{line.sku}</td>
             <td className="px-4 py-2 text-gray-900">{line.name}</td>
             <td className="px-4 py-2 text-right">{line.qtyOrdered}</td>
             <td className="px-4 py-2 text-right">
@@ -89,7 +89,7 @@ export function IncomingLinesEditor({ shipmentId, lines: initialLines }: Props) 
               <button
                 onClick={() => saveReceived(line.id, line.qtyReceived)}
                 disabled={saving === line.id}
-                className="rounded bg-blue-50 border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                className="rounded bg-blue-50 border border-blue-200 px-2 py-1 text-xs font-medium text-[#5d7da0] hover:bg-blue-100 disabled:opacity-50"
               >
                 {saving === line.id ? "..." : "Save"}
               </button>

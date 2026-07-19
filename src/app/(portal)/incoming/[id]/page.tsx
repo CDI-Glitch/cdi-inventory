@@ -9,7 +9,7 @@ import { IncomingLinesEditor } from "@/components/incoming/incoming-lines-editor
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
-  shipped: "bg-blue-100 text-blue-700",
+  shipped: "bg-blue-100 text-[#5d7da0]",
   in_transit: "bg-yellow-100 text-yellow-700",
   arrived: "bg-orange-100 text-orange-700",
   confirmed: "bg-green-100 text-green-700",
@@ -140,7 +140,7 @@ export default async function IncomingDetailPage({
               <tbody>
                 {shipment.lines.map((line) => (
                   <tr key={line.id} className="border-b border-gray-100">
-                    <td className="px-4 py-2 font-mono text-blue-600">{line.product.sku}</td>
+                    <td className="px-4 py-2 font-mono text-[#839DC0]">{line.product.sku}</td>
                     <td className="px-4 py-2 text-gray-900">{line.product.name}</td>
                     <td className="px-4 py-2 text-right">{line.qtyOrdered}</td>
                     <td className="px-4 py-2 text-right">

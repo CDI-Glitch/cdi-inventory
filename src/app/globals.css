@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+@theme {
+  --color-cdi-blue: #839DC0;
+  --color-cdi-blue-hover: #6a88ad;
+  --color-cdi-blue-subtle: rgba(131, 157, 192, 0.10);
+  --color-cdi-dark: #11161c;
+}

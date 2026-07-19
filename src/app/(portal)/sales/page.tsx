@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
-  deposit_paid: "bg-blue-100 text-blue-700",
+  deposit_paid: "bg-blue-100 text-[#5d7da0]",
   fully_paid: "bg-purple-100 text-purple-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
@@ -52,7 +52,7 @@ export default async function SalesPage({
         {role !== "viewer" && (
           <Link
             href="/sales/new"
-            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-[#839DC0] px-3 py-2 text-sm font-medium text-white hover:bg-[#6a88ad]"
           >
             + New record
           </Link>
@@ -103,7 +103,7 @@ export default async function SalesPage({
               {records.map((rec) => (
                 <tr key={rec.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <Link href={`/sales/${rec.id}`} className="font-mono text-blue-600 hover:underline">
+                    <Link href={`/sales/${rec.id}`} className="font-mono text-[#839DC0] hover:underline">
                       {rec.recordId}
                     </Link>
                   </td>

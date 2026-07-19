@@ -68,7 +68,7 @@ export function SalesStatusActions({ id, currentStatus, version }: Props) {
           <button
             onClick={() => transition(nextStatus)}
             disabled={loading !== null}
-            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-[#839DC0] px-3 py-2 text-sm font-medium text-white hover:bg-[#6a88ad] disabled:opacity-50"
           >
             {loading === nextStatus ? "Updating..." : NEXT_BTN_LABELS[status]}
           </button>

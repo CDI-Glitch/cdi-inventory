@@ -30,9 +30,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">CDI Inventory</h1>
+    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
+      <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        {/* CDI Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <img src="/logo-cdi.svg" alt="CDI" className="h-9 w-auto mb-3" />
+          <p className="text-xs text-gray-400 font-medium tracking-widest uppercase">Inventory Portal</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -43,7 +48,7 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#839DC0] focus:border-[#839DC0]"
             />
           </div>
           <div>
@@ -55,7 +60,7 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#839DC0] focus:border-[#839DC0]"
             />
           </div>
           {error && (
@@ -64,7 +69,10 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors"
+            style={{ backgroundColor: loading ? "#a0b5cc" : "#839DC0" }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#6a88ad"; }}
+            onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#839DC0"; }}
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

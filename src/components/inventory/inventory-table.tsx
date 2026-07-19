@@ -79,7 +79,7 @@ export function InventoryTable({
               <td className="px-4 py-3">
                 <Link
                   href={`/inventory/${row.sku}`}
-                  className="font-mono text-blue-600 hover:underline"
+                  className="font-mono text-[#839DC0] hover:underline"
                 >
                   {row.sku}
                 </Link>

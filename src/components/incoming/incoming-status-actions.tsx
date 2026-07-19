@@ -64,7 +64,7 @@ export function IncomingStatusActions({ id, currentStatus }: Props) {
             disabled={loading !== null}
             onClick={() => transition(next)}
             className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-              BTN_STYLES[next] ?? "bg-blue-600 text-white hover:bg-blue-700"
+              BTN_STYLES[next] ?? "bg-[#839DC0] text-white hover:bg-[#6a88ad]"
             }`}
           >
             {loading === next ? "..." : (BTN_LABELS[next] ?? next)}

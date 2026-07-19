@@ -62,7 +62,7 @@ export default async function TransferDetailPage({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-500">SKU</span>
-              <p className="font-mono font-medium text-blue-600 mt-0.5">{transfer.product.sku}</p>
+              <p className="font-mono font-medium text-[#839DC0] mt-0.5">{transfer.product.sku}</p>
             </div>
             <div>
               <span className="text-gray-500">Product</span>

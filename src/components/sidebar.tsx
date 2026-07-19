@@ -39,9 +39,10 @@ export function Sidebar({ user }: SidebarProps) {
 
   return (
     <aside className="w-56 flex flex-col bg-white border-r border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-gray-900">CDI Inventory</h2>
-        <p className="text-xs text-gray-500 mt-0.5">{user.name} ({role})</p>
+      <div className="px-4 py-4 border-b border-gray-200">
+        <img src="/logo-cdi.svg" alt="CDI" className="h-7 w-auto" />
+        <p className="text-xs text-gray-400 mt-2 font-medium tracking-wide uppercase">Inventory Portal</p>
+        <p className="text-xs text-gray-500 mt-0.5">{user.name} · {role}</p>
       </div>
 
       <nav className="flex-1 p-2 space-y-0.5">
@@ -54,8 +55,8 @@ export function Sidebar({ user }: SidebarProps) {
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-[#839DC0]/10 text-[#5d7da0] font-semibold"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               )}
             >
               <item.icon className="h-4 w-4" />

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const SALES_STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-600",
-  deposit_paid: "bg-blue-100 text-blue-700",
+  deposit_paid: "bg-blue-100 text-[#5d7da0]",
   fully_paid: "bg-purple-100 text-purple-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-600",
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</p>
             <p className="mt-2 text-3xl font-bold text-gray-900">{card.value}</p>
             {card.href && (
-              <Link href={card.href} className="mt-2 text-xs text-blue-600 hover:underline block">
+              <Link href={card.href} className="mt-2 text-xs text-[#839DC0] hover:underline block">
                 View all →
               </Link>
             )}
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-700">Open orders ({activeSalesRecords})</h2>
-            <Link href="/sales" className="text-xs text-blue-600 hover:underline">View all</Link>
+            <Link href="/sales" className="text-xs text-[#839DC0] hover:underline">View all</Link>
           </div>
           {recentSales.length === 0 ? (
             <p className="px-5 py-4 text-sm text-gray-400">No open orders</p>
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
               {recentSales.map((s) => (
                 <div key={s.id} className="flex items-center justify-between px-5 py-3">
                   <div>
-                    <Link href={`/sales/${s.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                    <Link href={`/sales/${s.id}`} className="text-sm font-medium text-[#839DC0] hover:underline">
                       {s.recordId}
                     </Link>
                     <p className="text-xs text-gray-500 mt-0.5">{s.customer} · {s.itemCode}</p>
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
                 {lowStock.map((p) => (
                   <div key={p.id} className="flex items-center justify-between px-5 py-3">
                     <div>
-                      <Link href={`/inventory/${p.sku}`} className="text-sm font-mono font-medium text-blue-600 hover:underline">
+                      <Link href={`/inventory/${p.sku}`} className="text-sm font-mono font-medium text-[#839DC0] hover:underline">
                         {p.sku}
                       </Link>
                       <p className="text-xs text-gray-500 mt-0.5">{p.name}</p>
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
             <div className="rounded-lg border border-gray-200 bg-white p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-700">Incoming shipments</h2>
-                <Link href="/incoming" className="text-xs text-blue-600 hover:underline">View all</Link>
+                <Link href="/incoming" className="text-xs text-[#839DC0] hover:underline">View all</Link>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{pendingIncoming}</p>
               <p className="text-xs text-gray-400 mt-1">In progress (not yet confirmed)</p>

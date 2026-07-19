@@ -85,7 +85,7 @@ export default async function InventoryPage({
             <>
               <Link
                 href="/inventory/new"
-                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="rounded-md bg-[#839DC0] px-3 py-2 text-sm font-medium text-white hover:bg-[#6a88ad]"
               >
                 + Add SKU
               </Link>

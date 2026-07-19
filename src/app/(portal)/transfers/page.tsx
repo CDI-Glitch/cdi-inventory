@@ -34,7 +34,7 @@ export default async function TransfersPage() {
         <h1 className="text-2xl font-bold text-gray-900">Stock transfers</h1>
         <Link
           href="/transfers/new"
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-[#839DC0] px-3 py-2 text-sm font-medium text-white hover:bg-[#6a88ad]"
         >
           + New transfer
         </Link>
@@ -62,7 +62,7 @@ export default async function TransfersPage() {
             <tbody>
               {transfers.map((t) => (
                 <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-blue-600">{t.product.sku}</td>
+                  <td className="px-4 py-3 font-mono text-[#839DC0]">{t.product.sku}</td>
                   <td className="px-4 py-3 text-gray-900">{t.product.name}</td>
                   <td className="px-4 py-3 text-gray-500">{t.fromLocation.name}</td>
                   <td className="px-4 py-3 text-gray-500">{t.toLocation.name}</td>
@@ -79,7 +79,7 @@ export default async function TransfersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/transfers/${t.id}`} className="text-xs text-blue-600 hover:underline">
+                    <Link href={`/transfers/${t.id}`} className="text-xs text-[#839DC0] hover:underline">
                       View
                     </Link>
                   </td>
