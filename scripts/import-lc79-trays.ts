@@ -1,51 +1,58 @@
-import * as XLSX from 'xlsx';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const DB_URL =
-  'postgresql://postgres:SHufVETPyuJhEckjrUldCjPZPkxrkVvv@tokaido.proxy.rlwy.net:43176/railway';
-
-const CATEGORY_MAP: Record<string, string> = {
-  Canopy: 'CANOPY',
-  Tray: 'TRAY',
-  Accessory: 'ACCESSORY',
-  Base: 'BASE_CANOPY',
-};
+// LC79 Factory Tray Canopy — 20 variants
+// 2-door only; 1840mm wide x 1000mm high; lengths 1200/1400/1600/1800
+// Raw Alloy not included
+const SKUS = [
+  { sku: 'LC-2D-181210-SHB', name: 'LC79 Factory Tray Canopy 1200 C Channel Sahara Black' },
+  { sku: 'LC-2D-181210-ST',  name: 'LC79 Factory Tray Canopy 1200 C Channel Sandy Taupe' },
+  { sku: 'LC-2D-181210-G',   name: 'LC79 Factory Tray Canopy 1200 C Channel Graphite' },
+  { sku: 'LC-2D-181210-BST', name: 'LC79 Factory Tray Canopy 1200 C Channel Sahara Black Body / Sandy Taupe Doors' },
+  { sku: 'LC-2D-181210-W',   name: 'LC79 Factory Tray Canopy 1200 C Channel Splash White' },
+  { sku: 'LC-2D-181410-SHB', name: 'LC79 Factory Tray Canopy 1400 C Channel Sahara Black' },
+  { sku: 'LC-2D-181410-ST',  name: 'LC79 Factory Tray Canopy 1400 C Channel Sandy Taupe' },
+  { sku: 'LC-2D-181410-G',   name: 'LC79 Factory Tray Canopy 1400 C Channel Graphite' },
+  { sku: 'LC-2D-181410-BST', name: 'LC79 Factory Tray Canopy 1400 C Channel Sahara Black Body / Sandy Taupe Doors' },
+  { sku: 'LC-2D-181410-W',   name: 'LC79 Factory Tray Canopy 1400 C Channel Splash White' },
+  { sku: 'LC-2D-181610-SHB', name: 'LC79 Factory Tray Canopy 1600 C Channel Sahara Black' },
+  { sku: 'LC-2D-181610-ST',  name: 'LC79 Factory Tray Canopy 1600 C Channel Sandy Taupe' },
+  { sku: 'LC-2D-181610-G',   name: 'LC79 Factory Tray Canopy 1600 C Channel Graphite' },
+  { sku: 'LC-2D-181610-BST', name: 'LC79 Factory Tray Canopy 1600 C Channel Sahara Black Body / Sandy Taupe Doors' },
+  { sku: 'LC-2D-181610-W',   name: 'LC79 Factory Tray Canopy 1600 C Channel Splash White' },
+  { sku: 'LC-2D-181810-SHB', name: 'LC79 Factory Tray Canopy 1800 C Channel Sahara Black' },
+  { sku: 'LC-2D-181810-ST',  name: 'LC79 Factory Tray Canopy 1800 C Channel Sandy Taupe' },
+  { sku: 'LC-2D-181810-G',   name: 'LC79 Factory Tray Canopy 1800 C Channel Graphite' },
+  { sku: 'LC-2D-181810-BST', name: 'LC79 Factory Tray Canopy 1800 C Channel Sahara Black Body / Sandy Taupe Doors' },
+  { sku: 'LC-2D-181810-W',   name: 'LC79 Factory Tray Canopy 1800 C Channel Splash White' },
+];
 
 async function main() {
-  const adapter = new PrismaPg({ connectionString: DB_URL });
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
   const prisma = new PrismaClient({ adapter } as any);
 
-  const wb = XLSX.readFile(
-    'c:/Users/CoreD/Documents/Codex/2026-07-20/x-z/outputs/lc79_tray_sku_import/LC79_Factory_Tray_SKU_Import.xlsx'
-  );
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
-  const dataRows = rows.slice(4).filter((r) => r[0] && String(r[0]).trim());
-
-  console.log(`Found ${dataRows.length} SKUs to import`);
+  console.log(`Importing ${SKUS.length} LC79 Factory Tray Canopy SKUs...`);
   let created = 0;
   let skipped = 0;
 
-  for (const r of dataRows) {
-    const sku = String(r[0]).trim();
-    const name = String(r[1]).trim();
-    const categoryRaw = String(r[2]).trim();
-    const reorderPoint = Number(r[5]) || 1;
-    const active = String(r[6]).trim().toLowerCase() !== 'no';
-    const category = CATEGORY_MAP[categoryRaw] ?? 'CANOPY';
-
-    const existing = await prisma.product.findUnique({ where: { sku } });
+  for (const item of SKUS) {
+    const existing = await prisma.product.findUnique({ where: { sku: item.sku } });
     if (existing) {
-      console.log(`SKIP (exists): ${sku}`);
+      console.log(`SKIP (exists): ${item.sku}`);
       skipped++;
       continue;
     }
-
     await prisma.product.create({
-      data: { sku, name, category, unit: 'Each', reorderPoint, active },
+      data: {
+        sku: item.sku,
+        name: item.name,
+        category: 'CANOPY',
+        unit: 'Each',
+        reorderPoint: 1,
+        active: true,
+      },
     });
-    console.log(`CREATED: ${sku}`);
+    console.log(`CREATED: ${item.sku}`);
     created++;
   }
 
