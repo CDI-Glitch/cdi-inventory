@@ -64,13 +64,6 @@ async function main() {
     await dst.salesRecord.upsert({ where: { id: r.id }, update: r, create: r });
   }
 
-  // ── 7. SalesLines ─────────────────────────────────────────
-  const salesLines = await src.salesLine.findMany();
-  console.log(`Migrating ${salesLines.length} sales lines...`);
-  for (const r of salesLines) {
-    await dst.salesLine.upsert({ where: { id: r.id }, update: r, create: r });
-  }
-
   // ── 8. GeneratedMovements ─────────────────────────────────
   const movements = await src.generatedMovement.findMany();
   console.log(`Migrating ${movements.length} generated movements...`);
@@ -99,11 +92,11 @@ async function main() {
     await dst.incomingLine.upsert({ where: { id: r.id }, update: r, create: r });
   }
 
-  // ── 12. StockTransfers ────────────────────────────────────
-  const transfers = await src.stockTransfer.findMany();
-  console.log(`Migrating ${transfers.length} stock transfers...`);
+  // ── 12. Transfers ─────────────────────────────────────────
+  const transfers = await src.transfer.findMany();
+  console.log(`Migrating ${transfers.length} transfers...`);
   for (const r of transfers) {
-    await dst.stockTransfer.upsert({ where: { id: r.id }, update: r, create: r });
+    await dst.transfer.upsert({ where: { id: r.id }, update: r, create: r });
   }
 
   // ── 13. ProcessedWebhooks ─────────────────────────────────
