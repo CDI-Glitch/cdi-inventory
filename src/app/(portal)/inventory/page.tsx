@@ -3,12 +3,15 @@ import { prisma } from "@/lib/db";
 import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { LocationTabs } from "@/components/ui/location-tabs";
+import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
+
+const PAGE_SIZE = 25;
 
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; status?: string; search?: string; loc?: string }>;
+  searchParams: Promise<{ category?: string; status?: string; search?: string; loc?: string; page?: string }>;
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role;
@@ -98,6 +101,19 @@ export default async function InventoryPage({
 
   const filtered = params.status ? rows.filter((r) => r.status === params.status) : rows;
 
+  // Pagination
+  const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Pass all current searchParams to Pagination for building URLs
+  const paginationParams: Record<string, string | undefined> = {
+    loc: activeLoc || undefined,
+    category: params.category || undefined,
+    status: params.status || undefined,
+    search: params.search || undefined,
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -134,9 +150,15 @@ export default async function InventoryPage({
       />
 
       <InventoryTable
-        rows={filtered}
+        rows={paginated}
         locationNames={visibleLocations.map((l) => l.name)}
         singleLocation={!!activeLocation}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        searchParams={paginationParams}
       />
     </div>
   );

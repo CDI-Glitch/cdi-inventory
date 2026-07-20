@@ -2,12 +2,12 @@ export const ROLES = ["viewer", "editor", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const CATEGORIES = [
-  "service_body",
-  "canopy",
-  "toolbox",
-  "tray",
-  "tray_kit",
-  "accessory",
+  "SERVICE_BODY",
+  "CANOPY",
+  "TOOLBOX",
+  "TRAY",
+  "TRAY_KIT",
+  "ACCESSORY",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
