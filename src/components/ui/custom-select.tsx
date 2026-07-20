@@ -53,11 +53,12 @@ export function CustomSelect({
   const displayLabel = selected ? selected.label : placeholder;
 
   function select(val: string) {
+    // Write value directly to DOM before any submit so form captures it
+    if (hiddenRef.current) hiddenRef.current.value = val;
     setInternalValue(val);
     setOpen(false);
     onChange?.(val);
     if (submitOnChange && hiddenRef.current?.form) {
-      // Tiny delay so the hidden input value is committed before submit
       setTimeout(() => hiddenRef.current?.form?.requestSubmit(), 0);
     }
   }

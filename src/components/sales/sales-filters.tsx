@@ -35,7 +35,7 @@ export function SalesFilters({ defaultSearch = "", defaultStatus = "", currentLo
         value={defaultStatus}
         options={STATUS_OPTIONS}
         placeholder="All statuses"
-        onChange={() => formRef.current?.requestSubmit()}
+        onChange={() => setTimeout(() => formRef.current?.requestSubmit(), 0)}
       />
       <button
         type="submit"

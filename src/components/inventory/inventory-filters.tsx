@@ -31,7 +31,8 @@ export function InventoryFilters({
   const formRef = useRef<HTMLFormElement>(null);
 
   function submitForm() {
-    formRef.current?.requestSubmit();
+    // Use setTimeout to let the hidden input DOM value settle before submit
+    setTimeout(() => formRef.current?.requestSubmit(), 0);
   }
 
   return (
