@@ -34,6 +34,28 @@ async function main() {
     });
   }
   console.log("Locations seeded: Brisbane, Sydney");
+
+  const staffAccounts = [
+    { email: "brisbane@cdi.com", name: "Brisbane", password: "Cdi@Bne2026$", role: "editor" },
+    { email: "sydney@cdi.com",   name: "Sydney",   password: "Cdi@Syd2026$", role: "editor" },
+  ];
+
+  for (const acc of staffAccounts) {
+    const exists = await prisma.user.findUnique({ where: { email: acc.email } });
+    if (!exists) {
+      await prisma.user.create({
+        data: {
+          email: acc.email,
+          name: acc.name,
+          passwordHash: await hash(acc.password, 12),
+          role: acc.role,
+        },
+      });
+      console.log(`Created: ${acc.email}`);
+    } else {
+      console.log(`Already exists: ${acc.email}`);
+    }
+  }
 }
 
 main()

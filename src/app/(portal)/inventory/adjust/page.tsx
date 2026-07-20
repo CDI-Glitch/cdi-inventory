@@ -5,7 +5,8 @@ import { AdjustForm } from "@/components/inventory/adjust-form";
 
 export default async function AdjustPage() {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") redirect("/inventory");
+  const role = (session?.user as any)?.role;
+  if (role !== "admin" && role !== "editor") redirect("/inventory");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),
