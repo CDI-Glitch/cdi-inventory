@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { InventoryTable } from "@/components/inventory/inventory-table";
+import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import Link from "next/link";
-import { CATEGORIES } from "@/lib/constants";
 
 export default async function InventoryPage({
   searchParams,
@@ -101,40 +101,11 @@ export default async function InventoryPage({
       </div>
 
       {/* Filters */}
-      <form method="GET" className="flex flex-wrap gap-2 mb-4">
-        <input
-          name="search"
-          defaultValue={params.search}
-          placeholder="Search SKU or name..."
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm w-48"
-        />
-        <select
-          name="category"
-          defaultValue={params.category ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">All categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
-          ))}
-        </select>
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">All statuses</option>
-          <option value="OK">OK</option>
-          <option value="REORDER">Reorder</option>
-          <option value="OUT_OF_STOCK">Out of stock</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-200"
-        >
-          Filter
-        </button>
-      </form>
+      <InventoryFilters
+        defaultSearch={params.search}
+        defaultCategory={params.category}
+        defaultStatus={params.status}
+      />
 
       <InventoryTable rows={filtered} locationNames={locations.map((l) => l.name)} />
     </div>

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { SalesFilters } from "@/components/sales/sales-filters";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -59,27 +60,7 @@ export default async function SalesPage({
         )}
       </div>
 
-      <form method="GET" className="flex flex-wrap gap-2 mb-4">
-        <input
-          name="search"
-          defaultValue={params.search}
-          placeholder="Search customer, record ID..."
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm w-56"
-        />
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">All statuses</option>
-          {Object.entries(STATUS_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
-        </select>
-        <button type="submit" className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-200">
-          Filter
-        </button>
-      </form>
+      <SalesFilters defaultSearch={params.search} defaultStatus={params.status} />
 
       {records.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500">
