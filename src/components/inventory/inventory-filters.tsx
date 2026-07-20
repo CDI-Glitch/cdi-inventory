@@ -38,7 +38,7 @@ export function InventoryFilters({
         name="search"
         defaultValue={defaultSearch}
         placeholder="Search SKU or name..."
-        className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm w-48 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-gray-300"
+        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm w-48 focus:outline-none"
       />
       <CustomSelect
         name="category"
