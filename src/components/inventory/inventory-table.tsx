@@ -99,7 +99,7 @@ export function InventoryTable({
                 </Link>
               </td>
               <td className="px-4 py-3 text-gray-900">{row.name}</td>
-              <td className="px-4 py-3 text-gray-500">{row.category.replace(/_/g, " ")}</td>
+              <td className="px-4 py-3 text-gray-500">{row.category.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}</td>
               {singleLocation ? (
                 (() => {
                   const s = row.byLocation[locationNames[0]] ?? { onHand: 0, reserved: 0, available: 0 };
