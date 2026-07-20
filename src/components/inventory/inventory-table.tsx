@@ -32,9 +32,11 @@ const STATUS_LABELS = {
 export function InventoryTable({
   rows,
   locationNames,
+  singleLocation = false,
 }: {
   rows: StockRow[];
   locationNames: string[];
+  singleLocation?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -52,26 +54,38 @@ export function InventoryTable({
             <th className="px-4 py-3 text-left font-medium text-gray-600">SKU</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
             <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
-            {locationNames.map((loc) => (
-              <th key={loc} className="px-4 py-3 text-center font-medium text-gray-600" colSpan={3}>
-                {loc}
-              </th>
-            ))}
-            <th className="px-4 py-3 text-center font-medium text-gray-600">Total Available</th>
+            {singleLocation ? (
+              <>
+                <th className="px-4 py-3 text-center font-medium text-gray-600">On Hand</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-600">Reserved</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-600">Available</th>
+              </>
+            ) : (
+              <>
+                {locationNames.map((loc) => (
+                  <th key={loc} className="px-4 py-3 text-center font-medium text-gray-600" colSpan={3}>
+                    {loc}
+                  </th>
+                ))}
+                <th className="px-4 py-3 text-center font-medium text-gray-600">Total Available</th>
+              </>
+            )}
             <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
           </tr>
-          <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-400">
-            <th colSpan={3} />
-            {locationNames.map((loc) => (
-              <React.Fragment key={loc}>
-                <th className="px-2 py-1 text-center">On Hand</th>
-                <th className="px-2 py-1 text-center">Reserved</th>
-                <th className="px-2 py-1 text-center">Available</th>
-              </React.Fragment>
-            ))}
-            <th />
-            <th />
-          </tr>
+          {!singleLocation && (
+            <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-400">
+              <th colSpan={3} />
+              {locationNames.map((loc) => (
+                <React.Fragment key={loc}>
+                  <th className="px-2 py-1 text-center">On Hand</th>
+                  <th className="px-2 py-1 text-center">Reserved</th>
+                  <th className="px-2 py-1 text-center">Available</th>
+                </React.Fragment>
+              ))}
+              <th />
+              <th />
+            </tr>
+          )}
         </thead>
         <tbody>
           {rows.map((row) => (
@@ -86,17 +100,32 @@ export function InventoryTable({
               </td>
               <td className="px-4 py-3 text-gray-900">{row.name}</td>
               <td className="px-4 py-3 text-gray-500">{row.category.replace(/_/g, " ")}</td>
-              {locationNames.map((loc) => {
-                const s = row.byLocation[loc] ?? { onHand: 0, reserved: 0, available: 0 };
-                return (
-                  <React.Fragment key={`${row.id}-${loc}`}>
-                    <td className="px-2 py-3 text-center tabular-nums">{s.onHand}</td>
-                    <td className="px-2 py-3 text-center tabular-nums text-orange-600">{s.reserved > 0 ? s.reserved : "—"}</td>
-                    <td className={cn("px-2 py-3 text-center tabular-nums font-medium", s.available <= 0 ? "text-red-600" : "text-gray-900")}>{s.available}</td>
-                  </React.Fragment>
-                );
-              })}
-              <td className="px-4 py-3 text-center tabular-nums font-semibold">{row.totalAvailable}</td>
+              {singleLocation ? (
+                (() => {
+                  const s = row.byLocation[locationNames[0]] ?? { onHand: 0, reserved: 0, available: 0 };
+                  return (
+                    <>
+                      <td className="px-4 py-3 text-center tabular-nums">{s.onHand}</td>
+                      <td className="px-4 py-3 text-center tabular-nums text-orange-600">{s.reserved > 0 ? s.reserved : "—"}</td>
+                      <td className={cn("px-4 py-3 text-center tabular-nums font-medium", s.available <= 0 ? "text-red-600" : "text-gray-900")}>{s.available}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  {locationNames.map((loc) => {
+                    const s = row.byLocation[loc] ?? { onHand: 0, reserved: 0, available: 0 };
+                    return (
+                      <React.Fragment key={`${row.id}-${loc}`}>
+                        <td className="px-2 py-3 text-center tabular-nums">{s.onHand}</td>
+                        <td className="px-2 py-3 text-center tabular-nums text-orange-600">{s.reserved > 0 ? s.reserved : "—"}</td>
+                        <td className={cn("px-2 py-3 text-center tabular-nums font-medium", s.available <= 0 ? "text-red-600" : "text-gray-900")}>{s.available}</td>
+                      </React.Fragment>
+                    );
+                  })}
+                  <td className="px-4 py-3 text-center tabular-nums font-semibold">{row.totalAvailable}</td>
+                </>
+              )}
               <td className="px-4 py-3 text-center">
                 <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[row.status])}>
                   {STATUS_LABELS[row.status]}

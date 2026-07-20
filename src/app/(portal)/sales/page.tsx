@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SalesFilters } from "@/components/sales/sales-filters";
+import { LocationTabs } from "@/components/ui/location-tabs";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -23,15 +24,29 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function SalesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; search?: string }>;
+  searchParams: Promise<{ status?: string; search?: string; loc?: string }>;
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role;
+  const userName = (session?.user as any)?.name ?? "";
   const params = await searchParams;
+
+  const locations = await prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } });
+
+  // Default tab: editor → their own warehouse, admin/viewer → All
+  const activeLoc =
+    params.loc !== undefined
+      ? params.loc
+      : role === "editor"
+      ? (locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name ?? "")
+      : "";
+
+  const activeLocation = activeLoc ? locations.find((l) => l.name === activeLoc) : null;
 
   const records = await prisma.salesRecord.findMany({
     where: {
       ...(params.status ? { status: params.status } : {}),
+      ...(activeLocation ? { locationId: activeLocation.id } : {}),
       ...(params.search
         ? {
             OR: [
@@ -48,7 +63,7 @@ export default async function SalesPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
         {role !== "viewer" && (
           <Link
@@ -60,7 +75,10 @@ export default async function SalesPage({
         )}
       </div>
 
-      <SalesFilters defaultSearch={params.search} defaultStatus={params.status} />
+      {/* Location tabs */}
+      <LocationTabs locations={locations} current={activeLoc} />
+
+      <SalesFilters defaultSearch={params.search} defaultStatus={params.status} currentLoc={activeLoc} />
 
       {records.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500">

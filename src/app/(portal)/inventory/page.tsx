@@ -2,16 +2,31 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
+import { LocationTabs } from "@/components/ui/location-tabs";
 import Link from "next/link";
 
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; status?: string; search?: string }>;
+  searchParams: Promise<{ category?: string; status?: string; search?: string; loc?: string }>;
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role;
+  const userName = (session?.user as any)?.name ?? "";
   const params = await searchParams;
+
+  const locations = await prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } });
+
+  // Default tab: editor → their own warehouse, admin/viewer → All
+  const defaultLoc =
+    params.loc !== undefined
+      ? params.loc
+      : role === "editor"
+      ? (locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name ?? "")
+      : "";
+
+  const activeLoc = defaultLoc;
+  const activeLocation = activeLoc ? locations.find((l) => l.name === activeLoc) : null;
 
   const products = await prisma.product.findMany({
     where: {
@@ -29,17 +44,21 @@ export default async function InventoryPage({
     orderBy: { sku: "asc" },
   });
 
-  const locations = await prisma.location.findMany({ where: { active: true } });
+  // Batch compute stock — scope to active location if set
+  const logWhere = activeLocation ? { locationId: activeLocation.id } : {};
+  const movWhere = activeLocation
+    ? { reservedQty: { gt: 0 }, locationId: activeLocation.id }
+    : { reservedQty: { gt: 0 } };
 
-  // Batch compute stock
   const [allLogs, allMovements] = await Promise.all([
     prisma.inventoryLog.groupBy({
       by: ["productId", "locationId"],
+      where: logWhere,
       _sum: { delta: true },
     }),
     prisma.generatedMovement.groupBy({
       by: ["productId", "locationId"],
-      where: { reservedQty: { gt: 0 } },
+      where: movWhere,
       _sum: { reservedQty: true },
     }),
   ]);
@@ -53,12 +72,15 @@ export default async function InventoryPage({
     movMap.set(`${mov.productId}:${mov.locationId}`, mov._sum.reservedQty ?? 0);
   }
 
+  // When single-location: only include that location's column
+  const visibleLocations = activeLocation ? [activeLocation] : locations;
+
   const rows = products.map((product) => {
     const byLocation: Record<string, { onHand: number; reserved: number; available: number }> = {};
     let totalOnHand = 0;
     let totalReserved = 0;
 
-    for (const loc of locations) {
+    for (const loc of visibleLocations) {
       const onHand = logMap.get(`${product.id}:${loc.id}`) ?? 0;
       const reserved = movMap.get(`${product.id}:${loc.id}`) ?? 0;
       byLocation[loc.name] = { onHand, reserved, available: onHand - reserved };
@@ -78,7 +100,7 @@ export default async function InventoryPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
         <div className="flex gap-2">
           {(role === "admin" || role === "editor") && (
@@ -100,14 +122,22 @@ export default async function InventoryPage({
         </div>
       </div>
 
+      {/* Location tabs */}
+      <LocationTabs locations={locations} current={activeLoc} />
+
       {/* Filters */}
       <InventoryFilters
         defaultSearch={params.search}
         defaultCategory={params.category}
         defaultStatus={params.status}
+        currentLoc={activeLoc}
       />
 
-      <InventoryTable rows={filtered} locationNames={locations.map((l) => l.name)} />
+      <InventoryTable
+        rows={filtered}
+        locationNames={visibleLocations.map((l) => l.name)}
+        singleLocation={!!activeLocation}
+      />
     </div>
   );
 }

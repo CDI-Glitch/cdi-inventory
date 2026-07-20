@@ -14,13 +14,16 @@ const STATUS_OPTIONS = [
 interface SalesFiltersProps {
   defaultSearch?: string;
   defaultStatus?: string;
+  currentLoc?: string;
 }
 
-export function SalesFilters({ defaultSearch = "", defaultStatus = "" }: SalesFiltersProps) {
+export function SalesFilters({ defaultSearch = "", defaultStatus = "", currentLoc = "" }: SalesFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <form ref={formRef} method="GET" className="flex flex-wrap gap-2 mb-4">
+      {/* Preserve current location tab across filter submissions */}
+      {currentLoc && <input type="hidden" name="loc" value={currentLoc} />}
       <input
         name="search"
         defaultValue={defaultSearch}
