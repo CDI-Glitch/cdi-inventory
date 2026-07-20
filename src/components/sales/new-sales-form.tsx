@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Props {
   products: { id: string; sku: string; name: string }[];
@@ -14,6 +16,12 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
   const [saleType, setSaleType] = useState<"sku" | "bundle">("sku");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const [itemCode, setItemCode] = useState("");
+  const [date, setDate] = useState(() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,11 +31,11 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
     const formData = new FormData(e.currentTarget);
     const body = {
       customer: formData.get("customer"),
-      date: formData.get("date"),
+      date,
       saleType,
-      itemCode: formData.get("itemCode"),
+      itemCode,
       qty: Number(formData.get("qty") || 1),
-      locationId: formData.get("locationId"),
+      locationId,
       invoiceNo: formData.get("invoiceNo") || undefined,
       orderNo: formData.get("orderNo") || undefined,
       staffNotes: formData.get("staffNotes") || undefined,
@@ -50,7 +58,15 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
     router.push(`/sales/${record.id}`);
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
+  const skuOptions = products.map(p => ({ value: p.sku, label: `${p.sku} — ${p.name}` }));
+  const bundleOptions = bundles.map(b => ({ value: b.code, label: `${b.code} — ${b.name}` }));
+
+  // Reset item selection when switching sale type
+  function handleSaleTypeChange(t: "sku" | "bundle") {
+    setSaleType(t);
+    setItemCode("");
+  }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg bg-white rounded-lg border border-gray-200 p-6 space-y-4">
@@ -67,38 +83,32 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Date *</label>
-          <input
-            name="date"
-            type="date"
-            required
-            defaultValue={today}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
+          <div className="mt-1">
+            <DatePicker name="date" value={date} onChange={setDate} required />
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Location *</label>
-          <select
+          <CustomSelect
             name="locationId"
-            required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">Select</option>
-            {locations.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
-            ))}
-          </select>
+            value={locationId}
+            options={locationOptions}
+            placeholder="Select"
+            onChange={setLocationId}
+            className="mt-1 w-full"
+          />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Type *</label>
         <div className="mt-1 flex gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={saleType === "sku"} onChange={() => setSaleType("sku")} />
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="radio" checked={saleType === "sku"} onChange={() => handleSaleTypeChange("sku")} />
             Individual SKU
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="radio" checked={saleType === "bundle"} onChange={() => setSaleType("bundle")} />
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="radio" checked={saleType === "bundle"} onChange={() => handleSaleTypeChange("bundle")} />
             Bundle
           </label>
         </div>
@@ -108,20 +118,14 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
         <label className="block text-sm font-medium text-gray-700">
           {saleType === "sku" ? "SKU" : "Bundle"} *
         </label>
-        <select
+        <CustomSelect
           name="itemCode"
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
-        >
-          <option value="">Select {saleType === "sku" ? "SKU" : "Bundle"}</option>
-          {saleType === "sku"
-            ? products.map((p) => (
-                <option key={p.id} value={p.sku}>{p.sku} — {p.name}</option>
-              ))
-            : bundles.map((b) => (
-                <option key={b.id} value={b.code}>{b.code} — {b.name}</option>
-              ))}
-        </select>
+          value={itemCode}
+          options={saleType === "sku" ? skuOptions : bundleOptions}
+          placeholder={`Select ${saleType === "sku" ? "SKU" : "Bundle"}`}
+          onChange={setItemCode}
+          className="mt-1 w-full"
+        />
       </div>
 
       <div>
@@ -169,7 +173,7 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !locationId || !itemCode || !date}
           className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
         >
           {loading ? "Creating..." : "Create as Quote"}

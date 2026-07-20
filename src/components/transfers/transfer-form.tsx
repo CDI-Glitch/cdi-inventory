@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 interface Props {
   products: { id: string; sku: string; name: string }[];
@@ -12,6 +13,9 @@ export function TransferForm({ products, locations }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [productId, setProductId] = useState("");
+  const [fromLocationId, setFromLocationId] = useState("");
+  const [toLocationId, setToLocationId] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,14 +24,14 @@ export function TransferForm({ products, locations }: Props) {
 
     const formData = new FormData(e.currentTarget);
     const body = {
-      productId: formData.get("productId"),
-      fromLocationId: formData.get("fromLocationId"),
-      toLocationId: formData.get("toLocationId"),
+      productId,
+      fromLocationId,
+      toLocationId,
       qty: Number(formData.get("qty")),
       notes: formData.get("notes") || undefined,
     };
 
-    if (body.fromLocationId === body.toLocationId) {
+    if (fromLocationId === toLocationId) {
       setError("Source and destination must be different");
       setLoading(false);
       return;
@@ -50,48 +54,45 @@ export function TransferForm({ products, locations }: Props) {
     router.refresh();
   }
 
+  const productOptions = products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }));
+  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
+
   return (
     <form onSubmit={handleSubmit} className="max-w-md space-y-5">
       <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">SKU *</label>
-          <select
+          <CustomSelect
             name="productId"
-            required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
-          >
-            <option value="">Select SKU</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>{p.sku} — {p.name}</option>
-            ))}
-          </select>
+            value={productId}
+            options={productOptions}
+            placeholder="Select SKU"
+            onChange={setProductId}
+            className="mt-1 w-full"
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">From *</label>
-            <select
+            <CustomSelect
               name="fromLocationId"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">Source</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+              value={fromLocationId}
+              options={locationOptions}
+              placeholder="Source"
+              onChange={setFromLocationId}
+              className="mt-1 w-full"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">To *</label>
-            <select
+            <CustomSelect
               name="toLocationId"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">Destination</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+              value={toLocationId}
+              options={locationOptions}
+              placeholder="Destination"
+              onChange={setToLocationId}
+              className="mt-1 w-full"
+            />
           </div>
         </div>
         <div>
@@ -120,7 +121,7 @@ export function TransferForm({ products, locations }: Props) {
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !productId || !fromLocationId || !toLocationId}
           className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
         >
           {loading ? "Creating..." : "Create transfer"}

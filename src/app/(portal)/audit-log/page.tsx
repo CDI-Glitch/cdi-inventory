@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
+import { AuditFilters } from "@/components/audit/audit-filters";
 
 const PAGE_SIZE = 50;
 
@@ -92,63 +93,14 @@ export default async function AuditLogPage({
       </div>
 
       {/* Filters */}
-      <form method="GET" className="flex flex-wrap gap-3 mb-6">
-        <input
-          name="sku"
-          defaultValue={params.sku}
-          placeholder="Filter by SKU…"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] w-44"
-        />
-
-        <select
-          name="type"
-          defaultValue={params.type ?? ""}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white"
-        >
-          <option value="">All types</option>
-          {INVENTORY_LOG_TYPES.map((t) => (
-            <option key={t} value={t}>{TYPE_LABELS[t] ?? t}</option>
-          ))}
-        </select>
-
-        <select
-          name="location"
-          defaultValue={params.location ?? ""}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white"
-        >
-          <option value="">All locations</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>{l.name}</option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          name="from"
-          defaultValue={params.from}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-        />
-        <span className="self-center text-gray-400 text-sm">to</span>
-        <input
-          type="date"
-          name="to"
-          defaultValue={params.to}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-        />
-
-        <button
-          type="submit"
-          className="rounded-lg bg-[#2563EB] text-white px-4 py-2 text-sm font-medium hover:bg-[#1D4ED8] transition-colors"
-        >
-          Filter
-        </button>
-        <a
-          href="/audit-log"
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          Clear
-        </a>
-      </form>
+      <AuditFilters
+        defaultSku={params.sku}
+        defaultType={params.type}
+        defaultLocation={params.location}
+        defaultFrom={params.from}
+        defaultTo={params.to}
+        locations={locations}
+      />
 
       {/* Table */}
       <div className="rounded-xl border border-gray-200 overflow-hidden">

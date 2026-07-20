@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 const TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -25,6 +26,9 @@ export function AdjustForm({ products, locations }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [productId, setProductId] = useState("");
+  const [locationId, setLocationId] = useState("");
+  const [type, setType] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,17 +37,15 @@ export function AdjustForm({ products, locations }: Props) {
     setSuccess("");
 
     const formData = new FormData(e.currentTarget);
-    const type = formData.get("type") as string;
     let delta = Number(formData.get("delta"));
 
-    // adjustment_out and write_off should be negative
     if (["adjustment_out", "write_off"].includes(type) && delta > 0) {
       delta = -delta;
     }
 
     const body = {
-      productId: formData.get("productId"),
-      locationId: formData.get("locationId"),
+      productId,
+      locationId,
       type,
       delta,
       reference: formData.get("reference") || undefined,
@@ -65,50 +67,50 @@ export function AdjustForm({ products, locations }: Props) {
 
     setSuccess("Stock adjusted successfully");
     setLoading(false);
+    setProductId("");
+    setLocationId("");
+    setType("");
     (e.target as HTMLFormElement).reset();
     router.refresh();
   }
+
+  const productOptions = products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }));
+  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg bg-white rounded-lg border border-gray-200 p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Product (SKU) *</label>
-        <select
+        <CustomSelect
           name="productId"
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Select SKU</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>{p.sku} — {p.name}</option>
-          ))}
-        </select>
+          value={productId}
+          options={productOptions}
+          placeholder="Select SKU"
+          onChange={setProductId}
+          className="mt-1 w-full"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Location *</label>
-        <select
+        <CustomSelect
           name="locationId"
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Select location</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>{l.name}</option>
-          ))}
-        </select>
+          value={locationId}
+          options={locationOptions}
+          placeholder="Select location"
+          onChange={setLocationId}
+          className="mt-1 w-full"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Type *</label>
-        <select
+        <CustomSelect
           name="type"
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Select type</option>
-          {MANUAL_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
+          value={type}
+          options={MANUAL_TYPES}
+          placeholder="Select type"
+          onChange={setType}
+          className="mt-1 w-full"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Quantity *</label>
@@ -143,7 +145,7 @@ export function AdjustForm({ products, locations }: Props) {
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !productId || !locationId || !type}
           className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
         >
           {loading ? "Saving..." : "Save adjustment"}
