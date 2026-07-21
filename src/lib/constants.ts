@@ -8,6 +8,7 @@ export const CATEGORIES = [
   "TRAY",
   "TRAY_KIT",
   "ACCESSORY",
+  "UNISTRUT",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
