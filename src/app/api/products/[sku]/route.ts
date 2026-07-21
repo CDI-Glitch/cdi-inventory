@@ -14,7 +14,8 @@ export async function PATCH(
   { params }: { params: Promise<{ sku: string }> }
 ) {
   const session = await auth();
-  if (!session || !["editor", "admin"].includes(session.user?.role as string)) {
+  const role = (session?.user as any)?.role;
+  if (!session || !["editor", "admin"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
