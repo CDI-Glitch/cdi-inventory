@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getStock } from "@/lib/inventory";
 import { cn } from "@/lib/utils";
-import ReorderPointEditor from "@/components/inventory/reorder-point-editor";
+import SKUDetailHeader from "@/components/inventory/sku-detail-header";
 
 const LOG_TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -23,7 +23,10 @@ export default async function SKUDetailPage({
 }: {
   params: Promise<{ sku: string }>;
 }) {
-  await auth();
+  const session = await auth();
+  const role = (session?.user as any)?.role as string | undefined;
+  const canAdjust = role === "editor" || role === "admin";
+
   const { sku } = await params;
 
   const product = await prisma.product.findUnique({
@@ -57,45 +60,18 @@ export default async function SKUDetailPage({
         <span className="font-mono font-semibold text-gray-900">{product.sku}</span>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">{product.sku}</h1>
-            <p className="text-gray-600 mt-0.5">{product.name}</p>
-            <p className="text-sm text-gray-400 mt-1">{product.category.replace(/_/g, " ")} · {product.unit}</p>
-          </div>
-          {product.adminNotes && (
-            <p className="text-sm text-gray-500 max-w-xs text-right">{product.adminNotes}</p>
-          )}
-        </div>
-
-        <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
-          <span className="text-sm text-gray-500">Reorder point:</span>
-          <ReorderPointEditor sku={product.sku} initialValue={product.reorderPoint} />
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          {stockByLocation.map(({ location, stock }) => (
-            <div key={location.id} className="rounded-md border border-gray-100 bg-gray-50 p-3">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{location.name}</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xs text-gray-400">On Hand</p>
-                  <p className="text-lg font-bold text-gray-900">{stock.onHand}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Reserved</p>
-                  <p className={cn("text-lg font-bold", stock.reserved > 0 ? "text-orange-600" : "text-gray-900")}>{stock.reserved}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Available</p>
-                  <p className={cn("text-lg font-bold", stock.available <= 0 ? "text-red-600" : "text-green-700")}>{stock.available}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SKUDetailHeader
+        sku={product.sku}
+        productId={product.id}
+        name={product.name}
+        category={product.category}
+        unit={product.unit}
+        adminNotes={product.adminNotes}
+        reorderPoint={product.reorderPoint}
+        stockByLocation={stockByLocation}
+        locations={locations}
+        canAdjust={canAdjust}
+      />
 
       <h2 className="text-lg font-semibold text-gray-900 mb-3">Stock movement history</h2>
       {logs.length === 0 ? (
