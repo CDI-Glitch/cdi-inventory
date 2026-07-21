@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getStock } from "@/lib/inventory";
 import { cn } from "@/lib/utils";
+import ReorderPointEditor from "@/components/inventory/reorder-point-editor";
 
 const LOG_TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -66,6 +67,11 @@ export default async function SKUDetailPage({
           {product.adminNotes && (
             <p className="text-sm text-gray-500 max-w-xs text-right">{product.adminNotes}</p>
           )}
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
+          <span className="text-sm text-gray-500">Reorder point:</span>
+          <ReorderPointEditor sku={product.sku} initialValue={product.reorderPoint} />
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-4">
