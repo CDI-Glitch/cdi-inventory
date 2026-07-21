@@ -119,21 +119,21 @@ export default async function InventoryPage({
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
         <div className="flex gap-2">
+          {role === "admin" && (
+            <Link
+              href="/inventory/new"
+              className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
+            >
+              + Add SKU
+            </Link>
+          )}
           {(role === "admin" || role === "editor") && (
-            <>
-              <Link
-                href="/inventory/new"
-                className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
-              >
-                + Add SKU
-              </Link>
-              <Link
-                href="/inventory/adjust"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Adjust Stock
-              </Link>
-            </>
+            <Link
+              href="/inventory/adjust"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Adjust Stock
+            </Link>
           )}
         </div>
       </div>

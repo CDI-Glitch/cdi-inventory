@@ -5,7 +5,7 @@ import { NewProductForm } from "@/components/inventory/new-product-form";
 export default async function NewProductPage() {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (role !== "admin" && role !== "editor") redirect("/inventory");
+  if (role !== "admin") redirect("/inventory");
 
   return (
     <div>
