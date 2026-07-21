@@ -3,7 +3,6 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +34,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         {/* CDI Logo */}
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo-cdi.svg" alt="CDI" width={160} height={36} className="mb-3" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-cdi.svg" alt="CDI" className="h-9 w-auto mb-3" />
           <p className="text-xs text-gray-400 font-medium tracking-widest uppercase">Inventory Portal</p>
         </div>
 
