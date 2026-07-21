@@ -116,7 +116,8 @@ export function IncomingForm({ products, locations }: Props) {
               options={locationOptions}
               placeholder="Select location"
               onChange={setLocationId}
-              className="mt-1 w-full"
+              className="mt-1"
+              fullWidth
             />
           </div>
           <div>

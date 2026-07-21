@@ -87,7 +87,8 @@ export function AdjustForm({ products, locations }: Props) {
           options={productOptions}
           placeholder="Select SKU"
           onChange={setProductId}
-          className="mt-1 w-full"
+          className="mt-1"
+          fullWidth
         />
       </div>
       <div>
@@ -98,7 +99,8 @@ export function AdjustForm({ products, locations }: Props) {
           options={locationOptions}
           placeholder="Select location"
           onChange={setLocationId}
-          className="mt-1 w-full"
+          className="mt-1"
+          fullWidth
         />
       </div>
       <div>
@@ -109,7 +111,8 @@ export function AdjustForm({ products, locations }: Props) {
           options={MANUAL_TYPES}
           placeholder="Select type"
           onChange={setType}
-          className="mt-1 w-full"
+          className="mt-1"
+          fullWidth
         />
       </div>
       <div>

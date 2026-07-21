@@ -68,7 +68,8 @@ export function TransferForm({ products, locations }: Props) {
             options={productOptions}
             placeholder="Select SKU"
             onChange={setProductId}
-            className="mt-1 w-full"
+            className="mt-1"
+            fullWidth
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -80,7 +81,8 @@ export function TransferForm({ products, locations }: Props) {
               options={locationOptions}
               placeholder="Source"
               onChange={setFromLocationId}
-              className="mt-1 w-full"
+              className="mt-1"
+              fullWidth
             />
           </div>
           <div>
@@ -91,7 +93,8 @@ export function TransferForm({ products, locations }: Props) {
               options={locationOptions}
               placeholder="Destination"
               onChange={setToLocationId}
-              className="mt-1 w-full"
+              className="mt-1"
+              fullWidth
             />
           </div>
         </div>

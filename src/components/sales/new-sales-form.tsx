@@ -95,7 +95,8 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
             options={locationOptions}
             placeholder="Select"
             onChange={setLocationId}
-            className="mt-1 w-full"
+            className="mt-1"
+            fullWidth
           />
         </div>
       </div>
@@ -124,7 +125,8 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
           options={saleType === "sku" ? skuOptions : bundleOptions}
           placeholder={`Select ${saleType === "sku" ? "SKU" : "Bundle"}`}
           onChange={setItemCode}
-          className="mt-1 w-full"
+          className="mt-1"
+          fullWidth
         />
       </div>
 

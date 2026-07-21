@@ -17,6 +17,8 @@ interface CustomSelectProps {
   /** If true, selecting an option auto-submits the parent <form> */
   submitOnChange?: boolean;
   className?: string;
+  /** If true, the select fills 100% of its parent width instead of sizing to content */
+  fullWidth?: boolean;
 }
 
 export function CustomSelect({
@@ -27,6 +29,7 @@ export function CustomSelect({
   onChange,
   submitOnChange = false,
   className = "",
+  fullWidth = false,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
@@ -64,30 +67,32 @@ export function CustomSelect({
   }
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div ref={containerRef} className={`relative ${fullWidth ? "block w-full" : "inline-block"} ${className}`}>
       {/* Hidden input carries the value for native form submission */}
       <input ref={hiddenRef} type="hidden" name={name} value={internalValue} />
 
       {/*
-        Ghost sizer: invisible block that always renders all option labels.
+        Ghost sizer: only used in auto-width (non-fullWidth) mode.
         Forces the container to be as wide as the longest option so the
         trigger button and dropdown panel are naturally the same width.
       */}
-      <div className="invisible h-0 overflow-hidden px-3 py-1.5 text-sm" aria-hidden="true">
-        <span className="flex items-center gap-1.5">
-          <span className="w-4 shrink-0" />
-          {[placeholder, ...options.map((o) => o.label)].reduce((a, b) =>
-            a.length >= b.length ? a : b
-          )}
-          <ChevronDown size={14} className="shrink-0" />
-        </span>
-      </div>
+      {!fullWidth && (
+        <div className="invisible h-0 overflow-hidden px-3 py-1.5 text-sm" aria-hidden="true">
+          <span className="flex items-center gap-1.5">
+            <span className="w-4 shrink-0" />
+            {[placeholder, ...options.map((o) => o.label)].reduce((a, b) =>
+              a.length >= b.length ? a : b
+            )}
+            <ChevronDown size={14} className="shrink-0" />
+          </span>
+        </div>
+      )}
 
       {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="absolute inset-0 flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none w-full"
+        className={`${fullWidth ? "w-full" : "absolute inset-0"} flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none`}
       >
         <span className="flex-1 text-left truncate">{displayLabel}</span>
         <ChevronDown

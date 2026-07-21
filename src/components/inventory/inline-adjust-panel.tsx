@@ -77,7 +77,7 @@ export default function InlineAdjustPanel({ productId, locations, onClose }: Pro
             options={locationOptions}
             placeholder="Select location"
             onChange={setLocationId}
-            className="w-full"
+            fullWidth
           />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default function InlineAdjustPanel({ productId, locations, onClose }: Pro
             options={TYPE_OPTIONS}
             placeholder="Select type"
             onChange={setType}
-            className="w-full"
+            fullWidth
           />
         </div>
         <div>
