@@ -64,7 +64,7 @@ export function CustomSelect({
   }
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div ref={containerRef} className={`relative inline-flex flex-col ${className}`}>
       {/* Hidden input carries the value for native form submission */}
       <input ref={hiddenRef} type="hidden" name={name} value={internalValue} />
 
@@ -72,7 +72,7 @@ export function CustomSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none min-w-[160px]"
+        className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none w-full min-w-[160px]"
       >
         <span className="flex-1 text-left truncate">{displayLabel}</span>
         <ChevronDown
@@ -83,7 +83,7 @@ export function CustomSelect({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-full w-max rounded-md border border-gray-300 bg-white py-1">
+        <div className="absolute left-0 top-full z-50 mt-1 w-max min-w-full rounded-md border border-gray-300 bg-white py-1">
           {/* "All" / placeholder option */}
           <button
             type="button"
