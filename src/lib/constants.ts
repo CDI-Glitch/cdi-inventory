@@ -14,6 +14,7 @@ export const CATEGORIES = [
   "ROOF_RACK",
   "CANOPY_ACCESSORY",
   "SERVICE_BODY",
+  "FITTING_KIT",
   "UNISTRUT",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
