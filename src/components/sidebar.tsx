@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -41,7 +42,7 @@ export function Sidebar({ user }: SidebarProps) {
     <aside className="w-64 flex flex-col bg-[#F8F9FB] border-r border-gray-200/80">
       {/* Logo area — generous padding for breathing room */}
       <div className="px-6 pt-7 pb-6">
-        <img src="/logo-cdi.svg" alt="CDI" className="h-8 w-auto" />
+        <Image src="/logo-cdi.svg" alt="CDI" width={140} height={32} />
         <p className="text-[10px] text-gray-400 mt-3 font-semibold tracking-[0.12em] uppercase">
           Inventory Portal
         </p>
