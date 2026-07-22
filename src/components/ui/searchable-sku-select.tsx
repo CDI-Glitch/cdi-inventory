@@ -234,7 +234,7 @@ function SkuRow({
       type="button"
       onClick={() => onSelect(option.sku)}
       className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors
-        ${selected ? "bg-blue-50 text-[#2563EB]" : "text-gray-700 hover:bg-gray-50"}`}
+        ${selected ? "bg-blue-50 text-[#2563EB]" : "text-gray-700 hover:bg-blue-50"}`}
     >
       <span className="mt-0.5 w-4 shrink-0">
         {selected && <Check size={14} className="text-[#2563EB]" />}
