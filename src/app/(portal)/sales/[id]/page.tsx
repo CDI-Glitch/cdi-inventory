@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SalesStatusActions } from "@/components/sales/sales-status-actions";
+import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
+import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -29,6 +31,7 @@ export default async function SalesDetailPage({
   const session = await auth();
   const role = (session?.user as any)?.role;
   const { id } = await params;
+  const isQuote = true; // evaluated below after fetch
 
   const record = await prisma.salesRecord.findUnique({
     where: { id },
@@ -44,21 +47,42 @@ export default async function SalesDetailPage({
 
   if (!record) notFound();
 
+  const recordIsQuote = record.status === "quote";
+  const canEdit = role !== "viewer" && recordIsQuote;
+
   // Resolve item names for lines
   const lineSkus = record.lines.filter((l) => l.lineType === "sku").map((l) => l.itemCode);
   const lineBundles = record.lines.filter((l) => l.lineType === "bundle").map((l) => l.itemCode);
 
-  const [skuProducts, bundleDefs] = await Promise.all([
+  const [skuProducts, bundleDefs, allLocations, allProducts, rawBundles] = await Promise.all([
     lineSkus.length > 0
       ? prisma.product.findMany({ where: { sku: { in: lineSkus } }, select: { sku: true, name: true, unit: true } })
       : Promise.resolve([]),
     lineBundles.length > 0
       ? prisma.bundleDefinition.findMany({ where: { code: { in: lineBundles } }, select: { code: true, name: true } })
       : Promise.resolve([]),
+    canEdit ? prisma.location.findMany({ where: { active: true } }) : Promise.resolve([]),
+    canEdit ? prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" }, select: { sku: true, name: true, category: true } }) : Promise.resolve([]),
+    canEdit
+      ? prisma.bundleDefinition.findMany({
+          where: { active: true },
+          orderBy: { code: "asc" },
+          include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
+        })
+      : Promise.resolve([]),
   ]);
 
   const skuMap = Object.fromEntries(skuProducts.map((p) => [p.sku, p]));
   const bundleMap = Object.fromEntries(bundleDefs.map((b) => [b.code, b]));
+
+  const bundlesForEditor = rawBundles.map((b: any) => ({
+    code: b.code,
+    name: b.name,
+    items: b.items.map((i: any) => ({ sku: i.product.sku, name: i.product.name, qty: i.qty })),
+  }));
+
+  // Format date for editor (yyyy-MM-dd)
+  const dateStr = record.date.toISOString().slice(0, 10);
 
   return (
     <div className="max-w-3xl">
@@ -72,45 +96,27 @@ export default async function SalesDetailPage({
 
       {/* Header card */}
       <div className="bg-white rounded-lg border border-gray-200 p-5 mb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-gray-900">{record.recordId}</h1>
-              <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", STATUS_STYLES[record.status])}>
-                {STATUS_LABELS[record.status]}
-              </span>
-            </div>
-            <p className="text-gray-600 mt-1">{record.customer}</p>
-          </div>
-          <div className="text-right text-sm text-gray-500">
-            <p>{new Date(record.date).toLocaleDateString("en-AU")}</p>
-            <p>{record.location.name}</p>
-          </div>
+        <div className="flex items-center gap-3 mb-3">
+          <h1 className="text-xl font-bold text-gray-900">{record.recordId}</h1>
+          <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", STATUS_STYLES[record.status])}>
+            {STATUS_LABELS[record.status]}
+          </span>
+          {recordIsQuote && (
+            <span className="text-xs text-gray-400 italic">Draft — no stock reserved</span>
+          )}
         </div>
 
-        {/* Reference numbers */}
-        {(record.invoiceNo || record.orderNo) && (
-          <div className="mt-3 flex gap-6 text-sm">
-            {record.invoiceNo && (
-              <div className="flex gap-2">
-                <span className="text-gray-500">Invoice</span>
-                <span className="font-medium">{record.invoiceNo}</span>
-              </div>
-            )}
-            {record.orderNo && (
-              <div className="flex gap-2">
-                <span className="text-gray-500">Order</span>
-                <span className="font-medium">{record.orderNo}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {record.staffNotes && (
-          <div className="mt-3 rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
-            {record.staffNotes}
-          </div>
-        )}
+        <SalesHeaderEditor
+          id={record.id}
+          customer={record.customer}
+          date={dateStr}
+          locationId={record.locationId}
+          locations={allLocations}
+          quoteNo={record.quoteNo ?? null}
+          invoiceNo={record.invoiceNo ?? null}
+          staffNotes={record.staffNotes ?? null}
+          isQuote={canEdit}
+        />
       </div>
 
       {/* Status actions */}
@@ -124,9 +130,19 @@ export default async function SalesDetailPage({
 
       {/* Lines table */}
       <div className="mb-4">
-        <h2 className="text-sm font-semibold text-gray-700 mb-2">
-          Order lines <span className="text-gray-400 font-normal">({record.lines.length})</span>
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold text-gray-700">
+            Order lines <span className="text-gray-400 font-normal">({record.lines.length})</span>
+          </h2>
+          {canEdit && (
+            <SalesLinesEditor
+              salesRecordId={record.id}
+              existingLines={record.lines}
+              skuOptions={allProducts}
+              bundles={bundlesForEditor}
+            />
+          )}
+        </div>
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead>

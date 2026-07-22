@@ -53,6 +53,7 @@ export default async function SalesPage({
               { customer: { contains: params.search, mode: "insensitive" } },
               { recordId: { contains: params.search, mode: "insensitive" } },
               { invoiceNo: { contains: params.search, mode: "insensitive" } },
+              { quoteNo: { contains: params.search, mode: "insensitive" } },
             ],
           }
         : {}),

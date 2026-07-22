@@ -83,7 +83,7 @@ async function handleOrderPaid(payload: any) {
 
   if (orderNo) {
     const record = await prisma.salesRecord.findFirst({
-      where: { orderNo, status: { in: ["quote", "deposit_paid"] } },
+      where: { invoiceNo: orderNo, status: { in: ["quote", "deposit_paid"] } },
     });
     if (record) {
       await prisma.salesRecord.update({

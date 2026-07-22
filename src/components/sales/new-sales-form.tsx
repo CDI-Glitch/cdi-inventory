@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSkuSelect } from "@/components/ui/searchable-sku-select";
+import type { SkuOption } from "@/components/ui/searchable-sku-select";
 import { cn } from "@/lib/utils";
 
 interface BundleItemPreview {
@@ -19,7 +21,7 @@ interface BundleOption {
 }
 
 interface SaleLine {
-  id: string; // client-side only key
+  id: string;
   lineType: "sku" | "bundle";
   itemCode: string;
   qty: number;
@@ -27,7 +29,7 @@ interface SaleLine {
 }
 
 interface Props {
-  products: { id: string; sku: string; name: string }[];
+  products: SkuOption[];
   bundles: BundleOption[];
   locations: { id: string; name: string }[];
 }
@@ -52,8 +54,7 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
     const t = new Date();
     return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
   });
-  const [invoiceNo, setInvoiceNo] = useState("");
-  const [orderNo, setOrderNo] = useState("");
+  const [quoteNo, setQuoteNo] = useState("");
   const [staffNotes, setStaffNotes] = useState("");
 
   // Lines
@@ -61,7 +62,6 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
   const [expandedBundles, setExpandedBundles] = useState<Set<string>>(new Set());
 
   const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
-  const skuOptions = products.map((p) => ({ value: p.sku, label: `${p.sku} — ${p.name}` }));
   const bundleOptions = bundles.map((b) => ({ value: b.code, label: `${b.code} — ${b.name}` }));
 
   const updateLine = useCallback((id: string, patch: Partial<SaleLine>) => {
@@ -69,33 +69,25 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
       prev.map((l) => {
         if (l.id !== id) return l;
         const updated = { ...l, ...patch };
-        // Reset itemCode when switching type
-        if (patch.lineType && patch.lineType !== l.lineType) {
-          updated.itemCode = "";
-        }
+        if (patch.lineType && patch.lineType !== l.lineType) updated.itemCode = "";
         return updated;
       })
     );
   }, []);
 
   const addLine = () => setLines((prev) => [...prev, emptyLine()]);
-
-  const removeLine = (id: string) => {
+  const removeLine = (id: string) =>
     setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
-  };
 
   const toggleBundleExpand = (lineId: string) => {
     setExpandedBundles((prev) => {
       const next = new Set(prev);
-      if (next.has(lineId)) next.delete(lineId);
-      else next.add(lineId);
+      next.has(lineId) ? next.delete(lineId) : next.add(lineId);
       return next;
     });
   };
 
-  const getBundleItems = (code: string): BundleItemPreview[] => {
-    return bundles.find((b) => b.code === code)?.items ?? [];
-  };
+  const getBundleItems = (code: string) => bundles.find((b) => b.code === code)?.items ?? [];
 
   const isValid =
     customer.trim() &&
@@ -116,8 +108,7 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
         customer: customer.trim(),
         date,
         locationId,
-        invoiceNo: invoiceNo.trim() || undefined,
-        orderNo: orderNo.trim() || undefined,
+        quoteNo: quoteNo.trim() || undefined,
         staffNotes: staffNotes.trim() || undefined,
         lines: lines.map((l) => ({
           lineType: l.lineType,
@@ -175,25 +166,14 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Invoice no.</label>
-              <input
-                value={invoiceNo}
-                onChange={(e) => setInvoiceNo(e.target.value)}
-                placeholder="INV-001"
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Order no.</label>
-              <input
-                value={orderNo}
-                onChange={(e) => setOrderNo(e.target.value)}
-                placeholder="ORD-001"
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Quote no. <span className="text-gray-400 font-normal">(optional)</span></label>
+            <input
+              value={quoteNo}
+              onChange={(e) => setQuoteNo(e.target.value)}
+              placeholder="Q-001"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div>
@@ -222,56 +202,52 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
                 <div className="flex-1 space-y-3">
                   {/* Type toggle */}
                   <div className="flex gap-3">
-                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={line.lineType === "sku"}
-                        onChange={() => updateLine(line.id, { lineType: "sku" })}
-                        className="accent-blue-600"
-                      />
-                      <span className={cn("font-medium", line.lineType === "sku" ? "text-blue-700" : "text-gray-500")}>
-                        SKU
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={line.lineType === "bundle"}
-                        onChange={() => updateLine(line.id, { lineType: "bundle" })}
-                        className="accent-blue-600"
-                      />
-                      <span className={cn("font-medium", line.lineType === "bundle" ? "text-blue-700" : "text-gray-500")}>
-                        Bundle
-                      </span>
-                    </label>
+                    {(["sku", "bundle"] as const).map((t) => (
+                      <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={line.lineType === t}
+                          onChange={() => updateLine(line.id, { lineType: t })}
+                          className="accent-blue-600"
+                        />
+                        <span className={cn("font-medium", line.lineType === t ? "text-blue-700" : "text-gray-500")}>
+                          {t === "sku" ? "SKU" : "Bundle"}
+                        </span>
+                      </label>
+                    ))}
                   </div>
 
                   <div className="grid grid-cols-4 gap-2">
-                    {/* Item select */}
                     <div className="col-span-3">
-                      <CustomSelect
-                        name={`line-item-${line.id}`}
-                        value={line.itemCode}
-                        options={line.lineType === "sku" ? skuOptions : bundleOptions}
-                        placeholder={line.lineType === "sku" ? "Select SKU" : "Select Bundle"}
-                        onChange={(val) => updateLine(line.id, { itemCode: val })}
-                        fullWidth
-                      />
+                      {line.lineType === "sku" ? (
+                        <SearchableSkuSelect
+                          value={line.itemCode}
+                          options={products}
+                          placeholder="Select SKU"
+                          onChange={(val) => updateLine(line.id, { itemCode: val })}
+                          fullWidth
+                        />
+                      ) : (
+                        <CustomSelect
+                          name={`line-bundle-${line.id}`}
+                          value={line.itemCode}
+                          options={bundleOptions}
+                          placeholder="Select Bundle"
+                          onChange={(val) => updateLine(line.id, { itemCode: val })}
+                          fullWidth
+                        />
+                      )}
                     </div>
-                    {/* Qty */}
-                    <div>
-                      <input
-                        type="number"
-                        min={1}
-                        value={line.qty}
-                        onChange={(e) => updateLine(line.id, { qty: Math.max(1, Number(e.target.value)) })}
-                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Qty"
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      value={line.qty}
+                      onChange={(e) => updateLine(line.id, { qty: Math.max(1, Number(e.target.value)) })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Qty"
+                    />
                   </div>
 
-                  {/* Notes */}
                   <input
                     type="text"
                     value={line.notes}
@@ -280,7 +256,6 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
                     className="w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
 
-                  {/* Bundle component preview */}
                   {line.lineType === "bundle" && line.itemCode && (
                     <div>
                       <button
@@ -309,7 +284,6 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
                   )}
                 </div>
 
-                {/* Remove button */}
                 <button
                   type="button"
                   onClick={() => removeLine(line.id)}

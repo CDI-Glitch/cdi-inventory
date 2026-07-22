@@ -87,8 +87,8 @@ model SalesRecord {
   id             String   @id @default(cuid())
   recordId       String   @unique
   date           DateTime
+  quoteNo        String?
   invoiceNo      String?
-  orderNo        String?
   customer       String
   status         String   @default("quote")
   staffNotes     String?

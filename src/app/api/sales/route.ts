@@ -15,7 +15,7 @@ const CreateSalesSchema = z.object({
   date: z.string().min(1),
   locationId: z.string().min(1),
   invoiceNo: z.string().optional(),
-  orderNo: z.string().optional(),
+  quoteNo: z.string().optional(),
   staffNotes: z.string().optional(),
   lines: z.array(SalesLineSchema).min(1, "At least one line is required"),
 });
@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
               { customer: { contains: search, mode: "insensitive" } },
               { recordId: { contains: search, mode: "insensitive" } },
               { invoiceNo: { contains: search, mode: "insensitive" } },
+              { quoteNo: { contains: search, mode: "insensitive" } },
             ],
           }
         : {}),
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       status: "quote",
       locationId: data.locationId,
       invoiceNo: data.invoiceNo,
-      orderNo: data.orderNo,
+      quoteNo: data.quoteNo,
       staffNotes: data.staffNotes,
       lines: {
         create: data.lines.map((line, idx) => ({

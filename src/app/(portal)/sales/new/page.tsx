@@ -8,7 +8,7 @@ export default async function NewSalesPage() {
   if ((session?.user as any)?.role === "viewer") redirect("/sales");
 
   const [products, rawBundles, locations] = await Promise.all([
-    prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),
+    prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" }, select: { sku: true, name: true, category: true } }),
     prisma.bundleDefinition.findMany({
       where: { active: true },
       orderBy: { code: "asc" },
