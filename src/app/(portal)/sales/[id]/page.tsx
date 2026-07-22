@@ -114,6 +114,17 @@ export default async function SalesDetailPage({
 
   const activeMovements = record.movements.filter((m) => m.reservedQty > 0);
 
+  // For completed records, fetch the actual deduction log so the Fulfillment table
+  // shows what was really pulled from stock (GeneratedMovement is zeroed out on complete).
+  const completedDeductions =
+    record.status === "completed"
+      ? await prisma.inventoryLog.findMany({
+          where: { reference: record.recordId, type: "sales_deduction" },
+          include: { product: true, location: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
   return (
     <div className="max-w-3xl">
       {/* Breadcrumb */}
@@ -242,7 +253,9 @@ export default async function SalesDetailPage({
             <div>
               <h2 className="text-sm font-semibold text-gray-700">Fulfillment</h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                Actual stock reserved / to be pulled — source of truth for deduction
+                {record.status === "completed"
+                  ? "Actual stock deducted at completion"
+                  : "Actual stock reserved / to be pulled — source of truth for deduction"}
               </p>
             </div>
             {canEditFulfillment && (
@@ -254,74 +267,131 @@ export default async function SalesDetailPage({
             )}
           </div>
 
-          {!hasFulfillment ? (
-            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
-              No active reservations.
-            </div>
+          {record.status === "completed" ? (
+            // Completed: show what was actually deducted from InventoryLog
+            completedDeductions.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
+                No deduction records found.
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">SKU</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">Location</th>
+                      <th className="px-4 py-2 text-center font-medium text-gray-600">Deducted</th>
+                      <th className="px-4 py-2 text-center font-medium text-gray-600 w-8" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedDeductions.map((log) => {
+                      const orderedQty = orderLineMap[log.product.sku];
+                      const deductedQty = Math.abs(log.delta);
+                      const isMismatch =
+                        orderedQty === undefined || orderedQty !== deductedQty;
+                      return (
+                        <tr key={log.id} className="border-b border-gray-100 last:border-0">
+                          <td className="px-4 py-2 font-mono text-xs text-gray-700">
+                            {log.product.sku}
+                          </td>
+                          <td className="px-4 py-2 text-gray-600">{log.product.name}</td>
+                          <td className="px-4 py-2 text-gray-500">{log.location.name}</td>
+                          <td className="px-4 py-2 text-center tabular-nums font-medium text-gray-500">
+                            {deductedQty}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {isMismatch && (
+                              <span
+                                title={
+                                  orderedQty === undefined
+                                    ? "SKU not in order lines (substituted)"
+                                    : `Order qty: ${orderedQty}, deducted: ${deductedQty}`
+                                }
+                                className="text-amber-500 text-xs font-semibold cursor-help"
+                              >
+                                ⚠
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {completedDeductions.some((log) => {
+                  const oq = orderLineMap[log.product.sku];
+                  return oq === undefined || oq !== Math.abs(log.delta);
+                }) && (
+                  <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
+                    ⚠ Some deducted items differ from the order lines — substitutions were made.
+                  </div>
+                )}
+              </div>
+            )
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-2 text-left font-medium text-gray-600">SKU</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-600">Location</th>
-                    <th className="px-4 py-2 text-center font-medium text-gray-600">
-                      {record.status === "completed" ? "Deducted" : "Reserved"}
-                    </th>
-                    <th className="px-4 py-2 text-center font-medium text-gray-600 w-8" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeMovements.map((mov) => {
-                    const orderedQty = orderLineMap[mov.product.sku];
-                    const isMismatch =
-                      orderedQty === undefined || orderedQty !== mov.reservedQty;
-                    return (
-                      <tr key={mov.id} className="border-b border-gray-100 last:border-0">
-                        <td className="px-4 py-2 font-mono text-xs text-gray-700">
-                          {mov.product.sku}
-                        </td>
-                        <td className="px-4 py-2 text-gray-600">{mov.product.name}</td>
-                        <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
-                        <td
-                          className={cn(
-                            "px-4 py-2 text-center tabular-nums font-medium",
-                            record.status === "completed"
-                              ? "text-gray-500"
-                              : "text-orange-600"
-                          )}
-                        >
-                          {mov.reservedQty}
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          {isMismatch && (
-                            <span
-                              title={
-                                orderedQty === undefined
-                                  ? "SKU not in order lines (substituted)"
-                                  : `Order qty: ${orderedQty}, fulfillment qty: ${mov.reservedQty}`
-                              }
-                              className="text-amber-500 text-xs font-semibold cursor-help"
-                            >
-                              ⚠
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {activeMovements.some((m) => {
-                const oq = orderLineMap[m.product.sku];
-                return oq === undefined || oq !== m.reservedQty;
-              }) && (
-                <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
-                  ⚠ Some fulfillment rows differ from the order lines — substitutions were made.
-                </div>
-              )}
-            </div>
+            // Active (deposit_paid / fully_paid): show live GeneratedMovement
+            !hasFulfillment ? (
+              <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
+                No active reservations.
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">SKU</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-600">Location</th>
+                      <th className="px-4 py-2 text-center font-medium text-gray-600">Reserved</th>
+                      <th className="px-4 py-2 text-center font-medium text-gray-600 w-8" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeMovements.map((mov) => {
+                      const orderedQty = orderLineMap[mov.product.sku];
+                      const isMismatch =
+                        orderedQty === undefined || orderedQty !== mov.reservedQty;
+                      return (
+                        <tr key={mov.id} className="border-b border-gray-100 last:border-0">
+                          <td className="px-4 py-2 font-mono text-xs text-gray-700">
+                            {mov.product.sku}
+                          </td>
+                          <td className="px-4 py-2 text-gray-600">{mov.product.name}</td>
+                          <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
+                          <td className="px-4 py-2 text-center tabular-nums font-medium text-orange-600">
+                            {mov.reservedQty}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            {isMismatch && (
+                              <span
+                                title={
+                                  orderedQty === undefined
+                                    ? "SKU not in order lines (substituted)"
+                                    : `Order qty: ${orderedQty}, fulfillment qty: ${mov.reservedQty}`
+                                }
+                                className="text-amber-500 text-xs font-semibold cursor-help"
+                              >
+                                ⚠
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {activeMovements.some((m) => {
+                  const oq = orderLineMap[m.product.sku];
+                  return oq === undefined || oq !== m.reservedQty;
+                }) && (
+                  <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
+                    ⚠ Some fulfillment rows differ from the order lines — substitutions were made.
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       )}
