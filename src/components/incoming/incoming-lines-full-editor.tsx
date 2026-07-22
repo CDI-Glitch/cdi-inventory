@@ -9,7 +9,6 @@ interface LineRow {
   id: string;
   sku: string;
   qtyOrdered: number;
-  unitCost: string;
   notes: string;
 }
 
@@ -19,7 +18,6 @@ interface Props {
     id: string;
     sku: string;
     qtyOrdered: number;
-    unitCost: number | null;
     notes: string;
   }[];
   skuOptions: SkuOption[];
@@ -43,7 +41,6 @@ export function IncomingLinesFullEditor({
       id: l.id,
       sku: l.sku,
       qtyOrdered: l.qtyOrdered,
-      unitCost: l.unitCost != null ? String(l.unitCost) : "",
       notes: l.notes,
     }))
   );
@@ -53,7 +50,7 @@ export function IncomingLinesFullEditor({
   function addRow() {
     setRows((prev) => [
       ...prev,
-      { id: uid(), sku: "", qtyOrdered: 1, unitCost: "", notes: "" },
+      { id: uid(), sku: "", qtyOrdered: 1, notes: "" },
     ]);
   }
 
@@ -65,7 +62,7 @@ export function IncomingLinesFullEditor({
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, sku } : r)));
   }
 
-  function updateField(idx: number, field: keyof Omit<LineRow, "id" | "sku">, value: string | number) {
+  function updateField(idx: number, field: keyof Pick<LineRow, "qtyOrdered" | "notes">, value: string | number) {
     setRows((prev) =>
       prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
     );
@@ -88,7 +85,6 @@ export function IncomingLinesFullEditor({
       lines: rows.map((r) => ({
         productId: skuToId[r.sku] ?? "",
         qtyOrdered: r.qtyOrdered,
-        unitCost: r.unitCost ? parseFloat(r.unitCost) : undefined,
         notes: r.notes || undefined,
       })),
     };
@@ -119,9 +115,8 @@ export function IncomingLinesFullEditor({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="px-4 py-2 text-left font-medium text-gray-600 w-[35%]">SKU</th>
-            <th className="px-4 py-2 text-right font-medium text-gray-600 w-24">Qty ordered</th>
-            <th className="px-4 py-2 text-right font-medium text-gray-600 w-28">Unit cost (AUD)</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-600 w-[45%]">SKU</th>
+            <th className="px-4 py-2 text-right font-medium text-gray-600 w-28">Qty ordered</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">Notes</th>
             <th className="px-4 py-2 w-10" />
           </tr>
@@ -144,17 +139,6 @@ export function IncomingLinesFullEditor({
                   min={1}
                   value={row.qtyOrdered}
                   onChange={(e) => updateField(idx, "qtyOrdered", Number(e.target.value))}
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-right"
-                />
-              </td>
-              <td className="px-4 py-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={row.unitCost}
-                  onChange={(e) => updateField(idx, "unitCost", e.target.value)}
-                  placeholder="0.00"
                   className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-right"
                 />
               </td>

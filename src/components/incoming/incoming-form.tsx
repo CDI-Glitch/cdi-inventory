@@ -9,7 +9,6 @@ import { SearchableSkuSelect, type SkuOption } from "@/components/ui/searchable-
 interface LineRow {
   productId: string;
   qtyOrdered: number;
-  unitCost: string;
   notes: string;
 }
 
@@ -21,7 +20,7 @@ interface Props {
 export function IncomingForm({ products, locations }: Props) {
   const router = useRouter();
   const [lines, setLines] = useState<LineRow[]>([
-    { productId: "", qtyOrdered: 1, unitCost: "", notes: "" },
+    { productId: "", qtyOrdered: 1, notes: "" },
   ]);
   const [locationId, setLocationId] = useState("");
   const [eta, setEta] = useState("");
@@ -39,7 +38,7 @@ export function IncomingForm({ products, locations }: Props) {
   const skuToId = Object.fromEntries(products.map((p) => [p.sku, p.id]));
 
   function addLine() {
-    setLines((prev) => [...prev, { productId: "", qtyOrdered: 1, unitCost: "", notes: "" }]);
+    setLines((prev) => [...prev, { productId: "", qtyOrdered: 1, notes: "" }]);
   }
 
   function removeLine(idx: number) {
@@ -83,7 +82,6 @@ export function IncomingForm({ products, locations }: Props) {
       lines: lines.map((l) => ({
         productId: l.productId,
         qtyOrdered: l.qtyOrdered,
-        unitCost: l.unitCost ? parseFloat(l.unitCost) : undefined,
         notes: l.notes || undefined,
       })),
     };
@@ -194,18 +192,6 @@ export function IncomingForm({ products, locations }: Props) {
                   min={1}
                   value={line.qtyOrdered}
                   onChange={(e) => updateLine(idx, "qtyOrdered", Number(e.target.value))}
-                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Unit cost (AUD)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={line.unitCost}
-                  onChange={(e) => updateLine(idx, "unitCost", e.target.value)}
-                  placeholder="0.00"
                   className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>

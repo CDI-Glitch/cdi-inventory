@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check, Search, X } from "lucide-react";
 
 export interface SkuOption {
   sku: string;
   name: string;
   category: string;
+}
+
+interface DropdownPos {
+  top: number;
+  left: number;
+  width: number;
+  openUp: boolean;
 }
 
 interface Props {
@@ -31,22 +39,47 @@ function highlight(text: string, query: string): React.ReactNode {
   );
 }
 
+const DROPDOWN_MAX_H = 288; // max-h-72 = 288px
+const DROPDOWN_MARGIN = 4;  // gap between trigger and dropdown
+
 export function SearchableSkuSelect({ value, options, placeholder = "Select SKU", onChange, fullWidth = false }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<DropdownPos | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Close on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+  const calcPos = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < DROPDOWN_MAX_H + DROPDOWN_MARGIN && spaceAbove > spaceBelow;
+    setPos({
+      top: openUp ? rect.top - DROPDOWN_MARGIN : rect.bottom + DROPDOWN_MARGIN,
+      left: rect.left,
+      width: rect.width,
+      openUp,
+    });
   }, []);
+
+  // Close on outside click; reposition on scroll
+  useEffect(() => {
+    if (!open) return;
+    function handleClose(e: MouseEvent) {
+      if (triggerRef.current && triggerRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    function handleScroll() {
+      calcPos();
+    }
+    document.addEventListener("mousedown", handleClose);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open, calcPos]);
 
   // Focus search box when dropdown opens
   useEffect(() => {
@@ -55,6 +88,11 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
       setTimeout(() => searchRef.current?.focus(), 30);
     }
   }, [open]);
+
+  function handleToggle() {
+    if (!open) calcPos();
+    setOpen((o) => !o);
+  }
 
   const selected = options.find((o) => o.sku === value);
 
@@ -70,7 +108,6 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
       );
       return { grouped: null, flatFiltered: flat };
     }
-    // Group by category
     const groups: Record<string, SkuOption[]> = {};
     for (const o of options) {
       const cat = o.category.replace(/_/g, " ");
@@ -89,12 +126,71 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
   const triggerLabel = selected ? `${selected.sku} — ${selected.name}` : placeholder;
   const hasValue = !!value;
 
+  const dropdown = open && pos ? (
+    <div
+      style={{
+        position: "fixed",
+        top: pos.openUp ? undefined : pos.top,
+        bottom: pos.openUp ? window.innerHeight - pos.top : undefined,
+        left: pos.left,
+        width: Math.max(pos.width, 280),
+        zIndex: 9999,
+      }}
+      className="rounded-md border border-gray-200 bg-white shadow-lg"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Search box */}
+      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
+        <Search size={13} className="shrink-0 text-gray-400" />
+        <input
+          ref={searchRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search SKU or name…"
+          className="flex-1 text-sm outline-none placeholder-gray-400"
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery("")} className="text-gray-300 hover:text-gray-500">
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
+      {/* Options list */}
+      <div className="max-h-72 overflow-y-auto py-1">
+        {flatFiltered !== null && (
+          flatFiltered.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-gray-400">No SKUs match &quot;{query}&quot;</p>
+          ) : (
+            flatFiltered.map((o) => (
+              <SkuRow key={o.sku} option={o} selected={value === o.sku} onSelect={select} query={query} />
+            ))
+          )
+        )}
+
+        {grouped !== null &&
+          Object.entries(grouped).map(([cat, items]) => (
+            <div key={cat}>
+              <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50 border-t border-b border-gray-100 first:border-t-0">
+                {cat}
+              </div>
+              {items.map((o) => (
+                <SkuRow key={o.sku} option={o} selected={value === o.sku} onSelect={select} query="" />
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div ref={containerRef} className={`relative ${fullWidth ? "w-full" : "inline-block"}`}>
+    <div className={`relative ${fullWidth ? "w-full" : "inline-block"}`}>
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className={`${fullWidth ? "w-full" : ""} flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`}
       >
         <span className={`flex-1 text-left truncate ${hasValue ? "text-gray-900" : "text-gray-400"}`}>
@@ -103,7 +199,7 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
         {hasValue && (
           <span
             role="button"
-            onClick={(e) => { e.stopPropagation(); onChange(""); }}
+            onClick={(e) => { e.stopPropagation(); onChange(""); setOpen(false); }}
             className="shrink-0 text-gray-300 hover:text-gray-500"
             title="Clear"
           >
@@ -116,55 +212,8 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
         />
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[280px] rounded-md border border-gray-200 bg-white shadow-lg">
-          {/* Search box */}
-          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
-            <Search size={13} className="shrink-0 text-gray-400" />
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search SKU or name…"
-              className="flex-1 text-sm outline-none placeholder-gray-400"
-            />
-            {query && (
-              <button type="button" onClick={() => setQuery("")} className="text-gray-300 hover:text-gray-500">
-                <X size={13} />
-              </button>
-            )}
-          </div>
-
-          {/* Options list */}
-          <div className="max-h-72 overflow-y-auto py-1">
-            {/* Search results — flat */}
-            {flatFiltered !== null && (
-              flatFiltered.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-gray-400">No SKUs match "{query}"</p>
-              ) : (
-                flatFiltered.map((o) => (
-                  <SkuRow key={o.sku} option={o} selected={value === o.sku} onSelect={select} query={query} />
-                ))
-              )
-            )}
-
-            {/* Grouped — no search */}
-            {grouped !== null &&
-              Object.entries(grouped).map(([cat, items]) => (
-                <div key={cat}>
-                  <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50 border-t border-b border-gray-100 first:border-t-0">
-                    {cat}
-                  </div>
-                  {items.map((o) => (
-                    <SkuRow key={o.sku} option={o} selected={value === o.sku} onSelect={select} query="" />
-                  ))}
-                </div>
-              ))
-            }
-          </div>
-        </div>
-      )}
+      {/* Portal dropdown — renders at document.body, never clipped by overflow containers */}
+      {typeof document !== "undefined" && dropdown && createPortal(dropdown, document.body)}
     </div>
   );
 }

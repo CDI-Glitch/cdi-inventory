@@ -154,7 +154,6 @@ export default async function IncomingDetailPage({
                 id: l.id,
                 sku: l.product.sku,
                 qtyOrdered: l.qtyOrdered,
-                unitCost: l.unitCost as number | null,
                 notes: l.notes ?? "",
               }))}
               skuOptions={skuOptions}
