@@ -35,14 +35,16 @@ function formatCategory(category: string) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// Fixed column tracks — header and rows share the same template so they align
+// Fixed column tracks — header and rows share the same template so they align.
+// Number cols are sized to their longest content ("Available" label, 3-digit nums).
+// Text cols use minmax so they absorb extra space on 2K/4K screens.
 const SINGLE_COLS =
-  "grid-cols-[minmax(8.5rem,1.1fr)_minmax(11rem,2.2fr)_minmax(7.5rem,1fr)_4.5rem_4.5rem_4.5rem_6.5rem]";
+  "grid-cols-[minmax(9rem,1fr)_minmax(12rem,2fr)_minmax(8rem,1fr)_5.5rem_5.5rem_5.5rem_7.5rem]";
 
 function multiCols(locationCount: number) {
   // SKU | Name | Category | (OH R Av)×N | Total | Status
-  const stockTracks = Array.from({ length: locationCount }, () => "3.5rem 3.5rem 3.5rem").join(" ");
-  return `grid-cols-[minmax(8rem,1fr)_minmax(10rem,1.8fr)_minmax(7rem,0.9fr)_${stockTracks}_4.5rem_6rem]`;
+  const stockTracks = Array.from({ length: locationCount }, () => "5.5rem 5.5rem 5.5rem").join(" ");
+  return `grid-cols-[minmax(8rem,1fr)_minmax(10rem,1.8fr)_minmax(7rem,0.9fr)_${stockTracks}_5.5rem_7.5rem]`;
 }
 
 export function InventoryTable({
@@ -72,38 +74,38 @@ export function InventoryTable({
       <div className="shrink-0 border-b border-gray-200 bg-gray-50">
         {singleLocation ? (
           <div className={cn("grid items-center", cols)}>
-            <div className={cn(cell, "font-medium text-gray-600")}>SKU</div>
-            <div className={cn(cell, "font-medium text-gray-600")}>Name</div>
-            <div className={cn(cell, "font-medium text-gray-600")}>Category</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600")}>On Hand</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600")}>Reserved</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600")}>Available</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600")}>Status</div>
+            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>SKU</div>
+            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Name</div>
+            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Category</div>
+            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>On Hand</div>
+            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Reserved</div>
+            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Available</div>
+            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Status</div>
           </div>
         ) : (
           <>
             <div className={cn("grid items-center border-b border-gray-100", cols)}>
-              <div className={cn(cell, "font-medium text-gray-600")}>SKU</div>
-              <div className={cn(cell, "font-medium text-gray-600")}>Name</div>
-              <div className={cn(cell, "font-medium text-gray-600")}>Category</div>
+              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>SKU</div>
+              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Name</div>
+              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Category</div>
               {locationNames.map((loc) => (
                 <div
                   key={loc}
-                  className={cn(cellCenter, "col-span-3 font-medium text-gray-600")}
+                  className={cn(cellCenter, "col-span-3 font-medium text-gray-600 whitespace-nowrap")}
                 >
                   {loc}
                 </div>
               ))}
-              <div className={cn(cellCenter, "font-medium text-gray-600")}>Total</div>
-              <div className={cn(cellCenter, "font-medium text-gray-600")}>Status</div>
+              <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Total</div>
+              <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Status</div>
             </div>
             <div className={cn("grid items-center text-xs text-gray-400", cols)}>
               <div className="col-span-3" />
               {locationNames.map((loc) => (
                 <div key={loc} className="contents">
-                  <div className={cn(cellCenter, "py-1.5")}>On Hand</div>
-                  <div className={cn(cellCenter, "py-1.5")}>Reserved</div>
-                  <div className={cn(cellCenter, "py-1.5")}>Available</div>
+                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>On Hand</div>
+                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>Reserved</div>
+                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>Available</div>
                 </div>
               ))}
               <div />
@@ -198,7 +200,7 @@ export function InventoryTable({
             <div className={cn(cellCenter, "flex justify-center")}>
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                  "rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
                   STATUS_STYLES[row.status]
                 )}
               >
