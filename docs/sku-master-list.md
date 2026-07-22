@@ -125,7 +125,7 @@
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
-| `CXH` | Under Tray Harness Cover | Each | 32 | 0 | 50 |
+| `CXH` | Under Body Harness Cover | Each | 32 | 0 | 50 |
 | `FK` | Fitting Kit | Each | 192 | 0 | 100 |
 | `FK-Ex` | Fitting Kit Extension | Each | 1 | 0 | 100 |
 | `TT-BN-BSG` | Bolt & Nut Kit — BSG | Set | 0 | 0 | 10 |
