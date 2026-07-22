@@ -115,10 +115,9 @@ export default async function InventoryPage({
   };
 
   return (
-    // Fill the portal main viewport: fixed header zone + scrollable table zone
+    // Fill portal viewport: fixed chrome + table card (pinned header, scrolling rows) + pagination
     <div className="-m-8 flex h-screen flex-col">
-      {/* Sticky header: title, location tabs, filters */}
-      <div className="shrink-0 border-b border-gray-100 bg-white px-8 pt-8 pb-3">
+      <div className="shrink-0 bg-white px-8 pt-8 pb-3">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <div className="flex gap-2">
@@ -151,14 +150,15 @@ export default async function InventoryPage({
         />
       </div>
 
-      {/* Scrollable table + pagination; thead sticks within this pane */}
-      <div className="min-h-0 flex-1 overflow-auto px-8 py-4">
+      <div className="mx-8 flex min-h-0 flex-1 flex-col">
         <InventoryTable
           rows={paginated}
           locationNames={visibleLocations.map((l) => l.name)}
           singleLocation={!!activeLocation}
         />
+      </div>
 
+      <div className="shrink-0 px-8 py-3">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
