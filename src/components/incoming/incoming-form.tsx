@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSkuSelect, type SkuOption } from "@/components/ui/searchable-sku-select";
@@ -171,11 +172,9 @@ export function IncomingForm({ products, locations }: Props) {
         </div>
         <div className="space-y-3">
           {lines.map((line, idx) => (
-            <div
-              key={idx}
-              className="rounded border border-gray-200 p-3 grid grid-cols-4 gap-2 items-end"
-            >
-              <div className="col-span-2">
+            <div key={idx} className="rounded border border-gray-200 p-3 space-y-2">
+              {/* Row 1: SKU full width */}
+              <div>
                 <label className="block text-xs text-gray-500 mb-1">SKU *</label>
                 <SearchableSkuSelect
                   value={getLineSku(line)}
@@ -185,35 +184,39 @@ export function IncomingForm({ products, locations }: Props) {
                   fullWidth
                 />
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Qty ordered</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={line.qtyOrdered}
-                  onChange={(e) => updateLine(idx, "qtyOrdered", Number(e.target.value))}
-                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
-                />
+              {/* Row 2: Qty + Notes + Remove */}
+              <div className="flex items-end gap-2">
+                <div className="w-32 shrink-0">
+                  <label className="block text-xs text-gray-500 mb-1">Qty ordered</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={line.qtyOrdered}
+                    onChange={(e) => updateLine(idx, "qtyOrdered", Number(e.target.value))}
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">Notes</label>
+                  <input
+                    type="text"
+                    value={line.notes}
+                    onChange={(e) => updateLine(idx, "notes", e.target.value)}
+                    placeholder="Optional"
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  />
+                </div>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeLine(idx)}
+                    className="mb-0.5 text-gray-300 hover:text-red-500 transition-colors"
+                    title="Remove line"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
               </div>
-              <div className="col-span-3">
-                <label className="block text-xs text-gray-500 mb-1">Notes</label>
-                <input
-                  type="text"
-                  value={line.notes}
-                  onChange={(e) => updateLine(idx, "notes", e.target.value)}
-                  placeholder="Optional"
-                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
-                />
-              </div>
-              {lines.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeLine(idx)}
-                  className="text-xs text-red-500 hover:text-red-700 pb-1.5"
-                >
-                  Remove
-                </button>
-              )}
             </div>
           ))}
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSkuSelect } from "@/components/ui/searchable-sku-select";
@@ -195,104 +196,106 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
           </div>
 
           {lines.map((line, idx) => (
-            <div key={line.id} className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-start gap-2">
-                <span className="mt-2 text-xs text-gray-400 w-5 text-right flex-shrink-0">{idx + 1}</span>
-
-                <div className="flex-1 space-y-3">
-                  {/* Type toggle */}
-                  <div className="flex gap-3">
-                    {(["sku", "bundle"] as const).map((t) => (
-                      <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={line.lineType === t}
-                          onChange={() => updateLine(line.id, { lineType: t })}
-                          className="accent-blue-600"
-                        />
-                        <span className={cn("font-medium", line.lineType === t ? "text-blue-700" : "text-gray-500")}>
-                          {t === "sku" ? "SKU" : "Bundle"}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="col-span-3">
-                      {line.lineType === "sku" ? (
-                        <SearchableSkuSelect
-                          value={line.itemCode}
-                          options={products}
-                          placeholder="Select SKU"
-                          onChange={(val) => updateLine(line.id, { itemCode: val })}
-                          fullWidth
-                        />
-                      ) : (
-                        <CustomSelect
-                          name={`line-bundle-${line.id}`}
-                          value={line.itemCode}
-                          options={bundleOptions}
-                          placeholder="Select Bundle"
-                          onChange={(val) => updateLine(line.id, { itemCode: val })}
-                          fullWidth
-                        />
-                      )}
-                    </div>
-                    <input
-                      type="number"
-                      min={1}
-                      value={line.qty}
-                      onChange={(e) => updateLine(line.id, { qty: Math.max(1, Number(e.target.value)) })}
-                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Qty"
-                    />
-                  </div>
-
-                  <input
-                    type="text"
-                    value={line.notes}
-                    onChange={(e) => updateLine(line.id, { notes: e.target.value })}
-                    placeholder="Line notes (optional)"
-                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                  />
-
-                  {line.lineType === "bundle" && line.itemCode && (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => toggleBundleExpand(line.id)}
-                        className="text-xs text-blue-600 hover:text-blue-800"
-                      >
-                        {expandedBundles.has(line.id) ? "▾ Hide components" : "▸ Show components"}
-                      </button>
-                      {expandedBundles.has(line.id) && (
-                        <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2 space-y-1">
-                          {getBundleItems(line.itemCode).length === 0 ? (
-                            <p className="text-xs text-gray-400">No components defined</p>
-                          ) : (
-                            getBundleItems(line.itemCode).map((item) => (
-                              <div key={item.sku} className="flex justify-between text-xs">
-                                <span className="font-mono text-gray-700">{item.sku}</span>
-                                <span className="text-gray-500">{item.name}</span>
-                                <span className="tabular-nums text-gray-500">×{item.qty * line.qty}</span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+            <div key={line.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {/* Card header: line number + type toggle + remove */}
+              <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+                <span className="text-xs font-semibold text-gray-400 w-4 shrink-0">{idx + 1}</span>
+                <div className="flex gap-4 flex-1">
+                  {(["sku", "bundle"] as const).map((t) => (
+                    <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={line.lineType === t}
+                        onChange={() => updateLine(line.id, { lineType: t })}
+                        className="accent-blue-600"
+                      />
+                      <span className={cn("font-medium", line.lineType === t ? "text-blue-700" : "text-gray-400")}>
+                        {t === "sku" ? "SKU" : "Bundle"}
+                      </span>
+                    </label>
+                  ))}
                 </div>
-
                 <button
                   type="button"
                   onClick={() => removeLine(line.id)}
                   disabled={lines.length === 1}
-                  className="mt-1 text-gray-300 hover:text-red-500 disabled:opacity-30 text-lg leading-none flex-shrink-0"
+                  className="text-gray-300 hover:text-red-500 disabled:opacity-30 transition-colors shrink-0"
                   title="Remove line"
                 >
-                  ×
+                  <Trash2 size={14} />
                 </button>
+              </div>
+
+              {/* Card body */}
+              <div className="px-4 py-3 space-y-2">
+                {/* SKU / Bundle selector + Qty */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    {line.lineType === "sku" ? (
+                      <SearchableSkuSelect
+                        value={line.itemCode}
+                        options={products}
+                        placeholder="Select SKU"
+                        onChange={(val) => updateLine(line.id, { itemCode: val })}
+                        fullWidth
+                      />
+                    ) : (
+                      <CustomSelect
+                        name={`line-bundle-${line.id}`}
+                        value={line.itemCode}
+                        options={bundleOptions}
+                        placeholder="Select Bundle"
+                        onChange={(val) => updateLine(line.id, { itemCode: val })}
+                        fullWidth
+                      />
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    value={line.qty}
+                    onChange={(e) => updateLine(line.id, { qty: Math.max(1, Number(e.target.value)) })}
+                    className="w-20 shrink-0 rounded border border-gray-300 px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Qty"
+                  />
+                </div>
+
+                {/* Notes */}
+                <input
+                  type="text"
+                  value={line.notes}
+                  onChange={(e) => updateLine(line.id, { notes: e.target.value })}
+                  placeholder="Line notes (optional)"
+                  className="w-full rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+
+                {/* Bundle components preview */}
+                {line.lineType === "bundle" && line.itemCode && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleBundleExpand(line.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      {expandedBundles.has(line.id) ? "▾ Hide components" : "▸ Show components"}
+                    </button>
+                    {expandedBundles.has(line.id) && (
+                      <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2 space-y-1">
+                        {getBundleItems(line.itemCode).length === 0 ? (
+                          <p className="text-xs text-gray-400">No components defined</p>
+                        ) : (
+                          getBundleItems(line.itemCode).map((item) => (
+                            <div key={item.sku} className="flex justify-between text-xs">
+                              <span className="font-mono text-gray-700">{item.sku}</span>
+                              <span className="text-gray-500">{item.name}</span>
+                              <span className="tabular-nums text-gray-500">×{item.qty * line.qty}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -300,7 +303,7 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
           <button
             type="button"
             onClick={addLine}
-            className="w-full rounded-lg border-2 border-dashed border-gray-200 py-2.5 text-sm text-gray-400 hover:border-blue-300 hover:text-blue-600 transition-colors"
+            className="w-full rounded-lg border-2 border-dashed border-gray-300 py-2.5 text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-colors"
           >
             + Add line
           </button>
