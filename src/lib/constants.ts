@@ -29,6 +29,7 @@ export const INVENTORY_LOG_TYPES = [
   "stocktake_correction",
   "transfer_out",
   "transfer_in",
+  "reservation_adjustment",
 ] as const;
 export type InventoryLogType = (typeof INVENTORY_LOG_TYPES)[number];
 

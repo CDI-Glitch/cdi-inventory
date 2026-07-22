@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { SalesStatusActions } from "@/components/sales/sales-status-actions";
 import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
 import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
+import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -31,7 +32,6 @@ export default async function SalesDetailPage({
   const session = await auth();
   const role = (session?.user as any)?.role;
   const { id } = await params;
-  const isQuote = true; // evaluated below after fetch
 
   const record = await prisma.salesRecord.findUnique({
     where: { id },
@@ -47,8 +47,15 @@ export default async function SalesDetailPage({
 
   if (!record) notFound();
 
-  const recordIsQuote = record.status === "quote";
-  const canEdit = role !== "viewer" && recordIsQuote;
+  const isQuote = record.status === "quote";
+  const canEditHeader = role !== "viewer" && isQuote;
+  const canEditLines = role !== "viewer" && isQuote;
+  const canEditFulfillment =
+    role === "admin" &&
+    (record.status === "deposit_paid" || record.status === "fully_paid");
+  const hasFulfillment = record.movements.some((m) => m.reservedQty > 0);
+  const showFulfillmentSection =
+    record.status !== "quote" && record.status !== "cancelled";
 
   // Resolve item names for lines
   const lineSkus = record.lines.filter((l) => l.lineType === "sku").map((l) => l.itemCode);
@@ -56,18 +63,32 @@ export default async function SalesDetailPage({
 
   const [skuProducts, bundleDefs, allLocations, allProducts, rawBundles] = await Promise.all([
     lineSkus.length > 0
-      ? prisma.product.findMany({ where: { sku: { in: lineSkus } }, select: { sku: true, name: true, unit: true } })
+      ? prisma.product.findMany({
+          where: { sku: { in: lineSkus } },
+          select: { sku: true, name: true, unit: true },
+        })
       : Promise.resolve([]),
     lineBundles.length > 0
-      ? prisma.bundleDefinition.findMany({ where: { code: { in: lineBundles } }, select: { code: true, name: true } })
+      ? prisma.bundleDefinition.findMany({
+          where: { code: { in: lineBundles } },
+          select: { code: true, name: true },
+        })
       : Promise.resolve([]),
-    canEdit ? prisma.location.findMany({ where: { active: true } }) : Promise.resolve([]),
-    canEdit ? prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" }, select: { sku: true, name: true, category: true } }) : Promise.resolve([]),
-    canEdit
+    canEditHeader ? prisma.location.findMany({ where: { active: true } }) : Promise.resolve([]),
+    canEditLines || canEditFulfillment
+      ? prisma.product.findMany({
+          where: { active: true },
+          orderBy: { sku: "asc" },
+          select: { sku: true, name: true, category: true },
+        })
+      : Promise.resolve([]),
+    canEditLines
       ? prisma.bundleDefinition.findMany({
           where: { active: true },
           orderBy: { code: "asc" },
-          include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
+          include: {
+            items: { include: { product: true }, orderBy: { sortOrder: "asc" } },
+          },
         })
       : Promise.resolve([]),
   ]);
@@ -81,11 +102,21 @@ export default async function SalesDetailPage({
     items: b.items.map((i: any) => ({ sku: i.product.sku, name: i.product.name, qty: i.qty })),
   }));
 
-  // Format date for editor (yyyy-MM-dd)
   const dateStr = record.date.toISOString().slice(0, 10);
+
+  // Build a set of { sku → qty } from Order lines for mismatch detection
+  const orderLineMap: Record<string, number> = {};
+  for (const line of record.lines) {
+    if (line.lineType === "sku") {
+      orderLineMap[line.itemCode] = (orderLineMap[line.itemCode] ?? 0) + line.qty;
+    }
+  }
+
+  const activeMovements = record.movements.filter((m) => m.reservedQty > 0);
 
   return (
     <div className="max-w-3xl">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
         <Link href="/sales" className="text-sm text-gray-500 hover:text-gray-700">
           ← Sales
@@ -98,10 +129,15 @@ export default async function SalesDetailPage({
       <div className="bg-white rounded-lg border border-gray-200 p-5 mb-4">
         <div className="flex items-center gap-3 mb-3">
           <h1 className="text-xl font-bold text-gray-900">{record.recordId}</h1>
-          <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", STATUS_STYLES[record.status])}>
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-medium",
+              STATUS_STYLES[record.status]
+            )}
+          >
             {STATUS_LABELS[record.status]}
           </span>
-          {recordIsQuote && (
+          {isQuote && (
             <span className="text-xs text-gray-400 italic">Draft — no stock reserved</span>
           )}
         </div>
@@ -116,7 +152,7 @@ export default async function SalesDetailPage({
           quoteNo={record.quoteNo ?? null}
           invoiceNo={record.invoiceNo ?? null}
           staffNotes={record.staffNotes ?? null}
-          isQuote={canEdit}
+          isQuote={canEditHeader}
         />
       </div>
 
@@ -129,13 +165,17 @@ export default async function SalesDetailPage({
         />
       )}
 
-      {/* Lines table */}
+      {/* ── Table 1: Order lines (客户订的) ── */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-gray-700">
-            Order lines <span className="text-gray-400 font-normal">({record.lines.length})</span>
-          </h2>
-          {canEdit && (
+          <div>
+            <h2 className="text-sm font-semibold text-gray-700">
+              Order lines{" "}
+              <span className="text-gray-400 font-normal">({record.lines.length})</span>
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">Customer order — Invoice basis</p>
+          </div>
+          {canEditLines && (
             <SalesLinesEditor
               salesRecordId={record.id}
               existingLines={record.lines}
@@ -177,10 +217,16 @@ export default async function SalesDetailPage({
                         {line.lineType === "bundle" ? "Bundle" : "SKU"}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">{line.itemCode}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
+                      {line.itemCode}
+                    </td>
                     <td className="px-4 py-2.5 text-gray-600">{itemName}</td>
-                    <td className="px-4 py-2.5 text-center tabular-nums font-medium">{line.qty}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-400">{line.notes ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums font-medium">
+                      {line.qty}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-400">
+                      {line.notes ?? "—"}
+                    </td>
                   </tr>
                 );
               })}
@@ -189,39 +235,94 @@ export default async function SalesDetailPage({
         </div>
       </div>
 
-      {/* Reserved components (after deposit paid) */}
-      {record.movements.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Reserved components</h2>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">SKU</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Location</th>
-                  <th className="px-4 py-2 text-center font-medium text-gray-600">Reserved</th>
-                </tr>
-              </thead>
-              <tbody>
-                {record.movements.map((mov) => (
-                  <tr key={mov.id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-2 font-mono text-xs">{mov.product.sku}</td>
-                    <td className="px-4 py-2 text-gray-700">{mov.product.name}</td>
-                    <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
-                    <td
-                      className={cn(
-                        "px-4 py-2 text-center tabular-nums font-medium",
-                        mov.reservedQty > 0 ? "text-orange-600" : "text-gray-400 line-through"
-                      )}
-                    >
-                      {mov.reservedQty > 0 ? mov.reservedQty : "released"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* ── Table 2: Fulfillment (实际发货) ── */}
+      {showFulfillmentSection && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700">Fulfillment</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Actual stock reserved / to be pulled — source of truth for deduction
+              </p>
+            </div>
+            {canEditFulfillment && (
+              <SalesMovementsEditor
+                salesRecordId={record.id}
+                existingMovements={record.movements}
+                skuOptions={allProducts}
+              />
+            )}
           </div>
+
+          {!hasFulfillment ? (
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
+              No active reservations.
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">SKU</th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
+                    <th className="px-4 py-2 text-left font-medium text-gray-600">Location</th>
+                    <th className="px-4 py-2 text-center font-medium text-gray-600">
+                      {record.status === "completed" ? "Deducted" : "Reserved"}
+                    </th>
+                    <th className="px-4 py-2 text-center font-medium text-gray-600 w-8" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeMovements.map((mov) => {
+                    const orderedQty = orderLineMap[mov.product.sku];
+                    const isMismatch =
+                      orderedQty === undefined || orderedQty !== mov.reservedQty;
+                    return (
+                      <tr key={mov.id} className="border-b border-gray-100 last:border-0">
+                        <td className="px-4 py-2 font-mono text-xs text-gray-700">
+                          {mov.product.sku}
+                        </td>
+                        <td className="px-4 py-2 text-gray-600">{mov.product.name}</td>
+                        <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
+                        <td
+                          className={cn(
+                            "px-4 py-2 text-center tabular-nums font-medium",
+                            record.status === "completed"
+                              ? "text-gray-500"
+                              : "text-orange-600"
+                          )}
+                        >
+                          {mov.reservedQty}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {isMismatch && (
+                            <span
+                              title={
+                                orderedQty === undefined
+                                  ? "SKU not in order lines (substituted)"
+                                  : `Order qty: ${orderedQty}, fulfillment qty: ${mov.reservedQty}`
+                              }
+                              className="text-amber-500 text-xs font-semibold cursor-help"
+                            >
+                              ⚠
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {activeMovements.some((m) => {
+                const oq = orderLineMap[m.product.sku];
+                return oq === undefined || oq !== m.reservedQty;
+              }) && (
+                <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
+                  ⚠ Some fulfillment rows differ from the order lines — substitutions were made.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

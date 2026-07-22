@@ -16,6 +16,7 @@ const TYPE_LABELS: Record<string, string> = {
   stocktake_correction: "Stocktake Correction",
   transfer_out: "Transfer Out",
   transfer_in: "Transfer In",
+  reservation_adjustment: "Reservation Adjusted",
 };
 
 const TYPE_STYLES: Record<string, string> = {
@@ -28,6 +29,7 @@ const TYPE_STYLES: Record<string, string> = {
   stocktake_correction: "bg-purple-50 text-purple-700",
   transfer_out: "bg-yellow-50 text-yellow-700",
   transfer_in: "bg-teal-50 text-teal-700",
+  reservation_adjustment: "bg-indigo-50 text-indigo-700",
 };
 
 export default async function AuditLogPage({
