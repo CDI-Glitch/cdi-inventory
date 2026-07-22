@@ -26,10 +26,12 @@ export async function transitionSalesRecord(
   expectedVersion: number,
   userId: string
 ) {
-  // Fetch record first (outside transaction — driver adapter doesn't support interactive tx)
   const record = await prisma.salesRecord.findUniqueOrThrow({
     where: { id: recordId },
-    include: { movements: true },
+    include: {
+      lines: true,
+      movements: true,
+    },
   });
 
   if (record.version !== expectedVersion) {
@@ -41,7 +43,6 @@ export async function transitionSalesRecord(
     throw new InvalidTransitionError(currentStatus, newStatus);
   }
 
-  // Build all operations to run sequentially
   if (currentStatus === "quote" && newStatus === "deposit_paid") {
     await reserveStock(record);
   } else if (newStatus === "completed") {
@@ -50,7 +51,6 @@ export async function transitionSalesRecord(
     await releaseReservations(record.id);
   }
 
-  // Final status update with optimistic lock check
   const updated = await prisma.salesRecord.updateMany({
     where: { id: recordId, version: expectedVersion },
     data: { status: newStatus, version: { increment: 1 } },
@@ -64,41 +64,47 @@ export async function transitionSalesRecord(
 }
 
 async function reserveStock(record: any) {
-  if (record.saleType === "bundle") {
-    const bundle = await prisma.bundleDefinition.findUnique({
-      where: { code: record.itemCode },
-      include: { items: { include: { product: true } } },
-    });
-    if (!bundle) throw new Error(`Bundle not found: ${record.itemCode}`);
+  if (record.lines.length === 0) {
+    throw new Error("Cannot reserve stock: sales record has no lines.");
+  }
 
-    for (const item of bundle.items) {
-      if (!item.product.active) {
-        throw new Error(`Component SKU inactive: ${item.product.sku}`);
+  for (const line of record.lines) {
+    if (line.lineType === "bundle") {
+      const bundle = await prisma.bundleDefinition.findUnique({
+        where: { code: line.itemCode },
+        include: { items: { include: { product: true } } },
+      });
+      if (!bundle) throw new Error(`Bundle not found: ${line.itemCode}`);
+
+      for (const item of bundle.items) {
+        if (!item.product.active) {
+          throw new Error(`Component SKU inactive: ${item.product.sku}`);
+        }
+        await prisma.generatedMovement.create({
+          data: {
+            salesRecordId: record.id,
+            productId: item.productId,
+            locationId: record.locationId,
+            reservedQty: item.qty * line.qty,
+          },
+        });
       }
+    } else {
+      const product = await prisma.product.findUnique({
+        where: { sku: line.itemCode },
+      });
+      if (!product) throw new Error(`SKU not found: ${line.itemCode}`);
+      if (!product.active) throw new Error(`SKU inactive: ${line.itemCode}`);
+
       await prisma.generatedMovement.create({
         data: {
           salesRecordId: record.id,
-          productId: item.productId,
+          productId: product.id,
           locationId: record.locationId,
-          reservedQty: item.qty * record.qty,
+          reservedQty: line.qty,
         },
       });
     }
-  } else {
-    const product = await prisma.product.findUnique({
-      where: { sku: record.itemCode },
-    });
-    if (!product) throw new Error(`SKU not found: ${record.itemCode}`);
-    if (!product.active) throw new Error(`SKU inactive: ${record.itemCode}`);
-
-    await prisma.generatedMovement.create({
-      data: {
-        salesRecordId: record.id,
-        productId: product.id,
-        locationId: record.locationId,
-        reservedQty: record.qty,
-      },
-    });
   }
 }
 

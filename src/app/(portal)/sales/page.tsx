@@ -57,7 +57,10 @@ export default async function SalesPage({
           }
         : {}),
     },
-    include: { location: true },
+    include: {
+      location: true,
+      lines: { orderBy: { sortOrder: "asc" }, take: 2 },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -92,8 +95,7 @@ export default async function SalesPage({
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Record</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Customer</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Item</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Qty</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Items</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Location</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
               </tr>
@@ -110,8 +112,20 @@ export default async function SalesPage({
                     {new Date(rec.date).toLocaleDateString("en-AU")}
                   </td>
                   <td className="px-4 py-3 text-gray-900">{rec.customer}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{rec.itemCode}</td>
-                  <td className="px-4 py-3 text-center tabular-nums">{rec.qty}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                    {(() => {
+                      const first = rec.lines[0];
+                      if (!first) return <span className="text-gray-400">—</span>;
+                      return (
+                        <>
+                          <span>{first.itemCode}</span>
+                          {rec.lines.length > 1 && (
+                            <span className="ml-1.5 text-gray-400">+{rec.lines.length - 1}</span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{rec.location.name}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[rec.status])}>

@@ -3,16 +3,21 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
+const SalesLineSchema = z.object({
+  lineType: z.enum(["sku", "bundle"]),
+  itemCode: z.string().min(1),
+  qty: z.number().int().min(1),
+  notes: z.string().optional(),
+});
+
 const CreateSalesSchema = z.object({
   customer: z.string().min(1),
   date: z.string().min(1),
-  saleType: z.enum(["sku", "bundle"]),
-  itemCode: z.string().min(1),
-  qty: z.number().int().min(1),
   locationId: z.string().min(1),
   invoiceNo: z.string().optional(),
   orderNo: z.string().optional(),
   staffNotes: z.string().optional(),
+  lines: z.array(SalesLineSchema).min(1, "At least one line is required"),
 });
 
 async function nextRecordId(): Promise<string> {
@@ -46,7 +51,10 @@ export async function GET(req: NextRequest) {
           }
         : {}),
     },
-    include: { location: true },
+    include: {
+      location: true,
+      lines: { orderBy: { sortOrder: "asc" } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -67,19 +75,22 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  // Validate itemCode exists
-  if (data.saleType === "sku") {
-    const product = await prisma.product.findUnique({ where: { sku: data.itemCode } });
-    if (!product) return NextResponse.json({ error: `SKU not found: ${data.itemCode}` }, { status: 404 });
-    if (!product.active) return NextResponse.json({ error: `SKU inactive: ${data.itemCode}` }, { status: 400 });
-  } else {
-    const bundle = await prisma.bundleDefinition.findUnique({ where: { code: data.itemCode } });
-    if (!bundle) return NextResponse.json({ error: `Bundle not found: ${data.itemCode}` }, { status: 404 });
-    if (!bundle.active) return NextResponse.json({ error: `Bundle inactive: ${data.itemCode}` }, { status: 400 });
-  }
-
+  // Validate location
   const location = await prisma.location.findUnique({ where: { id: data.locationId } });
   if (!location) return NextResponse.json({ error: "Location not found" }, { status: 404 });
+
+  // Validate each line's itemCode
+  for (const line of data.lines) {
+    if (line.lineType === "sku") {
+      const product = await prisma.product.findUnique({ where: { sku: line.itemCode } });
+      if (!product) return NextResponse.json({ error: `SKU not found: ${line.itemCode}` }, { status: 404 });
+      if (!product.active) return NextResponse.json({ error: `SKU inactive: ${line.itemCode}` }, { status: 400 });
+    } else {
+      const bundle = await prisma.bundleDefinition.findUnique({ where: { code: line.itemCode } });
+      if (!bundle) return NextResponse.json({ error: `Bundle not found: ${line.itemCode}` }, { status: 404 });
+      if (!bundle.active) return NextResponse.json({ error: `Bundle inactive: ${line.itemCode}` }, { status: 400 });
+    }
+  }
 
   const recordId = await nextRecordId();
 
@@ -88,16 +99,25 @@ export async function POST(req: NextRequest) {
       recordId,
       date: new Date(data.date),
       customer: data.customer,
-      saleType: data.saleType,
-      itemCode: data.itemCode,
-      qty: data.qty,
       status: "quote",
       locationId: data.locationId,
       invoiceNo: data.invoiceNo,
       orderNo: data.orderNo,
       staffNotes: data.staffNotes,
+      lines: {
+        create: data.lines.map((line, idx) => ({
+          lineType: line.lineType,
+          itemCode: line.itemCode,
+          qty: line.qty,
+          notes: line.notes,
+          sortOrder: idx,
+        })),
+      },
     },
-    include: { location: true },
+    include: {
+      location: true,
+      lines: { orderBy: { sortOrder: "asc" } },
+    },
   });
 
   return NextResponse.json(record, { status: 201 });

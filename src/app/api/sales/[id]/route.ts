@@ -17,6 +17,7 @@ export async function GET(
     where: { id },
     include: {
       location: true,
+      lines: { orderBy: { sortOrder: "asc" } },
       movements: {
         include: { product: true, location: true },
       },

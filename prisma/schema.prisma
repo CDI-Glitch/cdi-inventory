@@ -90,9 +90,6 @@ model SalesRecord {
   invoiceNo      String?
   orderNo        String?
   customer       String
-  saleType       String
-  itemCode       String
-  qty            Int      @default(1)
   status         String   @default("quote")
   staffNotes     String?
   locationId     String
@@ -102,7 +99,23 @@ model SalesRecord {
   updatedAt      DateTime @updatedAt
 
   location  Location            @relation(fields: [locationId], references: [id])
+  lines     SalesLine[]
   movements GeneratedMovement[]
+}
+
+model SalesLine {
+  id            String   @id @default(cuid())
+  salesRecordId String
+  lineType      String   // "sku" | "bundle"
+  itemCode      String
+  qty           Int      @default(1)
+  notes         String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  salesRecord SalesRecord @relation(fields: [salesRecordId], references: [id], onDelete: Cascade)
+
+  @@index([salesRecordId])
 }
 
 model GeneratedMovement {

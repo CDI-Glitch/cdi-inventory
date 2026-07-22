@@ -1,54 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { cn } from "@/lib/utils";
+
+interface BundleItemPreview {
+  sku: string;
+  name: string;
+  qty: number;
+}
+
+interface BundleOption {
+  code: string;
+  name: string;
+  items: BundleItemPreview[];
+}
+
+interface SaleLine {
+  id: string; // client-side only key
+  lineType: "sku" | "bundle";
+  itemCode: string;
+  qty: number;
+  notes: string;
+}
 
 interface Props {
   products: { id: string; sku: string; name: string }[];
-  bundles: { id: string; code: string; name: string }[];
+  bundles: BundleOption[];
   locations: { id: string; name: string }[];
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function emptyLine(): SaleLine {
+  return { id: uid(), lineType: "sku", itemCode: "", qty: 1, notes: "" };
 }
 
 export function NewSalesForm({ products, bundles, locations }: Props) {
   const router = useRouter();
-  const [saleType, setSaleType] = useState<"sku" | "bundle">("sku");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Header fields
+  const [customer, setCustomer] = useState("");
   const [locationId, setLocationId] = useState("");
-  const [itemCode, setItemCode] = useState("");
   const [date, setDate] = useState(() => {
     const t = new Date();
     return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
   });
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [orderNo, setOrderNo] = useState("");
+  const [staffNotes, setStaffNotes] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Lines
+  const [lines, setLines] = useState<SaleLine[]>([emptyLine()]);
+  const [expandedBundles, setExpandedBundles] = useState<Set<string>>(new Set());
+
+  const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
+  const skuOptions = products.map((p) => ({ value: p.sku, label: `${p.sku} — ${p.name}` }));
+  const bundleOptions = bundles.map((b) => ({ value: b.code, label: `${b.code} — ${b.name}` }));
+
+  const updateLine = useCallback((id: string, patch: Partial<SaleLine>) => {
+    setLines((prev) =>
+      prev.map((l) => {
+        if (l.id !== id) return l;
+        const updated = { ...l, ...patch };
+        // Reset itemCode when switching type
+        if (patch.lineType && patch.lineType !== l.lineType) {
+          updated.itemCode = "";
+        }
+        return updated;
+      })
+    );
+  }, []);
+
+  const addLine = () => setLines((prev) => [...prev, emptyLine()]);
+
+  const removeLine = (id: string) => {
+    setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev));
+  };
+
+  const toggleBundleExpand = (lineId: string) => {
+    setExpandedBundles((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineId)) next.delete(lineId);
+      else next.add(lineId);
+      return next;
+    });
+  };
+
+  const getBundleItems = (code: string): BundleItemPreview[] => {
+    return bundles.find((b) => b.code === code)?.items ?? [];
+  };
+
+  const isValid =
+    customer.trim() &&
+    locationId &&
+    date &&
+    lines.every((l) => l.itemCode && l.qty >= 1);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isValid) return;
     setLoading(true);
     setError("");
-
-    const formData = new FormData(e.currentTarget);
-    const body = {
-      customer: formData.get("customer"),
-      date,
-      saleType,
-      itemCode,
-      qty: Number(formData.get("qty") || 1),
-      locationId,
-      invoiceNo: formData.get("invoiceNo") || undefined,
-      orderNo: formData.get("orderNo") || undefined,
-      staffNotes: formData.get("staffNotes") || undefined,
-    };
 
     const res = await fetch("/api/sales", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        customer: customer.trim(),
+        date,
+        locationId,
+        invoiceNo: invoiceNo.trim() || undefined,
+        orderNo: orderNo.trim() || undefined,
+        staffNotes: staffNotes.trim() || undefined,
+        lines: lines.map((l) => ({
+          lineType: l.lineType,
+          itemCode: l.itemCode,
+          qty: l.qty,
+          notes: l.notes.trim() || undefined,
+        })),
+      }),
     });
 
     if (!res.ok) {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Failed to create record");
       setLoading(false);
       return;
@@ -58,131 +139,218 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
     router.push(`/sales/${record.id}`);
   }
 
-  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
-  const skuOptions = products.map(p => ({ value: p.sku, label: `${p.sku} — ${p.name}` }));
-  const bundleOptions = bundles.map(b => ({ value: b.code, label: `${b.code} — ${b.name}` }));
-
-  // Reset item selection when switching sale type
-  function handleSaleTypeChange(t: "sku" | "bundle") {
-    setSaleType(t);
-    setItemCode("");
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Customer *</label>
-        <input
-          name="customer"
-          required
-          placeholder="e.g. John Smith"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </div>
+    <form onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* ── Left: header info ── */}
+        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-5 space-y-4 self-start">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Order details</h2>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Date *</label>
-          <div className="mt-1">
-            <DatePicker name="date" value={date} onChange={setDate} required />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Customer *</label>
+            <input
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              required
+              placeholder="e.g. John Smith"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+              <DatePicker name="date" value={date} onChange={setDate} required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Location *</label>
+              <CustomSelect
+                name="locationId"
+                value={locationId}
+                options={locationOptions}
+                placeholder="Select"
+                onChange={setLocationId}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Invoice no.</label>
+              <input
+                value={invoiceNo}
+                onChange={(e) => setInvoiceNo(e.target.value)}
+                placeholder="INV-001"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Order no.</label>
+              <input
+                value={orderNo}
+                onChange={(e) => setOrderNo(e.target.value)}
+                placeholder="ORD-001"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Staff notes</label>
+            <textarea
+              value={staffNotes}
+              onChange={(e) => setStaffNotes(e.target.value)}
+              rows={2}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Location *</label>
-          <CustomSelect
-            name="locationId"
-            value={locationId}
-            options={locationOptions}
-            placeholder="Select"
-            onChange={setLocationId}
-            className="mt-1"
-            fullWidth
-          />
+
+        {/* ── Right: lines ── */}
+        <div className="lg:col-span-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Items</h2>
+            <span className="text-xs text-gray-400">{lines.length} line{lines.length !== 1 ? "s" : ""}</span>
+          </div>
+
+          {lines.map((line, idx) => (
+            <div key={line.id} className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-start gap-2">
+                <span className="mt-2 text-xs text-gray-400 w-5 text-right flex-shrink-0">{idx + 1}</span>
+
+                <div className="flex-1 space-y-3">
+                  {/* Type toggle */}
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={line.lineType === "sku"}
+                        onChange={() => updateLine(line.id, { lineType: "sku" })}
+                        className="accent-blue-600"
+                      />
+                      <span className={cn("font-medium", line.lineType === "sku" ? "text-blue-700" : "text-gray-500")}>
+                        SKU
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={line.lineType === "bundle"}
+                        onChange={() => updateLine(line.id, { lineType: "bundle" })}
+                        className="accent-blue-600"
+                      />
+                      <span className={cn("font-medium", line.lineType === "bundle" ? "text-blue-700" : "text-gray-500")}>
+                        Bundle
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {/* Item select */}
+                    <div className="col-span-3">
+                      <CustomSelect
+                        name={`line-item-${line.id}`}
+                        value={line.itemCode}
+                        options={line.lineType === "sku" ? skuOptions : bundleOptions}
+                        placeholder={line.lineType === "sku" ? "Select SKU" : "Select Bundle"}
+                        onChange={(val) => updateLine(line.id, { itemCode: val })}
+                        fullWidth
+                      />
+                    </div>
+                    {/* Qty */}
+                    <div>
+                      <input
+                        type="number"
+                        min={1}
+                        value={line.qty}
+                        onChange={(e) => updateLine(line.id, { qty: Math.max(1, Number(e.target.value)) })}
+                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Qty"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <input
+                    type="text"
+                    value={line.notes}
+                    onChange={(e) => updateLine(line.id, { notes: e.target.value })}
+                    placeholder="Line notes (optional)"
+                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+
+                  {/* Bundle component preview */}
+                  {line.lineType === "bundle" && line.itemCode && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => toggleBundleExpand(line.id)}
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        {expandedBundles.has(line.id) ? "▾ Hide components" : "▸ Show components"}
+                      </button>
+                      {expandedBundles.has(line.id) && (
+                        <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2 space-y-1">
+                          {getBundleItems(line.itemCode).length === 0 ? (
+                            <p className="text-xs text-gray-400">No components defined</p>
+                          ) : (
+                            getBundleItems(line.itemCode).map((item) => (
+                              <div key={item.sku} className="flex justify-between text-xs">
+                                <span className="font-mono text-gray-700">{item.sku}</span>
+                                <span className="text-gray-500">{item.name}</span>
+                                <span className="tabular-nums text-gray-500">×{item.qty * line.qty}</span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={() => removeLine(line.id)}
+                  disabled={lines.length === 1}
+                  className="mt-1 text-gray-300 hover:text-red-500 disabled:opacity-30 text-lg leading-none flex-shrink-0"
+                  title="Remove line"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addLine}
+            className="w-full rounded-lg border-2 border-dashed border-gray-200 py-2.5 text-sm text-gray-400 hover:border-blue-300 hover:text-blue-600 transition-colors"
+          >
+            + Add line
+          </button>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Type *</label>
-        <div className="mt-1 flex gap-4">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="radio" checked={saleType === "sku"} onChange={() => handleSaleTypeChange("sku")} />
-            Individual SKU
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="radio" checked={saleType === "bundle"} onChange={() => handleSaleTypeChange("bundle")} />
-            Bundle
-          </label>
+      {/* Footer */}
+      <div className="mt-6 flex items-center gap-3">
+        {error && <p className="text-sm text-red-600 flex-1">{error}</p>}
+        <div className="flex gap-3 ml-auto">
+          <a
+            href="/sales"
+            className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            disabled={loading || !isValid}
+            className="rounded bg-[#2563EB] px-5 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
+          >
+            {loading ? "Creating…" : "Create as Quote"}
+          </button>
         </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {saleType === "sku" ? "SKU" : "Bundle"} *
-        </label>
-        <CustomSelect
-          name="itemCode"
-          value={itemCode}
-          options={saleType === "sku" ? skuOptions : bundleOptions}
-          placeholder={`Select ${saleType === "sku" ? "SKU" : "Bundle"}`}
-          onChange={setItemCode}
-          className="mt-1"
-          fullWidth
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Quantity *</label>
-        <input
-          name="qty"
-          type="number"
-          required
-          min={1}
-          defaultValue={1}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Invoice no.</label>
-          <input
-            name="invoiceNo"
-            placeholder="INV-001"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Order no.</label>
-          <input
-            name="orderNo"
-            placeholder="ORD-001"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Staff notes</label>
-        <textarea
-          name="staffNotes"
-          rows={2}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={loading || !locationId || !itemCode || !date}
-          className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
-        >
-          {loading ? "Creating..." : "Create as Quote"}
-        </button>
-        <a href="/sales" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-          Cancel
-        </a>
       </div>
     </form>
   );

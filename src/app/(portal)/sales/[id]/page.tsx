@@ -34,6 +34,7 @@ export default async function SalesDetailPage({
     where: { id },
     include: {
       location: true,
+      lines: { orderBy: { sortOrder: "asc" } },
       movements: {
         include: { product: true, location: true },
         orderBy: { createdAt: "asc" },
@@ -42,6 +43,22 @@ export default async function SalesDetailPage({
   });
 
   if (!record) notFound();
+
+  // Resolve item names for lines
+  const lineSkus = record.lines.filter((l) => l.lineType === "sku").map((l) => l.itemCode);
+  const lineBundles = record.lines.filter((l) => l.lineType === "bundle").map((l) => l.itemCode);
+
+  const [skuProducts, bundleDefs] = await Promise.all([
+    lineSkus.length > 0
+      ? prisma.product.findMany({ where: { sku: { in: lineSkus } }, select: { sku: true, name: true, unit: true } })
+      : Promise.resolve([]),
+    lineBundles.length > 0
+      ? prisma.bundleDefinition.findMany({ where: { code: { in: lineBundles } }, select: { code: true, name: true } })
+      : Promise.resolve([]),
+  ]);
+
+  const skuMap = Object.fromEntries(skuProducts.map((p) => [p.sku, p]));
+  const bundleMap = Object.fromEntries(bundleDefs.map((b) => [b.code, b]));
 
   return (
     <div className="max-w-3xl">
@@ -71,32 +88,23 @@ export default async function SalesDetailPage({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-          <div className="flex gap-2">
-            <span className="text-gray-500 w-24">Item</span>
-            <span className="font-mono font-medium">{record.itemCode}</span>
+        {/* Reference numbers */}
+        {(record.invoiceNo || record.orderNo) && (
+          <div className="mt-3 flex gap-6 text-sm">
+            {record.invoiceNo && (
+              <div className="flex gap-2">
+                <span className="text-gray-500">Invoice</span>
+                <span className="font-medium">{record.invoiceNo}</span>
+              </div>
+            )}
+            {record.orderNo && (
+              <div className="flex gap-2">
+                <span className="text-gray-500">Order</span>
+                <span className="font-medium">{record.orderNo}</span>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
-            <span className="text-gray-500 w-24">Type</span>
-            <span className="capitalize">{record.saleType}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-gray-500 w-24">Qty</span>
-            <span>{record.qty}</span>
-          </div>
-          {record.invoiceNo && (
-            <div className="flex gap-2">
-              <span className="text-gray-500 w-24">Invoice</span>
-              <span>{record.invoiceNo}</span>
-            </div>
-          )}
-          {record.orderNo && (
-            <div className="flex gap-2">
-              <span className="text-gray-500 w-24">Order</span>
-              <span>{record.orderNo}</span>
-            </div>
-          )}
-        </div>
+        )}
 
         {record.staffNotes && (
           <div className="mt-3 rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
@@ -114,12 +122,60 @@ export default async function SalesDetailPage({
         />
       )}
 
-      {/* Generated movements (reserved components) */}
+      {/* Lines table */}
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold text-gray-700 mb-2">
+          Order lines <span className="text-gray-400 font-normal">({record.lines.length})</span>
+        </h2>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-2 text-left font-medium text-gray-600 w-6">#</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-600">Type</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-600">Code</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
+                <th className="px-4 py-2 text-center font-medium text-gray-600">Qty</th>
+                <th className="px-4 py-2 text-left font-medium text-gray-600">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {record.lines.map((line, idx) => {
+                const itemName =
+                  line.lineType === "sku"
+                    ? skuMap[line.itemCode]?.name ?? "—"
+                    : bundleMap[line.itemCode]?.name ?? "—";
+                return (
+                  <tr key={line.id} className="border-b border-gray-100 last:border-0">
+                    <td className="px-4 py-2.5 text-gray-400 text-xs">{idx + 1}</td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          line.lineType === "bundle"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-gray-100 text-gray-600"
+                        )}
+                      >
+                        {line.lineType === "bundle" ? "Bundle" : "SKU"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">{line.itemCode}</td>
+                    <td className="px-4 py-2.5 text-gray-600">{itemName}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums font-medium">{line.qty}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-400">{line.notes ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Reserved components (after deposit paid) */}
       {record.movements.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">
-            Reserved components
-          </h2>
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Reserved components</h2>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -132,13 +188,16 @@ export default async function SalesDetailPage({
               </thead>
               <tbody>
                 {record.movements.map((mov) => (
-                  <tr key={mov.id} className="border-b border-gray-100">
+                  <tr key={mov.id} className="border-b border-gray-100 last:border-0">
                     <td className="px-4 py-2 font-mono text-xs">{mov.product.sku}</td>
                     <td className="px-4 py-2 text-gray-700">{mov.product.name}</td>
                     <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
-                    <td className={cn("px-4 py-2 text-center tabular-nums font-medium",
-                      mov.reservedQty > 0 ? "text-orange-600" : "text-gray-400 line-through"
-                    )}>
+                    <td
+                      className={cn(
+                        "px-4 py-2 text-center tabular-nums font-medium",
+                        mov.reservedQty > 0 ? "text-orange-600" : "text-gray-400 line-through"
+                      )}
+                    >
                       {mov.reservedQty > 0 ? mov.reservedQty : "released"}
                     </td>
                   </tr>

@@ -7,11 +7,25 @@ export default async function NewSalesPage() {
   const session = await auth();
   if ((session?.user as any)?.role === "viewer") redirect("/sales");
 
-  const [products, bundles, locations] = await Promise.all([
+  const [products, rawBundles, locations] = await Promise.all([
     prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),
-    prisma.bundleDefinition.findMany({ where: { active: true }, orderBy: { code: "asc" } }),
+    prisma.bundleDefinition.findMany({
+      where: { active: true },
+      orderBy: { code: "asc" },
+      include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
+    }),
     prisma.location.findMany({ where: { active: true } }),
   ]);
+
+  const bundles = rawBundles.map((b) => ({
+    code: b.code,
+    name: b.name,
+    items: b.items.map((i) => ({
+      sku: i.product.sku,
+      name: i.product.name,
+      qty: i.qty,
+    })),
+  }));
 
   return (
     <div>

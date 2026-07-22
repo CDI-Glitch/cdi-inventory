@@ -38,7 +38,10 @@ export default async function DashboardPage() {
     prisma.salesRecord.count({ where: { status: { in: ["quote", "deposit_paid", "fully_paid"] } } }),
     prisma.salesRecord.findMany({
       where: { status: { in: ["quote", "deposit_paid", "fully_paid"] } },
-      include: { location: true },
+      include: {
+        location: true,
+        lines: { orderBy: { sortOrder: "asc" }, take: 2 },
+      },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
@@ -117,7 +120,16 @@ export default async function DashboardPage() {
                     <Link href={`/sales/${s.id}`} className="text-sm font-medium text-[#2563EB] hover:underline">
                       {s.recordId}
                     </Link>
-                    <p className="text-xs text-gray-500 mt-0.5">{s.customer} · {s.itemCode}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {s.customer}
+                      {s.lines[0] && (
+                        <>
+                          {" · "}
+                          <span className="font-mono">{s.lines[0].itemCode}</span>
+                          {s.lines.length > 1 && <span className="text-gray-400"> +{s.lines.length - 1}</span>}
+                        </>
+                      )}
+                    </p>
                   </div>
                   <span className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-medium",
