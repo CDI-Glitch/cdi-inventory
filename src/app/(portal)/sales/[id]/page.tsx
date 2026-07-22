@@ -111,6 +111,7 @@ export default async function SalesDetailPage({
           customer={record.customer}
           date={dateStr}
           locationId={record.locationId}
+          locationName={record.location.name}
           locations={allLocations}
           quoteNo={record.quoteNo ?? null}
           invoiceNo={record.invoiceNo ?? null}

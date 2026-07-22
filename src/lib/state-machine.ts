@@ -24,7 +24,8 @@ export async function transitionSalesRecord(
   recordId: string,
   newStatus: SalesStatus,
   expectedVersion: number,
-  userId: string
+  userId: string,
+  invoiceNo?: string
 ) {
   const record = await prisma.salesRecord.findUniqueOrThrow({
     where: { id: recordId },
@@ -51,9 +52,18 @@ export async function transitionSalesRecord(
     await releaseReservations(record.id);
   }
 
+  // Build update payload — invoiceNo is written once when moving to deposit_paid
+  const updateData: Record<string, any> = {
+    status: newStatus,
+    version: { increment: 1 },
+  };
+  if (newStatus === "deposit_paid" && invoiceNo !== undefined) {
+    updateData.invoiceNo = invoiceNo.trim() || null;
+  }
+
   const updated = await prisma.salesRecord.updateMany({
     where: { id: recordId, version: expectedVersion },
-    data: { status: newStatus, version: { increment: 1 } },
+    data: updateData,
   });
 
   if (updated.count === 0) {

@@ -31,6 +31,8 @@ export async function GET(
 const TransitionSchema = z.object({
   status: z.enum(["quote", "deposit_paid", "fully_paid", "completed", "cancelled"]),
   version: z.number().int(),
+  // invoiceNo may only be supplied when transitioning TO deposit_paid
+  invoiceNo: z.string().optional(),
 });
 
 export async function PATCH(
@@ -56,7 +58,8 @@ export async function PATCH(
       id,
       parsed.data.status as SalesStatus,
       parsed.data.version,
-      userId
+      userId,
+      parsed.data.status === "deposit_paid" ? parsed.data.invoiceNo : undefined
     );
     return NextResponse.json(updated);
   } catch (err) {

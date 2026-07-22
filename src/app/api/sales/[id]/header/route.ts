@@ -8,7 +8,7 @@ const PatchHeaderSchema = z.object({
   date: z.string().min(1).optional(),
   locationId: z.string().min(1).optional(),
   quoteNo: z.string().optional(),
-  invoiceNo: z.string().optional(),
+  // invoiceNo is intentionally excluded — it is set once at quote→deposit_paid and then locked
   staffNotes: z.string().optional(),
 });
 
@@ -49,7 +49,6 @@ export async function PATCH(
   if (parsed.data.date !== undefined) data.date = new Date(parsed.data.date);
   if (parsed.data.locationId !== undefined) data.locationId = parsed.data.locationId;
   if (parsed.data.quoteNo !== undefined) data.quoteNo = parsed.data.quoteNo || null;
-  if (parsed.data.invoiceNo !== undefined) data.invoiceNo = parsed.data.invoiceNo || null;
   if (parsed.data.staffNotes !== undefined) data.staffNotes = parsed.data.staffNotes || null;
 
   const updated = await prisma.salesRecord.update({

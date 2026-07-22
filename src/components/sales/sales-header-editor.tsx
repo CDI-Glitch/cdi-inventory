@@ -9,13 +9,14 @@ import { Pencil } from "lucide-react";
 interface Props {
   id: string;
   customer: string;
-  date: string; // ISO date string yyyy-MM-dd
+  date: string; // yyyy-MM-dd
   locationId: string;
-  locations: { id: string; name: string }[];
+  locationName: string; // resolved name passed from server
+  locations: { id: string; name: string }[]; // only populated for quote status
   quoteNo: string | null;
   invoiceNo: string | null;
   staffNotes: string | null;
-  isQuote: boolean; // only show edit button when true
+  isQuote: boolean;
 }
 
 export function SalesHeaderEditor({
@@ -23,9 +24,10 @@ export function SalesHeaderEditor({
   customer: initialCustomer,
   date: initialDate,
   locationId: initialLocationId,
+  locationName,
   locations,
   quoteNo: initialQuoteNo,
-  invoiceNo: initialInvoiceNo,
+  invoiceNo,
   staffNotes: initialStaffNotes,
   isQuote,
 }: Props) {
@@ -38,18 +40,15 @@ export function SalesHeaderEditor({
   const [date, setDate] = useState(initialDate);
   const [locationId, setLocationId] = useState(initialLocationId);
   const [quoteNo, setQuoteNo] = useState(initialQuoteNo ?? "");
-  const [invoiceNo, setInvoiceNo] = useState(initialInvoiceNo ?? "");
   const [staffNotes, setStaffNotes] = useState(initialStaffNotes ?? "");
 
   const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
-  const locationName = locations.find((l) => l.id === locationId)?.name ?? locationId;
 
   function cancel() {
     setCustomer(initialCustomer);
     setDate(initialDate);
     setLocationId(initialLocationId);
     setQuoteNo(initialQuoteNo ?? "");
-    setInvoiceNo(initialInvoiceNo ?? "");
     setStaffNotes(initialStaffNotes ?? "");
     setError("");
     setEditing(false);
@@ -67,7 +66,6 @@ export function SalesHeaderEditor({
         date,
         locationId,
         quoteNo: quoteNo.trim() || undefined,
-        invoiceNo: invoiceNo.trim() || undefined,
         staffNotes: staffNotes.trim() || undefined,
       }),
     });
@@ -86,26 +84,28 @@ export function SalesHeaderEditor({
     return (
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-gray-600 mt-1">{customer}</p>
-          {(quoteNo || invoiceNo) && (
-            <div className="mt-2 flex gap-4 text-sm">
-              {quoteNo && (
-                <span className="text-gray-500">Quote <span className="font-medium text-gray-800">{quoteNo}</span></span>
-              )}
-              {invoiceNo && (
-                <span className="text-gray-500">Invoice <span className="font-medium text-gray-800">{invoiceNo}</span></span>
-              )}
-            </div>
-          )}
+          <p className="text-gray-700 font-medium">{customer}</p>
+          <div className="mt-1.5 flex flex-wrap gap-4 text-sm">
+            {quoteNo && (
+              <span className="text-gray-500">
+                Quote <span className="font-medium text-gray-800">{quoteNo}</span>
+              </span>
+            )}
+            {invoiceNo && (
+              <span className="text-gray-500">
+                Invoice <span className="font-medium text-gray-800">{invoiceNo}</span>
+              </span>
+            )}
+          </div>
           {staffNotes && (
             <div className="mt-2 rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
               {staffNotes}
             </div>
           )}
         </div>
-        <div className="flex items-start gap-4 text-sm text-gray-500 text-right">
+        <div className="flex items-start gap-3 text-sm text-gray-500 text-right shrink-0 ml-4">
           <div>
-            <p>{new Date(date).toLocaleDateString("en-AU")}</p>
+            <p>{new Date(date + "T00:00:00").toLocaleDateString("en-AU")}</p>
             <p>{locationName}</p>
           </div>
           {isQuote && (
@@ -122,7 +122,7 @@ export function SalesHeaderEditor({
     );
   }
 
-  // Edit mode
+  // Edit mode (quote only)
   return (
     <div className="space-y-3">
       <div>
@@ -149,25 +149,14 @@ export function SalesHeaderEditor({
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Quote no.</label>
-          <input
-            value={quoteNo}
-            onChange={(e) => setQuoteNo(e.target.value)}
-            placeholder="Q-001"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Invoice no.</label>
-          <input
-            value={invoiceNo}
-            onChange={(e) => setInvoiceNo(e.target.value)}
-            placeholder="INV-001"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Quote no.</label>
+        <input
+          value={quoteNo}
+          onChange={(e) => setQuoteNo(e.target.value)}
+          placeholder="Q-001"
+          className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Staff notes</label>

@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { VALID_TRANSITIONS, type SalesStatus } from "@/lib/constants";
 
-const STATUS_LABELS: Record<SalesStatus, string> = {
-  quote: "Quote",
-  deposit_paid: "Deposit paid",
-  fully_paid: "Fully paid",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
 const NEXT_BTN_LABELS: Partial<Record<SalesStatus, string>> = {
   quote: "Mark deposit paid →",
   deposit_paid: "Mark fully paid →",
@@ -28,20 +20,29 @@ export function SalesStatusActions({ id, currentStatus, version }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // invoiceNo input — only relevant for quote → deposit_paid
+  const [invoiceNo, setInvoiceNo] = useState("");
 
   const status = currentStatus as SalesStatus;
   const allowed = VALID_TRANSITIONS[status] ?? [];
 
   if (allowed.length === 0) return null;
 
+  const isQuoteToDeposit = status === "quote";
+
   async function transition(newStatus: SalesStatus) {
     setLoading(newStatus);
     setError("");
 
+    const body: Record<string, any> = { status: newStatus, version };
+    if (newStatus === "deposit_paid" && invoiceNo.trim()) {
+      body.invoiceNo = invoiceNo.trim();
+    }
+
     const res = await fetch(`/api/sales/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus, version }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
@@ -63,6 +64,22 @@ export function SalesStatusActions({ id, currentStatus, version }: Props) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Actions</p>
+
+      {/* Invoice no. input — only shown for quote → deposit_paid */}
+      {isQuoteToDeposit && (
+        <div className="mb-3">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Invoice no. <span className="text-gray-400 font-normal">(optional — locked after confirmation)</span>
+          </label>
+          <input
+            value={invoiceNo}
+            onChange={(e) => setInvoiceNo(e.target.value)}
+            placeholder="e.g. INV-0042"
+            className="w-60 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {nextStatus && NEXT_BTN_LABELS[status] && (
           <button
