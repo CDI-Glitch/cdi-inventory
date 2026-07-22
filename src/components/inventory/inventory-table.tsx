@@ -10,8 +10,6 @@ interface StockRow {
   category: string;
   unit: string;
   byLocation: Record<string, { onHand: number; reserved: number; available: number }>;
-  totalOnHand: number;
-  totalReserved: number;
   totalAvailable: number;
   status: "OK" | "REORDER" | "OUT_OF_STOCK";
 }
@@ -35,26 +33,21 @@ function formatCategory(category: string) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// Fixed column tracks — header and rows share the same template so they align.
-// Number cols are sized to their longest content ("Available" label, 3-digit nums).
-// Text cols use minmax so they absorb extra space on 2K/4K screens.
-const SINGLE_COLS =
+// SKU grows | Name grows | Category grows | On Hand | Reserved | Available | Status
+const COLS =
   "grid-cols-[minmax(9rem,1fr)_minmax(12rem,2fr)_minmax(8rem,1fr)_5.5rem_5.5rem_5.5rem_7.5rem]";
 
-function multiCols(locationCount: number) {
-  // SKU | Name | Category | (OH R Av)×N | Total | Status
-  const stockTracks = Array.from({ length: locationCount }, () => "5.5rem 5.5rem 5.5rem").join(" ");
-  return `grid-cols-[minmax(8rem,1fr)_minmax(10rem,1.8fr)_minmax(7rem,0.9fr)_${stockTracks}_5.5rem_7.5rem]`;
-}
+const cell = "px-3 py-2.5 text-sm min-w-0";
+const cellCenter = cn(cell, "text-center tabular-nums");
+const headerCell = cn(cell, "font-medium text-gray-600 whitespace-nowrap");
+const headerCellCenter = cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap");
 
 export function InventoryTable({
   rows,
-  locationNames,
-  singleLocation = false,
+  locationName,
 }: {
   rows: StockRow[];
-  locationNames: string[];
-  singleLocation?: boolean;
+  locationName: string;
 }) {
   if (rows.length === 0) {
     return (
@@ -64,151 +57,68 @@ export function InventoryTable({
     );
   }
 
-  const cols = singleLocation ? SINGLE_COLS : multiCols(locationNames.length);
-  const cell = "px-3 py-2.5 text-sm min-w-0";
-  const cellCenter = cn(cell, "text-center tabular-nums");
-
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
-      {/* Pinned column header — never scrolls */}
-      <div className="shrink-0 border-b border-gray-200 bg-gray-50">
-        {singleLocation ? (
-          <div className={cn("grid items-center", cols)}>
-            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>SKU</div>
-            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Name</div>
-            <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Category</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>On Hand</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Reserved</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Available</div>
-            <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Status</div>
-          </div>
-        ) : (
-          <>
-            <div className={cn("grid items-center border-b border-gray-100", cols)}>
-              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>SKU</div>
-              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Name</div>
-              <div className={cn(cell, "font-medium text-gray-600 whitespace-nowrap")}>Category</div>
-              {locationNames.map((loc) => (
-                <div
-                  key={loc}
-                  className={cn(cellCenter, "col-span-3 font-medium text-gray-600 whitespace-nowrap")}
-                >
-                  {loc}
-                </div>
-              ))}
-              <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Total</div>
-              <div className={cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap")}>Status</div>
-            </div>
-            <div className={cn("grid items-center text-xs text-gray-400", cols)}>
-              <div className="col-span-3" />
-              {locationNames.map((loc) => (
-                <div key={loc} className="contents">
-                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>On Hand</div>
-                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>Reserved</div>
-                  <div className={cn(cellCenter, "py-1.5 whitespace-nowrap")}>Available</div>
-                </div>
-              ))}
-              <div />
-              <div />
-            </div>
-          </>
-        )}
+      {/* Pinned column header */}
+      <div className={cn("grid shrink-0 items-center border-b border-gray-200 bg-gray-50", COLS)}>
+        <div className={headerCell}>SKU</div>
+        <div className={headerCell}>Name</div>
+        <div className={headerCell}>Category</div>
+        <div className={headerCellCenter}>On Hand</div>
+        <div className={headerCellCenter}>Reserved</div>
+        <div className={headerCellCenter}>Available</div>
+        <div className={headerCellCenter}>Status</div>
       </div>
 
-      {/* Scrollable rows only */}
+      {/* Scrollable rows */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {rows.map((row) => (
-          <div
-            key={row.id}
-            className={cn(
-              "grid items-center border-b border-gray-100 hover:bg-gray-50",
-              cols
-            )}
-          >
-            <div className={cn(cell, "font-mono")}>
-              <Link
-                href={`/inventory/${row.sku}`}
-                className="text-[#2563EB] hover:underline"
-              >
-                {row.sku}
-              </Link>
-            </div>
-            <div className={cn(cell, "truncate text-gray-900")} title={row.name}>
-              {row.name}
-            </div>
-            <div className={cn(cell, "truncate text-gray-500")}>
-              {formatCategory(row.category)}
-            </div>
-
-            {singleLocation ? (
-              (() => {
-                const s = row.byLocation[locationNames[0]] ?? {
-                  onHand: 0,
-                  reserved: 0,
-                  available: 0,
-                };
-                return (
-                  <>
-                    <div className={cellCenter}>{s.onHand}</div>
-                    <div className={cn(cellCenter, "text-orange-600")}>
-                      {s.reserved > 0 ? s.reserved : "—"}
-                    </div>
-                    <div
-                      className={cn(
-                        cellCenter,
-                        "font-medium",
-                        s.available <= 0 ? "text-red-600" : "text-gray-900"
-                      )}
-                    >
-                      {s.available}
-                    </div>
-                  </>
-                );
-              })()
-            ) : (
-              <>
-                {locationNames.map((loc) => {
-                  const s = row.byLocation[loc] ?? {
-                    onHand: 0,
-                    reserved: 0,
-                    available: 0,
-                  };
-                  return (
-                    <div key={`${row.id}-${loc}`} className="contents">
-                      <div className={cn(cellCenter, "px-1")}>{s.onHand}</div>
-                      <div className={cn(cellCenter, "px-1 text-orange-600")}>
-                        {s.reserved > 0 ? s.reserved : "—"}
-                      </div>
-                      <div
-                        className={cn(
-                          cellCenter,
-                          "px-1 font-medium",
-                          s.available <= 0 ? "text-red-600" : "text-gray-900"
-                        )}
-                      >
-                        {s.available}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className={cn(cellCenter, "font-semibold")}>
-                  {row.totalAvailable}
-                </div>
-              </>
-            )}
-
-            <div className={cn(cellCenter, "flex justify-center")}>
-              <span
+        {rows.map((row) => {
+          const s = row.byLocation[locationName] ?? { onHand: 0, reserved: 0, available: 0 };
+          return (
+            <div
+              key={row.id}
+              className={cn("grid items-center border-b border-gray-100 hover:bg-gray-50", COLS)}
+            >
+              <div className={cn(cell, "font-mono")}>
+                <Link
+                  href={`/inventory/${row.sku}`}
+                  className="text-[#2563EB] hover:underline"
+                >
+                  {row.sku}
+                </Link>
+              </div>
+              <div className={cn(cell, "truncate text-gray-900")} title={row.name}>
+                {row.name}
+              </div>
+              <div className={cn(cell, "truncate text-gray-500")}>
+                {formatCategory(row.category)}
+              </div>
+              <div className={cellCenter}>{s.onHand}</div>
+              <div className={cn(cellCenter, "text-orange-600")}>
+                {s.reserved > 0 ? s.reserved : "—"}
+              </div>
+              <div
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                  STATUS_STYLES[row.status]
+                  cellCenter,
+                  "font-medium",
+                  s.available <= 0 ? "text-red-600" : "text-gray-900"
                 )}
               >
-                {STATUS_LABELS[row.status]}
-              </span>
+                {s.available}
+              </div>
+              <div className={cn(cellCenter, "flex justify-center")}>
+                <span
+                  className={cn(
+                    "rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                    STATUS_STYLES[row.status]
+                  )}
+                >
+                  {STATUS_LABELS[row.status]}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

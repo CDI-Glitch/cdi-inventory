@@ -20,16 +20,16 @@ export default async function InventoryPage({
 
   const locations = await prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } });
 
-  // Default tab: editor → their own warehouse, admin/viewer → All
+  // Default: editor → their own warehouse, admin/viewer → first location alphabetically
   const defaultLoc =
     params.loc !== undefined
       ? params.loc
-      : role === "editor"
-      ? (locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name ?? "")
-      : "";
+      : locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name
+        ?? locations[0]?.name
+        ?? "";
 
   const activeLoc = defaultLoc;
-  const activeLocation = activeLoc ? locations.find((l) => l.name === activeLoc) : null;
+  const activeLocation = locations.find((l) => l.name === activeLoc) ?? locations[0] ?? null;
 
   const products = await prisma.product.findMany({
     where: {
@@ -47,56 +47,52 @@ export default async function InventoryPage({
     orderBy: { sku: "asc" },
   });
 
-  // Batch compute stock — scope to active location if set
-  const logWhere = activeLocation ? { locationId: activeLocation.id } : {};
-  const movWhere = activeLocation
-    ? { reservedQty: { gt: 0 }, locationId: activeLocation.id }
-    : { reservedQty: { gt: 0 } };
-
+  // Always single-location scope
   const [allLogs, allMovements] = await Promise.all([
     prisma.inventoryLog.groupBy({
-      by: ["productId", "locationId"],
-      where: logWhere,
+      by: ["productId"],
+      where: activeLocation ? { locationId: activeLocation.id } : { locationId: locations[0]?.id },
       _sum: { delta: true },
     }),
     prisma.generatedMovement.groupBy({
-      by: ["productId", "locationId"],
-      where: movWhere,
+      by: ["productId"],
+      where: {
+        reservedQty: { gt: 0 },
+        locationId: activeLocation?.id ?? locations[0]?.id,
+      },
       _sum: { reservedQty: true },
     }),
   ]);
 
   const logMap = new Map<string, number>();
   for (const log of allLogs) {
-    logMap.set(`${log.productId}:${log.locationId}`, log._sum.delta ?? 0);
+    logMap.set(log.productId, log._sum.delta ?? 0);
   }
   const movMap = new Map<string, number>();
   for (const mov of allMovements) {
-    movMap.set(`${mov.productId}:${mov.locationId}`, mov._sum.reservedQty ?? 0);
+    movMap.set(mov.productId, mov._sum.reservedQty ?? 0);
   }
 
-  // When single-location: only include that location's column
-  const visibleLocations = activeLocation ? [activeLocation] : locations;
+  const locationName = activeLocation?.name ?? locations[0]?.name ?? "";
 
   const rows = products.map((product) => {
-    const byLocation: Record<string, { onHand: number; reserved: number; available: number }> = {};
-    let totalOnHand = 0;
-    let totalReserved = 0;
+    const onHand = logMap.get(product.id) ?? 0;
+    const reserved = movMap.get(product.id) ?? 0;
+    const available = onHand - reserved;
+    const byLocation = { [locationName]: { onHand, reserved, available } };
 
-    for (const loc of visibleLocations) {
-      const onHand = logMap.get(`${product.id}:${loc.id}`) ?? 0;
-      const reserved = movMap.get(`${product.id}:${loc.id}`) ?? 0;
-      byLocation[loc.name] = { onHand, reserved, available: onHand - reserved };
-      totalOnHand += onHand;
-      totalReserved += reserved;
-    }
-
-    const totalAvailable = totalOnHand - totalReserved;
     let status: "OK" | "REORDER" | "OUT_OF_STOCK" = "OK";
-    if (totalAvailable <= 0) status = "OUT_OF_STOCK";
-    else if (totalAvailable <= product.reorderPoint) status = "REORDER";
+    if (available <= 0) status = "OUT_OF_STOCK";
+    else if (available <= product.reorderPoint) status = "REORDER";
 
-    return { ...product, byLocation, totalOnHand, totalReserved, totalAvailable, status };
+    return {
+      ...product,
+      byLocation,
+      totalOnHand: onHand,
+      totalReserved: reserved,
+      totalAvailable: available,
+      status,
+    };
   });
 
   const filtered = params.status ? rows.filter((r) => r.status === params.status) : rows;
@@ -153,8 +149,7 @@ export default async function InventoryPage({
       <div className="mx-8 flex min-h-0 flex-1 flex-col">
         <InventoryTable
           rows={paginated}
-          locationNames={visibleLocations.map((l) => l.name)}
-          singleLocation={!!activeLocation}
+          locationName={locationName}
         />
       </div>
 
