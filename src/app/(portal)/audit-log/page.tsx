@@ -83,6 +83,24 @@ export default async function AuditLogPage({
     prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 
+  // Resolve enteredBy (user cuid / special tokens) → display name
+  const enteredByIds = [...new Set(logs.map((l) => l.enteredBy).filter(Boolean))];
+  const users =
+    enteredByIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: enteredByIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const userNameMap = Object.fromEntries(users.map((u) => [u.id, u.name]));
+
+  function displayEnteredBy(enteredBy: string) {
+    if (userNameMap[enteredBy]) return userNameMap[enteredBy];
+    // Known system tokens (import scripts, etc.)
+    if (enteredBy === "import" || enteredBy === "system") return enteredBy;
+    return enteredBy; // fallback: show raw id if user deleted
+  }
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -149,7 +167,7 @@ export default async function AuditLogPage({
                   {log.delta > 0 ? "+" : ""}{log.delta}
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-xs">{log.reference ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{log.enteredBy}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{displayEnteredBy(log.enteredBy)}</td>
                 <td className="px-4 py-3 text-gray-400 text-xs max-w-[200px] truncate">{log.notes ?? "—"}</td>
               </tr>
             ))}

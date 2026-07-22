@@ -78,6 +78,10 @@ async function reserveStock(record: any) {
     throw new Error("Cannot reserve stock: sales record has no lines.");
   }
 
+  // Accumulate qty per productId so duplicate SalesLines (same SKU twice)
+  // become one GeneratedMovement with summed qty — avoids false mismatch ⚠
+  const qtyMap: Record<string, number> = {};
+
   for (const line of record.lines) {
     if (line.lineType === "bundle") {
       const bundle = await prisma.bundleDefinition.findUnique({
@@ -90,14 +94,7 @@ async function reserveStock(record: any) {
         if (!item.product.active) {
           throw new Error(`Component SKU inactive: ${item.product.sku}`);
         }
-        await prisma.generatedMovement.create({
-          data: {
-            salesRecordId: record.id,
-            productId: item.productId,
-            locationId: record.locationId,
-            reservedQty: item.qty * line.qty,
-          },
-        });
+        qtyMap[item.productId] = (qtyMap[item.productId] ?? 0) + item.qty * line.qty;
       }
     } else {
       const product = await prisma.product.findUnique({
@@ -106,15 +103,19 @@ async function reserveStock(record: any) {
       if (!product) throw new Error(`SKU not found: ${line.itemCode}`);
       if (!product.active) throw new Error(`SKU inactive: ${line.itemCode}`);
 
-      await prisma.generatedMovement.create({
-        data: {
-          salesRecordId: record.id,
-          productId: product.id,
-          locationId: record.locationId,
-          reservedQty: line.qty,
-        },
-      });
+      qtyMap[product.id] = (qtyMap[product.id] ?? 0) + line.qty;
     }
+  }
+
+  for (const [productId, reservedQty] of Object.entries(qtyMap)) {
+    await prisma.generatedMovement.create({
+      data: {
+        salesRecordId: record.id,
+        productId,
+        locationId: record.locationId,
+        reservedQty,
+      },
+    });
   }
 }
 

@@ -104,7 +104,7 @@ export default async function SalesDetailPage({
 
   const dateStr = record.date.toISOString().slice(0, 10);
 
-  // Build a set of { sku → qty } from Order lines for mismatch detection
+  // Build { sku → total qty } from Order lines for mismatch detection
   const orderLineMap: Record<string, number> = {};
   for (const line of record.lines) {
     if (line.lineType === "sku") {
@@ -112,7 +112,27 @@ export default async function SalesDetailPage({
     }
   }
 
+  // Aggregate active movements by SKU (legacy rows may have duplicates before reserveStock merge)
   const activeMovements = record.movements.filter((m) => m.reservedQty > 0);
+  const fulfillmentBySku = new Map<
+    string,
+    { sku: string; name: string; locationName: string; reservedQty: number; id: string }
+  >();
+  for (const mov of activeMovements) {
+    const existing = fulfillmentBySku.get(mov.product.sku);
+    if (existing) {
+      existing.reservedQty += mov.reservedQty;
+    } else {
+      fulfillmentBySku.set(mov.product.sku, {
+        id: mov.id,
+        sku: mov.product.sku,
+        name: mov.product.name,
+        locationName: mov.location.name,
+        reservedQty: mov.reservedQty,
+      });
+    }
+  }
+  const fulfillmentRows = Array.from(fulfillmentBySku.values());
 
   // For completed records, fetch the actual deduction log so the Fulfillment table
   // shows what was really pulled from stock (GeneratedMovement is zeroed out on complete).
@@ -124,6 +144,40 @@ export default async function SalesDetailPage({
           orderBy: { createdAt: "asc" },
         })
       : [];
+
+  // Aggregate deductions by SKU for display + mismatch
+  const deductionBySku = new Map<
+    string,
+    { id: string; sku: string; name: string; locationName: string; deductedQty: number }
+  >();
+  for (const log of completedDeductions) {
+    const existing = deductionBySku.get(log.product.sku);
+    const qty = Math.abs(log.delta);
+    if (existing) {
+      existing.deductedQty += qty;
+    } else {
+      deductionBySku.set(log.product.sku, {
+        id: log.id,
+        sku: log.product.sku,
+        name: log.product.name,
+        locationName: log.location.name,
+        deductedQty: qty,
+      });
+    }
+  }
+  const deductionRows = Array.from(deductionBySku.values());
+
+  function isSkuMismatch(sku: string, fulfillmentQty: number) {
+    const orderedQty = orderLineMap[sku];
+    return orderedQty === undefined || orderedQty !== fulfillmentQty;
+  }
+
+  const hasAnyFulfillmentMismatch = fulfillmentRows.some((r) =>
+    isSkuMismatch(r.sku, r.reservedQty)
+  );
+  const hasAnyDeductionMismatch = deductionRows.some((r) =>
+    isSkuMismatch(r.sku, r.deductedQty)
+  );
 
   return (
     <div className="max-w-3xl">
@@ -269,7 +323,7 @@ export default async function SalesDetailPage({
 
           {record.status === "completed" ? (
             // Completed: show what was actually deducted from InventoryLog
-            completedDeductions.length === 0 ? (
+            deductionRows.length === 0 ? (
               <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
                 No deduction records found.
               </div>
@@ -286,28 +340,26 @@ export default async function SalesDetailPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {completedDeductions.map((log) => {
-                      const orderedQty = orderLineMap[log.product.sku];
-                      const deductedQty = Math.abs(log.delta);
-                      const isMismatch =
-                        orderedQty === undefined || orderedQty !== deductedQty;
+                    {deductionRows.map((row) => {
+                      const orderedQty = orderLineMap[row.sku];
+                      const mismatch = isSkuMismatch(row.sku, row.deductedQty);
                       return (
-                        <tr key={log.id} className="border-b border-gray-100 last:border-0">
+                        <tr key={row.id} className="border-b border-gray-100 last:border-0">
                           <td className="px-4 py-2 font-mono text-xs text-gray-700">
-                            {log.product.sku}
+                            {row.sku}
                           </td>
-                          <td className="px-4 py-2 text-gray-600">{log.product.name}</td>
-                          <td className="px-4 py-2 text-gray-500">{log.location.name}</td>
+                          <td className="px-4 py-2 text-gray-600">{row.name}</td>
+                          <td className="px-4 py-2 text-gray-500">{row.locationName}</td>
                           <td className="px-4 py-2 text-center tabular-nums font-medium text-gray-500">
-                            {deductedQty}
+                            {row.deductedQty}
                           </td>
                           <td className="px-4 py-2 text-center">
-                            {isMismatch && (
+                            {mismatch && (
                               <span
                                 title={
                                   orderedQty === undefined
                                     ? "SKU not in order lines (substituted)"
-                                    : `Order qty: ${orderedQty}, deducted: ${deductedQty}`
+                                    : `Order qty: ${orderedQty}, deducted: ${row.deductedQty}`
                                 }
                                 className="text-amber-500 text-xs font-semibold cursor-help"
                               >
@@ -320,10 +372,7 @@ export default async function SalesDetailPage({
                     })}
                   </tbody>
                 </table>
-                {completedDeductions.some((log) => {
-                  const oq = orderLineMap[log.product.sku];
-                  return oq === undefined || oq !== Math.abs(log.delta);
-                }) && (
+                {hasAnyDeductionMismatch && (
                   <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
                     ⚠ Some deducted items differ from the order lines — substitutions were made.
                   </div>
@@ -331,7 +380,7 @@ export default async function SalesDetailPage({
               </div>
             )
           ) : (
-            // Active (deposit_paid / fully_paid): show live GeneratedMovement
+            // Active (deposit_paid / fully_paid): show live GeneratedMovement (aggregated by SKU)
             !hasFulfillment ? (
               <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400">
                 No active reservations.
@@ -349,27 +398,26 @@ export default async function SalesDetailPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {activeMovements.map((mov) => {
-                      const orderedQty = orderLineMap[mov.product.sku];
-                      const isMismatch =
-                        orderedQty === undefined || orderedQty !== mov.reservedQty;
+                    {fulfillmentRows.map((row) => {
+                      const orderedQty = orderLineMap[row.sku];
+                      const mismatch = isSkuMismatch(row.sku, row.reservedQty);
                       return (
-                        <tr key={mov.id} className="border-b border-gray-100 last:border-0">
+                        <tr key={row.id} className="border-b border-gray-100 last:border-0">
                           <td className="px-4 py-2 font-mono text-xs text-gray-700">
-                            {mov.product.sku}
+                            {row.sku}
                           </td>
-                          <td className="px-4 py-2 text-gray-600">{mov.product.name}</td>
-                          <td className="px-4 py-2 text-gray-500">{mov.location.name}</td>
+                          <td className="px-4 py-2 text-gray-600">{row.name}</td>
+                          <td className="px-4 py-2 text-gray-500">{row.locationName}</td>
                           <td className="px-4 py-2 text-center tabular-nums font-medium text-orange-600">
-                            {mov.reservedQty}
+                            {row.reservedQty}
                           </td>
                           <td className="px-4 py-2 text-center">
-                            {isMismatch && (
+                            {mismatch && (
                               <span
                                 title={
                                   orderedQty === undefined
                                     ? "SKU not in order lines (substituted)"
-                                    : `Order qty: ${orderedQty}, fulfillment qty: ${mov.reservedQty}`
+                                    : `Order qty: ${orderedQty}, fulfillment qty: ${row.reservedQty}`
                                 }
                                 className="text-amber-500 text-xs font-semibold cursor-help"
                               >
@@ -382,10 +430,7 @@ export default async function SalesDetailPage({
                     })}
                   </tbody>
                 </table>
-                {activeMovements.some((m) => {
-                  const oq = orderLineMap[m.product.sku];
-                  return oq === undefined || oq !== m.reservedQty;
-                }) && (
+                {hasAnyFulfillmentMismatch && (
                   <div className="border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
                     ⚠ Some fulfillment rows differ from the order lines — substitutions were made.
                   </div>

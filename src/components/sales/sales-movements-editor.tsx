@@ -33,10 +33,20 @@ export function SalesMovementsEditor({ salesRecordId, existingMovements, skuOpti
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const toEditRows = (): MovementRow[] =>
-    existingMovements
-      .filter((m) => m.reservedQty > 0)
-      .map((m) => ({ id: uid(), sku: m.product.sku, reservedQty: m.reservedQty }));
+  const toEditRows = (): MovementRow[] => {
+    // Merge duplicate SKUs (legacy rows created before reserveStock aggregation)
+    const merged: Record<string, number> = {};
+    for (const m of existingMovements) {
+      if (m.reservedQty > 0) {
+        merged[m.product.sku] = (merged[m.product.sku] ?? 0) + m.reservedQty;
+      }
+    }
+    return Object.entries(merged).map(([sku, reservedQty]) => ({
+      id: uid(),
+      sku,
+      reservedQty,
+    }));
+  };
 
   const [rows, setRows] = useState<MovementRow[]>(toEditRows);
 
