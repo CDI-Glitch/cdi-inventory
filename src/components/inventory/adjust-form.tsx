@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { SearchableSkuSelect, type SkuOption } from "@/components/ui/searchable-sku-select";
 
 const TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -17,7 +18,7 @@ const TYPE_LABELS: Record<string, string> = {
 const MANUAL_TYPES = Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
 interface Props {
-  products: { id: string; sku: string; name: string }[];
+  products: { id: string; sku: string; name: string; category: string }[];
   locations: { id: string; name: string }[];
 }
 
@@ -26,7 +27,8 @@ export function AdjustForm({ products, locations }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [productId, setProductId] = useState("");
+  const [selectedSku, setSelectedSku] = useState("");
+  const productId = products.find((p) => p.sku === selectedSku)?.id ?? "";
   const [locationId, setLocationId] = useState("");
   const [type, setType] = useState("");
 
@@ -67,29 +69,33 @@ export function AdjustForm({ products, locations }: Props) {
 
     setSuccess("Stock adjusted successfully");
     setLoading(false);
-    setProductId("");
+    setSelectedSku("");
     setLocationId("");
     setType("");
     (e.target as HTMLFormElement).reset();
     router.refresh();
   }
 
-  const productOptions = products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }));
-  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
+  const skuOptions: SkuOption[] = products.map((p) => ({
+    sku: p.sku,
+    name: p.name,
+    category: p.category,
+  }));
+  const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg bg-white rounded-lg border border-gray-200 p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Product (SKU) *</label>
-        <CustomSelect
-          name="productId"
-          value={productId}
-          options={productOptions}
-          placeholder="Select SKU"
-          onChange={setProductId}
-          className="mt-1"
-          fullWidth
-        />
+        <div className="mt-1">
+          <SearchableSkuSelect
+            value={selectedSku}
+            options={skuOptions}
+            placeholder="Search SKU…"
+            onChange={setSelectedSku}
+            fullWidth
+          />
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Location *</label>
