@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { IncomingStatusActions } from "@/components/incoming/incoming-status-actions";
 import { IncomingLinesEditor } from "@/components/incoming/incoming-lines-editor";
+import { IncomingLinesFullEditor } from "@/components/incoming/incoming-lines-full-editor";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -36,17 +37,35 @@ export default async function IncomingDetailPage({
 
   const { id } = await params;
 
-  const shipment = await prisma.incomingShipment.findUnique({
-    where: { id },
-    include: {
-      location: true,
-      lines: { include: { product: true }, orderBy: { id: "asc" } },
-    },
-  });
+  const [shipment, products] = await Promise.all([
+    prisma.incomingShipment.findUnique({
+      where: { id },
+      include: {
+        location: true,
+        lines: { include: { product: true }, orderBy: { id: "asc" } },
+      },
+    }),
+    prisma.product.findMany({
+      where: { active: true },
+      select: { id: true, sku: true, name: true, category: true },
+      orderBy: { sku: "asc" },
+    }),
+  ]);
 
   if (!shipment) notFound();
 
-  const canEditLines = ["in_transit", "arrived"].includes(shipment.status);
+  // Three-branch edit logic
+  const canFullEdit = ["pending", "shipped", "in_transit"].includes(shipment.status);
+  const canEditReceived = shipment.status === "arrived";
+  // confirmed / cancelled → read-only
+
+  const skuOptions = products.map((p) => ({
+    sku: p.sku,
+    name: p.name,
+    category: p.category,
+  }));
+
+  const skuToId = Object.fromEntries(products.map((p) => [p.sku, p.id]));
 
   return (
     <div>
@@ -71,10 +90,12 @@ export default async function IncomingDetailPage({
                 {shipment.location.name}
               </p>
             </div>
-            <span className={cn(
-              "rounded-full px-3 py-1 text-sm font-medium",
-              STATUS_STYLES[shipment.status] ?? "bg-gray-100 text-gray-500"
-            )}>
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-sm font-medium",
+                STATUS_STYLES[shipment.status] ?? "bg-gray-100 text-gray-500"
+              )}
+            >
               {STATUS_LABELS[shipment.status] ?? shipment.status}
             </span>
           </div>
@@ -82,7 +103,9 @@ export default async function IncomingDetailPage({
             <div>
               <span className="text-gray-500">ETA</span>
               <p className="font-medium text-gray-900 mt-0.5">
-                {shipment.eta ? new Date(shipment.eta).toLocaleDateString("en-AU") : "Not set"}
+                {shipment.eta
+                  ? new Date(shipment.eta).toLocaleDateString("en-AU")
+                  : "Not set"}
               </p>
             </div>
             <div>
@@ -102,18 +125,45 @@ export default async function IncomingDetailPage({
 
         {/* Status actions */}
         {!["confirmed", "cancelled"].includes(shipment.status) && (
-          <IncomingStatusActions
-            id={shipment.id}
-            currentStatus={shipment.status}
-          />
+          <IncomingStatusActions id={shipment.id} currentStatus={shipment.status} />
         )}
 
         {/* Lines */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-700">Lines ({shipment.lines.length})</h2>
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-700">
+              Lines ({shipment.lines.length})
+            </h2>
+            {canFullEdit && (
+              <p className="text-xs text-gray-400">
+                Edit lines freely — SKU, quantity, and cost can be changed until arrived
+              </p>
+            )}
+            {canEditReceived && (
+              <p className="text-xs text-gray-400">
+                Enter received quantities — ordered quantities are now locked
+              </p>
+            )}
           </div>
-          {canEditLines ? (
+
+          {/* Branch 1: full edit (pending / shipped / in_transit) */}
+          {canFullEdit && (
+            <IncomingLinesFullEditor
+              shipmentId={shipment.id}
+              initialLines={shipment.lines.map((l) => ({
+                id: l.id,
+                sku: l.product.sku,
+                qtyOrdered: l.qtyOrdered,
+                unitCost: l.unitCost as number | null,
+                notes: l.notes ?? "",
+              }))}
+              skuOptions={skuOptions}
+              skuToId={skuToId}
+            />
+          )}
+
+          {/* Branch 2: received qty edit (arrived) */}
+          {canEditReceived && (
             <IncomingLinesEditor
               shipmentId={shipment.id}
               lines={shipment.lines.map((l) => ({
@@ -122,11 +172,14 @@ export default async function IncomingDetailPage({
                 name: l.product.name,
                 qtyOrdered: l.qtyOrdered,
                 qtyReceived: l.qtyReceived,
-                unitCost: (l.unitCost as number | null),
+                unitCost: l.unitCost as number | null,
                 notes: l.notes ?? "",
               }))}
             />
-          ) : (
+          )}
+
+          {/* Branch 3: read-only (confirmed / cancelled) */}
+          {!canFullEdit && !canEditReceived && (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -144,7 +197,13 @@ export default async function IncomingDetailPage({
                     <td className="px-4 py-2 text-gray-900">{line.product.name}</td>
                     <td className="px-4 py-2 text-right">{line.qtyOrdered}</td>
                     <td className="px-4 py-2 text-right">
-                      <span className={line.qtyReceived < line.qtyOrdered ? "text-orange-600" : "text-green-600"}>
+                      <span
+                        className={
+                          line.qtyReceived < line.qtyOrdered
+                            ? "text-orange-600"
+                            : "text-green-600"
+                        }
+                      >
                         {line.qtyReceived}
                       </span>
                     </td>

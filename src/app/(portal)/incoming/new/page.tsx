@@ -9,7 +9,11 @@ export default async function NewIncomingPage() {
   if (role === "viewer") redirect("/dashboard");
 
   const [products, locations] = await Promise.all([
-    prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),
+    prisma.product.findMany({
+      where: { active: true },
+      select: { id: true, sku: true, name: true, category: true },
+      orderBy: { sku: "asc" },
+    }),
     prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 

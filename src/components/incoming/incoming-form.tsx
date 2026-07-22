@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSkuSelect, type SkuOption } from "@/components/ui/searchable-sku-select";
 
 interface LineRow {
   productId: string;
@@ -13,7 +14,7 @@ interface LineRow {
 }
 
 interface Props {
-  products: { id: string; sku: string; name: string }[];
+  products: { id: string; sku: string; name: string; category: string }[];
   locations: { id: string; name: string }[];
 }
 
@@ -27,16 +28,37 @@ export function IncomingForm({ products, locations }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Build sku options for SearchableSkuSelect (keyed by sku, resolved to productId on submit)
+  const skuOptions: SkuOption[] = products.map((p) => ({
+    sku: p.sku,
+    name: p.name,
+    category: p.category,
+  }));
+
+  // Map sku → productId for submission
+  const skuToId = Object.fromEntries(products.map((p) => [p.sku, p.id]));
+
   function addLine() {
-    setLines(prev => [...prev, { productId: "", qtyOrdered: 1, unitCost: "", notes: "" }]);
+    setLines((prev) => [...prev, { productId: "", qtyOrdered: 1, unitCost: "", notes: "" }]);
   }
 
   function removeLine(idx: number) {
-    setLines(prev => prev.filter((_, i) => i !== idx));
+    setLines((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateLineSku(idx: number, sku: string) {
+    const productId = skuToId[sku] ?? "";
+    setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, productId } : l)));
   }
 
   function updateLine(idx: number, field: keyof LineRow, value: string | number) {
-    setLines(prev => prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l)));
+    setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l)));
+  }
+
+  // Get the sku for a line (reverse lookup)
+  function getLineSku(line: LineRow): string {
+    const product = products.find((p) => p.id === line.productId);
+    return product?.sku ?? "";
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -44,7 +66,7 @@ export function IncomingForm({ products, locations }: Props) {
     setLoading(true);
     setError("");
 
-    if (lines.some(l => !l.productId)) {
+    if (lines.some((l) => !l.productId)) {
       setError("All lines must have a SKU selected");
       setLoading(false);
       return;
@@ -58,7 +80,7 @@ export function IncomingForm({ products, locations }: Props) {
       eta: eta || undefined,
       notes: formData.get("notes") || undefined,
       locationId,
-      lines: lines.map(l => ({
+      lines: lines.map((l) => ({
         productId: l.productId,
         qtyOrdered: l.qtyOrdered,
         unitCost: l.unitCost ? parseFloat(l.unitCost) : undefined,
@@ -83,8 +105,7 @@ export function IncomingForm({ products, locations }: Props) {
     router.refresh();
   }
 
-  const locationOptions = locations.map(l => ({ value: l.id, label: l.name }));
-  const productOptions = products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }));
+  const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
@@ -152,16 +173,18 @@ export function IncomingForm({ products, locations }: Props) {
         </div>
         <div className="space-y-3">
           {lines.map((line, idx) => (
-            <div key={idx} className="rounded border border-gray-200 p-3 grid grid-cols-4 gap-2 items-end">
+            <div
+              key={idx}
+              className="rounded border border-gray-200 p-3 grid grid-cols-4 gap-2 items-end"
+            >
               <div className="col-span-2">
                 <label className="block text-xs text-gray-500 mb-1">SKU *</label>
-                <CustomSelect
-                  name={`line_sku_${idx}`}
-                  value={line.productId}
-                  options={productOptions}
-                  placeholder="Select SKU"
-                  onChange={v => updateLine(idx, "productId", v)}
-                  className="w-full"
+                <SearchableSkuSelect
+                  value={getLineSku(line)}
+                  options={skuOptions}
+                  placeholder="Search SKU…"
+                  onChange={(sku) => updateLineSku(idx, sku)}
+                  fullWidth
                 />
               </div>
               <div>
@@ -170,7 +193,7 @@ export function IncomingForm({ products, locations }: Props) {
                   type="number"
                   min={1}
                   value={line.qtyOrdered}
-                  onChange={e => updateLine(idx, "qtyOrdered", Number(e.target.value))}
+                  onChange={(e) => updateLine(idx, "qtyOrdered", Number(e.target.value))}
                   className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
@@ -181,7 +204,7 @@ export function IncomingForm({ products, locations }: Props) {
                   step="0.01"
                   min={0}
                   value={line.unitCost}
-                  onChange={e => updateLine(idx, "unitCost", e.target.value)}
+                  onChange={(e) => updateLine(idx, "unitCost", e.target.value)}
                   placeholder="0.00"
                   className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                 />
@@ -191,7 +214,7 @@ export function IncomingForm({ products, locations }: Props) {
                 <input
                   type="text"
                   value={line.notes}
-                  onChange={e => updateLine(idx, "notes", e.target.value)}
+                  onChange={(e) => updateLine(idx, "notes", e.target.value)}
                   placeholder="Optional"
                   className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                 />
@@ -220,7 +243,10 @@ export function IncomingForm({ products, locations }: Props) {
         >
           {loading ? "Creating..." : "Create shipment"}
         </button>
-        <a href="/incoming" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <a
+          href="/incoming"
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
           Cancel
         </a>
       </div>
