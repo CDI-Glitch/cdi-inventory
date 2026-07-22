@@ -29,6 +29,13 @@ const STATUS_LABELS = {
   OUT_OF_STOCK: "Out of stock",
 };
 
+const TH =
+  "sticky z-10 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600";
+const TH_CENTER =
+  "sticky z-10 bg-gray-50 px-4 py-3 text-center font-medium text-gray-600";
+const TH_SUB =
+  "sticky z-10 bg-gray-50 px-2 py-1 text-center font-medium text-gray-400";
+
 export function InventoryTable({
   rows,
   locationNames,
@@ -46,44 +53,52 @@ export function InventoryTable({
     );
   }
 
+  // Primary header row sticks at top; secondary (multi-location) sticks below it
+  const primaryTop = "top-0";
+  const secondaryTop = "top-[45px]"; // matches primary row height (py-3 + text)
+
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-lg border border-gray-200 bg-white">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
-            <th className="px-4 py-3 text-left font-medium text-gray-600">SKU</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
+          <tr className="border-b border-gray-200">
+            <th className={cn(TH, primaryTop)}>SKU</th>
+            <th className={cn(TH, primaryTop)}>Name</th>
+            <th className={cn(TH, primaryTop)}>Category</th>
             {singleLocation ? (
               <>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">On Hand</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Reserved</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Available</th>
+                <th className={cn(TH_CENTER, primaryTop)}>On Hand</th>
+                <th className={cn(TH_CENTER, primaryTop)}>Reserved</th>
+                <th className={cn(TH_CENTER, primaryTop)}>Available</th>
               </>
             ) : (
               <>
                 {locationNames.map((loc) => (
-                  <th key={loc} className="px-4 py-3 text-center font-medium text-gray-600" colSpan={3}>
+                  <th
+                    key={loc}
+                    className={cn(TH_CENTER, primaryTop)}
+                    colSpan={3}
+                  >
                     {loc}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-center font-medium text-gray-600">Total Available</th>
+                <th className={cn(TH_CENTER, primaryTop)}>Total Available</th>
               </>
             )}
-            <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
+            <th className={cn(TH_CENTER, primaryTop)}>Status</th>
           </tr>
           {!singleLocation && (
-            <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-400">
-              <th colSpan={3} />
+            <tr className="border-b border-gray-200 text-xs">
+              <th className={cn(TH_SUB, secondaryTop)} colSpan={3} />
               {locationNames.map((loc) => (
                 <React.Fragment key={loc}>
-                  <th className="px-2 py-1 text-center">On Hand</th>
-                  <th className="px-2 py-1 text-center">Reserved</th>
-                  <th className="px-2 py-1 text-center">Available</th>
+                  <th className={cn(TH_SUB, secondaryTop)}>On Hand</th>
+                  <th className={cn(TH_SUB, secondaryTop)}>Reserved</th>
+                  <th className={cn(TH_SUB, secondaryTop)}>Available</th>
                 </React.Fragment>
               ))}
-              <th />
-              <th />
+              <th className={cn(TH_SUB, secondaryTop)} />
+              <th className={cn(TH_SUB, secondaryTop)} />
             </tr>
           )}
         </thead>
@@ -99,35 +114,73 @@ export function InventoryTable({
                 </Link>
               </td>
               <td className="px-4 py-3 text-gray-900">{row.name}</td>
-              <td className="px-4 py-3 text-gray-500">{row.category.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}</td>
+              <td className="px-4 py-3 text-gray-500">
+                {row.category
+                  .replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (c) => c.toUpperCase())}
+              </td>
               {singleLocation ? (
                 (() => {
-                  const s = row.byLocation[locationNames[0]] ?? { onHand: 0, reserved: 0, available: 0 };
+                  const s = row.byLocation[locationNames[0]] ?? {
+                    onHand: 0,
+                    reserved: 0,
+                    available: 0,
+                  };
                   return (
                     <>
                       <td className="px-4 py-3 text-center tabular-nums">{s.onHand}</td>
-                      <td className="px-4 py-3 text-center tabular-nums text-orange-600">{s.reserved > 0 ? s.reserved : "—"}</td>
-                      <td className={cn("px-4 py-3 text-center tabular-nums font-medium", s.available <= 0 ? "text-red-600" : "text-gray-900")}>{s.available}</td>
+                      <td className="px-4 py-3 text-center tabular-nums text-orange-600">
+                        {s.reserved > 0 ? s.reserved : "—"}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-3 text-center tabular-nums font-medium",
+                          s.available <= 0 ? "text-red-600" : "text-gray-900"
+                        )}
+                      >
+                        {s.available}
+                      </td>
                     </>
                   );
                 })()
               ) : (
                 <>
                   {locationNames.map((loc) => {
-                    const s = row.byLocation[loc] ?? { onHand: 0, reserved: 0, available: 0 };
+                    const s = row.byLocation[loc] ?? {
+                      onHand: 0,
+                      reserved: 0,
+                      available: 0,
+                    };
                     return (
                       <React.Fragment key={`${row.id}-${loc}`}>
                         <td className="px-2 py-3 text-center tabular-nums">{s.onHand}</td>
-                        <td className="px-2 py-3 text-center tabular-nums text-orange-600">{s.reserved > 0 ? s.reserved : "—"}</td>
-                        <td className={cn("px-2 py-3 text-center tabular-nums font-medium", s.available <= 0 ? "text-red-600" : "text-gray-900")}>{s.available}</td>
+                        <td className="px-2 py-3 text-center tabular-nums text-orange-600">
+                          {s.reserved > 0 ? s.reserved : "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-2 py-3 text-center tabular-nums font-medium",
+                            s.available <= 0 ? "text-red-600" : "text-gray-900"
+                          )}
+                        >
+                          {s.available}
+                        </td>
                       </React.Fragment>
                     );
                   })}
-                  <td className="px-4 py-3 text-center tabular-nums font-semibold">{row.totalAvailable}</td>
+                  <td className="px-4 py-3 text-center tabular-nums font-semibold">
+                    {row.totalAvailable}
+                  </td>
                 </>
               )}
               <td className="px-4 py-3 text-center">
-                <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[row.status])}>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-medium",
+                    STATUS_STYLES[row.status]
+                  )}
+                >
                   {STATUS_LABELS[row.status]}
                 </span>
               </td>

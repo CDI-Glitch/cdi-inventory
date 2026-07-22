@@ -115,51 +115,56 @@ export default async function InventoryPage({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-        <div className="flex gap-2">
-          {role === "admin" && (
-            <Link
-              href="/inventory/new"
-              className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
-            >
-              + Add SKU
-            </Link>
-          )}
-          {(role === "admin" || role === "editor") && (
-            <Link
-              href="/inventory/adjust"
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Adjust Stock
-            </Link>
-          )}
+    // Fill the portal main viewport: fixed header zone + scrollable table zone
+    <div className="-m-8 flex h-screen flex-col">
+      {/* Sticky header: title, location tabs, filters */}
+      <div className="shrink-0 border-b border-gray-100 bg-white px-8 pt-8 pb-3">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+          <div className="flex gap-2">
+            {role === "admin" && (
+              <Link
+                href="/inventory/new"
+                className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
+              >
+                + Add SKU
+              </Link>
+            )}
+            {(role === "admin" || role === "editor") && (
+              <Link
+                href="/inventory/adjust"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Adjust Stock
+              </Link>
+            )}
+          </div>
         </div>
+
+        <LocationTabs locations={locations} current={activeLoc} />
+
+        <InventoryFilters
+          defaultSearch={params.search}
+          defaultCategory={params.category}
+          defaultStatus={params.status}
+          currentLoc={activeLoc}
+        />
       </div>
 
-      {/* Location tabs */}
-      <LocationTabs locations={locations} current={activeLoc} />
+      {/* Scrollable table + pagination; thead sticks within this pane */}
+      <div className="min-h-0 flex-1 overflow-auto px-8 py-4">
+        <InventoryTable
+          rows={paginated}
+          locationNames={visibleLocations.map((l) => l.name)}
+          singleLocation={!!activeLocation}
+        />
 
-      {/* Filters */}
-      <InventoryFilters
-        defaultSearch={params.search}
-        defaultCategory={params.category}
-        defaultStatus={params.status}
-        currentLoc={activeLoc}
-      />
-
-      <InventoryTable
-        rows={paginated}
-        locationNames={visibleLocations.map((l) => l.name)}
-        singleLocation={!!activeLocation}
-      />
-
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        searchParams={paginationParams}
-      />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          searchParams={paginationParams}
+        />
+      </div>
     </div>
   );
 }
