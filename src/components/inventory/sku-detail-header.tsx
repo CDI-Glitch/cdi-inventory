@@ -69,7 +69,11 @@ export default function SKUDetailHeader({
 
       <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
         <span className="text-sm text-gray-500">Reorder point:</span>
-        <ReorderPointEditor sku={sku} initialValue={reorderPoint} />
+        {canAdjust ? (
+          <ReorderPointEditor sku={sku} initialValue={reorderPoint} />
+        ) : (
+          <span className="text-sm font-semibold text-gray-900">{reorderPoint}</span>
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
