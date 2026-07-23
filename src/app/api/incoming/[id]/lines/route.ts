@@ -30,7 +30,7 @@ export async function PUT(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as any)?.role;
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id: shipmentId } = await params;
 
@@ -103,7 +103,7 @@ export async function PATCH(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as any)?.role;
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id: shipmentId } = await params;
 

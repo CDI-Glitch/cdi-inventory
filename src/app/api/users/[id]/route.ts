@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 
 const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
-  role: z.enum(["viewer", "editor", "admin"]).optional(),
+  role: z.enum(["viewer", "sales", "editor", "admin"]).optional(),
   active: z.boolean().optional(),
   password: z.string().min(8).optional(),
 });

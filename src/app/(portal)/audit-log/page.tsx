@@ -47,7 +47,7 @@ export default async function AuditLogPage({
   const session = await auth();
   if (!session) redirect("/login");
   const role = (session.user as any)?.role;
-  if (role !== "admin" && role !== "editor") redirect("/dashboard");
+  if (role !== "admin" && role !== "editor" && role !== "sales") redirect("/dashboard");
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1"));

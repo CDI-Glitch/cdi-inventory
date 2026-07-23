@@ -125,7 +125,7 @@ export default async function InventoryPage({
                 + Add SKU
               </Link>
             )}
-            {role === "admin" && (
+            {(role === "admin" || role === "editor") && (
               <Link
                 href="/inventory/adjust"
                 className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"

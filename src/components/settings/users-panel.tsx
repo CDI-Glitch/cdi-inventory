@@ -137,6 +137,7 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white"
               >
                 <option value="viewer">Viewer</option>
+                <option value="sales">Sales</option>
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
@@ -196,6 +197,7 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
                     className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
                   >
                     <option value="viewer">Viewer</option>
+                    <option value="sales">Sales</option>
                     <option value="editor">Editor</option>
                     <option value="admin">Admin</option>
                   </select>

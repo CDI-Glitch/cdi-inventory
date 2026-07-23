@@ -25,7 +25,7 @@ export default async function SKUDetailPage({
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role as string | undefined;
-  const canAdjust = role === "admin";
+  const canAdjust = role === "admin" || role === "editor";
 
   const { sku } = await params;
 

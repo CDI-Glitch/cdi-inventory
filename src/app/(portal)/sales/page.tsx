@@ -33,11 +33,11 @@ export default async function SalesPage({
 
   const locations = await prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } });
 
-  // Default tab: editor → their own warehouse, admin/viewer → All
+  // Default tab: editor/sales → their own warehouse, admin/viewer → All
   const activeLoc =
     params.loc !== undefined
       ? params.loc
-      : role === "editor"
+      : (role === "editor" || role === "sales")
       ? (locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name ?? "")
       : "";
 

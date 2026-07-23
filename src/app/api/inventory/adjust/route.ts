@@ -16,7 +16,7 @@ const AdjustSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (!session || role !== "admin") {
+  if (!session || (role !== "admin" && role !== "editor")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

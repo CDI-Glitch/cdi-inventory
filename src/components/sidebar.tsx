@@ -21,13 +21,13 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["viewer", "editor", "admin"] },
-  { href: "/inventory", label: "Inventory", icon: Package, roles: ["viewer", "editor", "admin"] },
-  { href: "/sales", label: "Sales", icon: ShoppingCart, roles: ["viewer", "editor", "admin"] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["viewer", "sales", "editor", "admin"] },
+  { href: "/inventory", label: "Inventory", icon: Package, roles: ["viewer", "sales", "editor", "admin"] },
+  { href: "/sales", label: "Sales", icon: ShoppingCart, roles: ["viewer", "sales", "editor", "admin"] },
   { href: "/bundles", label: "Bundles", icon: Layers, roles: ["admin"] },
   { href: "/incoming", label: "Incoming", icon: Truck, roles: ["editor", "admin"] },
   { href: "/transfers", label: "Transfers", icon: ArrowLeftRight, roles: ["editor", "admin"] },
-  { href: "/audit-log", label: "Audit Log", icon: FileText, roles: ["editor", "admin"] },
+  { href: "/audit-log", label: "Audit Log", icon: FileText, roles: ["sales", "editor", "admin"] },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
 ];
 
