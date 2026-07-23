@@ -14,7 +14,8 @@ const PutMovementsSchema = z.object({
 });
 
 // PUT /api/sales/[id]/movements
-// Admin-only. Replaces the fulfillment (GeneratedMovement) layer for deposit_paid/fully_paid records.
+// Replaces the fulfillment (GeneratedMovement) layer for deposit_paid/fully_paid records.
+// Accessible to sales, editor, and admin. viewer is blocked.
 // Back-orders are ALLOWED (Available can go negative) — consistent with constitution H#3.
 // Every changed SKU writes a delta=0 reservation_adjustment InventoryLog row for full audit trail.
 export async function PUT(
@@ -24,8 +25,8 @@ export async function PUT(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as any)?.role;
-  if (role !== "admin") {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  if (role === "viewer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
