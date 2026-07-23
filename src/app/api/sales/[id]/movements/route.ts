@@ -25,9 +25,6 @@ export async function PUT(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as any)?.role;
-  if (role === "viewer") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   const { id } = await params;
   const body = await req.json();
@@ -48,6 +45,16 @@ export async function PUT(
       { error: `Fulfillment can only be adjusted on deposit_paid or fully_paid records (current: ${record.status})` },
       { status: 400 }
     );
+  }
+
+  // deposit_paid: sales/editor/admin; fully_paid: editor/admin only
+  const canEdit =
+    (record.status === "deposit_paid" &&
+      ["admin", "editor", "sales"].includes(role)) ||
+    (record.status === "fully_paid" &&
+      ["admin", "editor"].includes(role));
+  if (!canEdit) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const userId = (session.user as any)?.id ?? "system";

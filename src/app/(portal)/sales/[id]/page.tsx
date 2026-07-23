@@ -51,8 +51,10 @@ export default async function SalesDetailPage({
   const canEditHeader = role !== "viewer" && isQuote;
   const canEditLines = role !== "viewer" && isQuote;
   const canEditFulfillment =
-    (role === "admin" || role === "editor" || role === "sales") &&
-    (record.status === "deposit_paid" || record.status === "fully_paid");
+    (record.status === "deposit_paid" &&
+      (role === "admin" || role === "editor" || role === "sales")) ||
+    (record.status === "fully_paid" &&
+      (role === "admin" || role === "editor"));
   const hasFulfillment = record.movements.some((m) => m.reservedQty > 0);
   const showFulfillmentSection =
     record.status !== "quote" && record.status !== "cancelled";
