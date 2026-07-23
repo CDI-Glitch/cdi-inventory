@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { href: "/bundles", label: "Bundles", icon: Layers, roles: ["admin"] },
   { href: "/incoming", label: "Incoming", icon: Truck, roles: ["editor", "admin"] },
   { href: "/transfers", label: "Transfers", icon: ArrowLeftRight, roles: ["editor", "admin"] },
-  { href: "/audit-log", label: "Audit Log", icon: FileText, roles: ["admin"] },
+  { href: "/audit-log", label: "Audit Log", icon: FileText, roles: ["editor", "admin"] },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
 ];
 
