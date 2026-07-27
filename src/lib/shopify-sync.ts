@@ -116,12 +116,12 @@ export async function syncProductToShopify(
         input: {
           reason: "correction",
           name: "available",
-          ignoreCompareQuantity: true,
           quantities: [
             {
               inventoryItemId: `gid://shopify/InventoryItem/${product.shopifyInventoryItemId}`,
               locationId: `gid://shopify/Location/${location.shopifyLocationId}`,
               quantity: available,
+              changeFromQuantity: null, // null = skip CAS check, Portal is source of truth
             },
           ],
         },
