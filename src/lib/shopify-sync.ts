@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { randomUUID } from "crypto";
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 const SHOPIFY_CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
@@ -101,10 +102,13 @@ export async function syncProductToShopify(
   const available = Math.max(0, onHand - reserved);
 
   try {
+    // @idempotent directive is required since Shopify API 2026-04
+    const idempotencyKey = randomUUID();
+
     // Set absolute available quantity directly — no read needed
     const result = await shopifyGraphQL<any>(
       `mutation SetInventory($input: InventorySetQuantitiesInput!) {
-        inventorySetQuantities(input: $input) {
+        inventorySetQuantities(input: $input) @idempotent(key: "${idempotencyKey}") {
           userErrors { field message }
         }
       }`,
