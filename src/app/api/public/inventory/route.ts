@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 /**
  * GET /api/public/inventory?sku=<SKU>
  *
@@ -16,6 +22,12 @@ import { prisma } from "@/lib/db";
  *   400 — sku param missing
  *   500 — DB error
  */
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function GET(req: NextRequest) {
   const sku = req.nextUrl.searchParams.get("sku");
   if (!sku) {
@@ -70,7 +82,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(result, {
     headers: {
       "Cache-Control": "public, max-age=30, stale-while-revalidate=60",
-      "Access-Control-Allow-Origin": "*",
+      ...CORS_HEADERS,
     },
   });
 }
