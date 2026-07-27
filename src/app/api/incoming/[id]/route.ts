@@ -60,8 +60,16 @@ export async function PATCH(
     );
   }
 
-  // When confirmed: create InventoryLog entries for each line
+  // When confirmed: require at least one line with qtyReceived > 0
   if (newStatus === "confirmed") {
+    const hasAnyReceived = shipment.lines.some((l) => l.qtyReceived > 0);
+    if (!hasAnyReceived) {
+      return NextResponse.json(
+        { error: "No received quantities entered. Please fill in the Received column before confirming." },
+        { status: 400 }
+      );
+    }
+
     const userId = (session.user as any)?.id ?? "system";
     for (const line of shipment.lines) {
       if (line.qtyReceived <= 0) continue;

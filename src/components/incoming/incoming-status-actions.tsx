@@ -20,9 +20,11 @@ const BTN_STYLES: Record<string, string> = {
 interface Props {
   id: string;
   currentStatus: string;
+  /** At least one line has qtyReceived > 0 — required before confirming */
+  hasReceivedQty?: boolean;
 }
 
-export function IncomingStatusActions({ id, currentStatus }: Props) {
+export function IncomingStatusActions({ id, currentStatus, hasReceivedQty = true }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -57,19 +59,29 @@ export function IncomingStatusActions({ id, currentStatus }: Props) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-sm font-medium text-gray-700 mb-3">Actions</h3>
-      <div className="flex flex-wrap gap-2">
-        {allowed.map((next) => (
-          <button
-            key={next}
-            disabled={loading !== null}
-            onClick={() => transition(next)}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-              BTN_STYLES[next] ?? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
-            }`}
-          >
-            {loading === next ? "..." : (BTN_LABELS[next] ?? next)}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2 items-center">
+        {allowed.map((next) => {
+          const isConfirm = next === "confirmed";
+          const blocked = isConfirm && !hasReceivedQty;
+          return (
+            <button
+              key={next}
+              disabled={loading !== null || blocked}
+              title={blocked ? "Enter received quantities before confirming" : undefined}
+              onClick={() => transition(next)}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                BTN_STYLES[next] ?? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
+              }`}
+            >
+              {loading === next ? "..." : (BTN_LABELS[next] ?? next)}
+            </button>
+          );
+        })}
+        {!hasReceivedQty && currentStatus === "arrived" && (
+          <p className="text-xs text-amber-600">
+            Fill in received quantities before confirming.
+          </p>
+        )}
       </div>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>

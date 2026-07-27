@@ -125,7 +125,11 @@ export default async function IncomingDetailPage({
 
         {/* Status actions */}
         {!["confirmed", "cancelled"].includes(shipment.status) && (
-          <IncomingStatusActions id={shipment.id} currentStatus={shipment.status} />
+          <IncomingStatusActions
+            id={shipment.id}
+            currentStatus={shipment.status}
+            hasReceivedQty={shipment.lines.some((l) => l.qtyReceived > 0)}
+          />
         )}
 
         {/* Lines */}
