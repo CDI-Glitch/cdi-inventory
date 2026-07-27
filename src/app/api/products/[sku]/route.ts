@@ -4,9 +4,11 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
 const PatchSchema = z.object({
-  reorderPoint: z.number().int().min(0).optional(),
-  adminNotes:   z.string().optional(),
-  active:       z.boolean().optional(),
+  reorderPoint:           z.number().int().min(0).optional(),
+  adminNotes:             z.string().optional(),
+  active:                 z.boolean().optional(),
+  shopifyInventoryItemId: z.string().optional(),
+  shopifyVariantId:       z.string().optional(),
 });
 
 export async function PATCH(
@@ -24,6 +26,11 @@ export async function PATCH(
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  // Shopify binding fields are admin-only
+  if (role !== "admin" && (parsed.data.shopifyInventoryItemId !== undefined || parsed.data.shopifyVariantId !== undefined)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const product = await prisma.product.findUnique({

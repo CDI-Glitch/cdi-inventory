@@ -80,8 +80,9 @@ export function SyncPanel({ syncLogs }: { syncLogs: SyncLog[] }) {
           Set these on each product's detail page in Inventory. Also set the <strong>Shopify Location ID</strong> on each location in the Locations tab.
         </p>
         <p className="text-sm text-amber-700 mt-2">
-          Required environment variables: <code className="text-xs bg-amber-100 px-1 rounded">SHOPIFY_SHOP_DOMAIN</code>,{" "}
-          <code className="text-xs bg-amber-100 px-1 rounded">SHOPIFY_ADMIN_API_TOKEN</code>
+          Required environment variables: <code className="text-xs bg-amber-100 px-1 rounded">SHOPIFY_STORE_DOMAIN</code>,{" "}
+          <code className="text-xs bg-amber-100 px-1 rounded">SHOPIFY_CLIENT_ID</code>,{" "}
+          <code className="text-xs bg-amber-100 px-1 rounded">SHOPIFY_CLIENT_SECRET</code>
         </p>
       </div>
 

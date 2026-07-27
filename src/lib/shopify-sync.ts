@@ -1,7 +1,45 @@
 import { prisma } from "./db";
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
-const SHOPIFY_TOKEN = process.env.SHOPIFY_ADMIN_API_TOKEN;
+const SHOPIFY_CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
+const SHOPIFY_CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
+
+// In-memory token cache — valid for 24 h, refreshed 60 s before expiry
+let _cachedToken: string | null = null;
+let _tokenExpiresAt = 0;
+
+async function getToken(): Promise<string> {
+  if (_cachedToken && Date.now() < _tokenExpiresAt - 60_000) {
+    return _cachedToken;
+  }
+
+  if (!SHOPIFY_DOMAIN || !SHOPIFY_CLIENT_ID || !SHOPIFY_CLIENT_SECRET) {
+    throw new Error("Shopify credentials not configured (SHOPIFY_STORE_DOMAIN / SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET)");
+  }
+
+  const res = await fetch(
+    `https://${SHOPIFY_DOMAIN}/admin/oauth/access_token`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: SHOPIFY_CLIENT_ID,
+        client_secret: SHOPIFY_CLIENT_SECRET,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Shopify token request failed (${res.status}): ${text}`);
+  }
+
+  const { access_token, expires_in } = await res.json();
+  _cachedToken = access_token as string;
+  _tokenExpiresAt = Date.now() + (expires_in as number) * 1000;
+  return _cachedToken;
+}
 
 interface ShopifyGraphQLResponse<T = any> {
   data?: T;
@@ -9,17 +47,15 @@ interface ShopifyGraphQLResponse<T = any> {
 }
 
 async function shopifyGraphQL<T>(query: string, variables?: Record<string, any>): Promise<T> {
-  if (!SHOPIFY_DOMAIN || !SHOPIFY_TOKEN) {
-    throw new Error("Shopify credentials not configured");
-  }
+  const token = await getToken();
 
   const res = await fetch(
-    `https://${SHOPIFY_DOMAIN}/admin/api/2024-04/graphql.json`,
+    `https://${SHOPIFY_DOMAIN}/admin/api/2026-07/graphql.json`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Shopify-Access-Token": SHOPIFY_TOKEN,
+        "X-Shopify-Access-Token": token,
       },
       body: JSON.stringify({ query, variables }),
     }

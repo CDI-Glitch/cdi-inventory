@@ -26,9 +26,9 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (!process.env.SHOPIFY_ADMIN_API_TOKEN) {
+  if (!process.env.SHOPIFY_CLIENT_ID || !process.env.SHOPIFY_CLIENT_SECRET) {
     return NextResponse.json(
-      { error: "Shopify API token not configured" },
+      { error: "Shopify credentials not configured (SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET)" },
       { status: 400 }
     );
   }

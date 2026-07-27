@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getStock } from "@/lib/inventory";
 import { cn } from "@/lib/utils";
 import SKUDetailHeader from "@/components/inventory/sku-detail-header";
+import { ShopifyBindingPanel } from "@/components/inventory/shopify-binding-panel";
 
 const LOG_TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -26,6 +27,7 @@ export default async function SKUDetailPage({
   const session = await auth();
   const role = (session?.user as any)?.role as string | undefined;
   const canAdjust = role === "admin" || role === "editor";
+  const isAdmin = role === "admin";
 
   const { sku } = await params;
 
@@ -72,6 +74,16 @@ export default async function SKUDetailPage({
         locations={locations}
         canAdjust={canAdjust}
       />
+
+      {isAdmin && (
+        <div className="mb-6">
+          <ShopifyBindingPanel
+            sku={product.sku}
+            shopifyInventoryItemId={product.shopifyInventoryItemId ?? null}
+            shopifyVariantId={product.shopifyVariantId ?? null}
+          />
+        </div>
+      )}
 
       <h2 className="text-lg font-semibold text-gray-900 mb-3">Stock movement history</h2>
       {logs.length === 0 ? (
