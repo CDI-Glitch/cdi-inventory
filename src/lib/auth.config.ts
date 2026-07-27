@@ -26,10 +26,11 @@ export const authConfig: NextAuthConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isOnLogin = nextUrl.pathname.startsWith("/login");
-      const isWebhook = nextUrl.pathname.startsWith("/api/webhooks");
-      const isAuthApi = nextUrl.pathname.startsWith("/api/auth");
+      const isWebhook   = nextUrl.pathname.startsWith("/api/webhooks");
+      const isAuthApi   = nextUrl.pathname.startsWith("/api/auth");
+      const isPublicApi = nextUrl.pathname.startsWith("/api/public");
 
-      if (isWebhook || isAuthApi) return true;
+      if (isWebhook || isAuthApi || isPublicApi) return true;
       if (isOnLogin) return true;
       if (!isLoggedIn) return false;
       return true;
