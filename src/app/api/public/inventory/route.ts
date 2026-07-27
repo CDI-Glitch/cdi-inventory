@@ -7,6 +7,10 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+function corsJson(data: unknown, init?: { status?: number }) {
+  return NextResponse.json(data, { ...init, headers: CORS_HEADERS });
+}
+
 /**
  * GET /api/public/inventory?sku=<SKU>
  *
@@ -31,7 +35,7 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
   const sku = req.nextUrl.searchParams.get("sku");
   if (!sku) {
-    return NextResponse.json({ error: "sku parameter required" }, { status: 400 });
+    return corsJson({ error: "sku parameter required" }, { status: 400 });
   }
 
   const product = await prisma.product.findFirst({
@@ -40,7 +44,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (!product) {
-    return NextResponse.json({ error: "SKU not found" }, { status: 404 });
+    return corsJson({ error: "SKU not found" }, { status: 404 });
   }
 
   const locations = await prisma.location.findMany({
