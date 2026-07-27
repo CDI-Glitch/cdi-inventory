@@ -18,7 +18,9 @@ export default async function SettingsPage({
   const params = await searchParams;
   const tab = params.tab ?? "users";
 
-  const [users, locations, syncLogs] = await Promise.all([
+  const PAGE_SIZE = 50;
+
+  const [users, locations, syncLogsData, syncTotal] = await Promise.all([
     prisma.user.findMany({
       select: { id: true, email: true, name: true, role: true, active: true, createdAt: true },
       orderBy: { createdAt: "asc" },
@@ -27,8 +29,9 @@ export default async function SettingsPage({
     prisma.syncLog.findMany({
       include: { product: { select: { sku: true, name: true } }, location: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: PAGE_SIZE,
     }),
+    prisma.syncLog.count(),
   ]);
 
   const TABS = [
@@ -63,7 +66,17 @@ export default async function SettingsPage({
 
       {tab === "users" && <UsersPanel users={users} />}
       {tab === "locations" && <LocationsPanel locations={locations} />}
-      {tab === "shopify" && <SyncPanel syncLogs={syncLogs} />}
+      {tab === "shopify" && (
+        <SyncPanel
+          syncLogs={syncLogsData}
+          initialPagination={{
+            total: syncTotal,
+            page: 1,
+            pageSize: PAGE_SIZE,
+            totalPages: Math.ceil(syncTotal / PAGE_SIZE),
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -188,6 +188,9 @@
 | 2026-07-21 | `session.user?.role` TS 类型错误 | 改为 `(session?.user as any)?.role` |
 | 2026-07-21 | `CustomSelect` 在 form 内过窄 | 新增 `fullWidth` prop，所有 form 内 CustomSelect 更新 |
 | 2026-07-22 | `PrismaPg` v7.8 + Railway Public URL 带 `?connect_timeout` 参数导致 `ECONNREFUSED` | 见下方「Import 脚本连接规范」|
+| 2026-07-27 | Shopify `inventorySetQuantities` 变量验证报错（三轮调试） | 详见下方「Shopify API Breaking Changes 记录」 |
+| 2026-07-27 | `SHOPIFY_ADMIN_API_TOKEN` 废弃，改 client credentials grant | `shopify-sync.ts` 重构 `getToken()`，Railway 变量改为 `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET` |
+| 2026-07-27 | SyncLog 需分页 + 清理功能 | GET /api/sync 加 `page` 参数，新增 DELETE 接口，Settings UI 加分页与清理按钮 |
 
 ---
 
@@ -285,9 +288,151 @@ node -e "require('./scripts/_test-pg.cjs')"
 DATABASE_URL=postgresql://user:pass@host:5432/cdi_inventory
 NEXTAUTH_SECRET=随机32位字符串
 NEXTAUTH_URL=http://localhost:3000
-SHOPIFY_STORE_DOMAIN=coredrivenindustries.myshopify.com
-SHOPIFY_ADMIN_API_TOKEN=shpat_xxxxx
-SHOPIFY_WEBHOOK_SECRET=whsec_xxxxx
+SHOPIFY_STORE_DOMAIN=vdg1pn-e4.myshopify.com
+SHOPIFY_CLIENT_ID=（Dev Dashboard → CDI Inventory Portal → Settings → Client ID）
+SHOPIFY_CLIENT_SECRET=（Dev Dashboard → CDI Inventory Portal → Settings → Secret）
+SHOPIFY_WEBHOOK_SECRET=（自定义随机字符串，注册 Webhook 时填同一个值）
 ADMIN_EMAIL=admin@cdi.com.au
 ADMIN_PASSWORD=changeme
 ```
+
+> ⚠️ `SHOPIFY_ADMIN_API_TOKEN` 已废弃（Shopify 2026 年起不再支持 Admin Custom App 静态 token）。
+> 现在使用 client credentials grant：`SHOPIFY_CLIENT_ID` + `SHOPIFY_CLIENT_SECRET` 动态换取临时 token（有效期 24h，自动续期）。
+
+---
+
+## Shopify 同步 Runbook
+
+### A. 首次搭建（只需做一次）
+
+**1. 创建 Dev Dashboard App**
+
+前往 [https://dev.shopify.com/dashboard/](https://dev.shopify.com/dashboard/)（不是 Partners Dashboard，也不是 Shopify Admin）。
+
+> ⚠️ Shopify 已不再允许在 Shopify Admin 内创建 Custom App，必须通过 Dev Dashboard。
+
+- 打开已有 App「CDI Inventory Portal」或点 **Create app**
+- 进入 **Versions → Create version**
+- **Scopes** 填写：`read_inventory,write_inventory,read_products,read_locations`
+- **Webhooks API version** 选当前最新季度版（当前为 `2026-07`）
+- 点 **Release**
+- 进入 **Settings**，复制 **Client ID** 和 **Client secret**（Secret 只显示一次，立即复制）
+- 在左侧找到 **Install** 或 **Test on store**，将 App 安装到 `vdg1pn-e4.myshopify.com`
+
+**2. 写入 Railway 环境变量**
+
+Railway → `cdi-inventory` 服务 → **Variables** → 添加：
+
+| 变量名 | 值 |
+|---|---|
+| `SHOPIFY_STORE_DOMAIN` | `vdg1pn-e4.myshopify.com` |
+| `SHOPIFY_CLIENT_ID` | 从 Dev Dashboard Settings 复制 |
+| `SHOPIFY_CLIENT_SECRET` | 从 Dev Dashboard Settings 复制 |
+
+**3. 填写 Shopify Location ID**
+
+Shopify Admin → **Settings → Locations** → 点开每个仓库，URL 末尾数字即为 Location ID：
+`/admin/settings/locations/112920068395` → ID 为 `112920068395`
+
+运行脚本（ID 已在脚本内硬编码，Brisbane=112920068395，Sydney=115677495595）：
+
+```powershell
+cd C:\Users\CoreD\Desktop\shopify\cdi-inventory
+node scripts/set-location-shopify-ids.cjs
+```
+
+---
+
+### B. 绑定 SKU InventoryItem ID（新增 SKU 需同步时）
+
+**步骤 1：拉取 Shopify 产品列表**
+
+```powershell
+$env:SHOPIFY_CLIENT_ID="8c3db662f811dbb18eba8d7de7d8ae8c"
+$env:SHOPIFY_CLIENT_SECRET="你的secret"
+node scripts/fetch-shopify-inventory-items.cjs
+```
+
+输出格式：
+
+```
+Product                SKU              VariantID        InventoryItemID
+Base Canopy 1200mm     CD-2D-17128-SHB  53753696485675   55840277233963
+...
+```
+
+**步骤 2：更新绑定脚本并执行**
+
+打开 `scripts/bind-shopify-inventory-item-ids.cjs`，在 `BINDINGS` 对象里追加新条目：
+
+```javascript
+'NEW-SKU-CODE': { inventoryItemId: '55840277299499', variantId: '53753696551211' },
+```
+
+然后运行：
+
+```powershell
+node scripts/bind-shopify-inventory-item-ids.cjs
+```
+
+脚本会报告每条 OK 或 NOT FOUND（NOT FOUND 表示 Portal 里没有该 SKU，需先创建产品）。
+
+**当前已绑定的 SKU 范围（2026-07-27）：**
+- Base Canopy 1000–1800mm（CD-2D-171xx 系列，含 SHB/W/无后缀，33 个 SKU）
+- Base Canopy 1800mm Full Access（CD-3D-17188 系列）
+- LC79 Factory Tray Canopy 1200/1600/1800mm（LC-2D-181x10 系列）
+- Lockable Jerry Can Holder（CD-JCA 系列）
+- Spare Wheel Carrier（CD-SWH 系列）
+
+**不同步的 SKU 范围：**
+- Base Tray / PKG 套餐（Portal 无对应 SKU，Shopify 端手动管理）
+- Trundle Drawer（T-ADDON-VTD-*，方案待定）
+- Add-on 配件（CDI-ADDON-*，如 Sensor/Camera/BLIS/灯）
+
+---
+
+### C. 手动触发同步
+
+Portal → **Settings → Shopify Sync → Sync now**
+
+查看 Sync Log 确认全部 `success`。如有 `error`，查看完整错误原因：
+
+```sql
+-- 在 Railway → Postgres → Data 标签页执行
+SELECT p.sku, l.name AS location, sl.status, sl.error, sl."createdAt"
+FROM "SyncLog" sl
+JOIN "Product" p ON p.id = sl."productId"
+JOIN "Location" l ON l.id = sl."locationId"
+WHERE sl.status = 'error'
+ORDER BY sl."createdAt" DESC
+LIMIT 20;
+```
+
+---
+
+### D. API 版本升级（年度维护）
+
+Shopify 每季度发布新 API 版本（01/04/07/10），每个版本支持约 12 个月。Shopify 会在到期前 3 个月发邮件提醒。
+
+**升级时需检查的两个文件：**
+
+| 文件 | 改动位置 |
+|---|---|
+| `src/lib/shopify-sync.ts` | 第 70 行附近的 `/admin/api/2026-07/graphql.json` 版本字符串 |
+| Cloudflare Rate Worker | 环境变量 `SHOPIFY_API_VERSION` 直接改值，无需改代码 |
+
+**升级前必查的 mutation：**
+- `inventorySetQuantities`（Portal 同步核心）→ 检查 `InventorySetQuantitiesInput` 和 `InventoryQuantityInput` 的字段定义
+- 文档地址：`https://shopify.dev/docs/api/admin-graphql/{版本}/input-objects/InventorySetQuantitiesInput`
+
+---
+
+### E. 已知 API Breaking Changes 记录（2026-07-27）
+
+| API 版本 | Breaking Change | 影响 | 修复方案 |
+|---|---|---|---|
+| 2026-01+ | `inventorySetQuantities` 支持 `@idempotent` directive（可选） | 无，新增功能 | — |
+| 2026-04+ | `@idempotent` directive **强制必填** | 不带 key 的调用返回变量验证错误 | 每次调用用 `randomUUID()` 生成 key 嵌入 query |
+| 2026-07 | `InventorySetQuantitiesInput` 无 `ignoreCompareQuantity` 字段 | 传该字段导致 GraphQL 类型验证失败 | 移除该字段 |
+| 2026-07 | `InventoryQuantityInput.changeFromQuantity` **强制必填**（传 `null` 跳过 CAS 校验） | 不传导致 mutation 报错 | 每个 quantity item 加 `changeFromQuantity: null` |
+| N/A | Shopify Admin 不再支持创建 Custom App，改为 Dev Dashboard | 无法在 Store Admin 拿到静态 `shpat_` token | 改用 Dev Dashboard + client credentials grant |
