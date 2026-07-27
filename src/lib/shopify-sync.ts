@@ -101,47 +101,32 @@ export async function syncProductToShopify(
   const available = Math.max(0, onHand - reserved);
 
   try {
-    // Get current Shopify qty to compute delta
-    const data = await shopifyGraphQL<any>(
-      `query GetInventoryLevel($inventoryItemId: ID!, $locationId: ID!) {
-        inventoryLevel(inventoryItemId: $inventoryItemId, locationId: $locationId) {
-          quantities(names: ["available"]) {
-            name
-            quantity
-          }
+    // Set absolute available quantity directly — no read needed
+    const result = await shopifyGraphQL<any>(
+      `mutation SetInventory($input: InventorySetQuantitiesInput!) {
+        inventorySetQuantities(input: $input) {
+          userErrors { field message }
         }
       }`,
       {
-        inventoryItemId: `gid://shopify/InventoryItem/${product.shopifyInventoryItemId}`,
-        locationId: `gid://shopify/Location/${location.shopifyLocationId}`,
+        input: {
+          reason: "correction",
+          name: "available",
+          ignoreCompareQuantity: true,
+          quantities: [
+            {
+              inventoryItemId: `gid://shopify/InventoryItem/${product.shopifyInventoryItemId}`,
+              locationId: `gid://shopify/Location/${location.shopifyLocationId}`,
+              quantity: available,
+            },
+          ],
+        },
       }
     );
 
-    const currentQty: number =
-      data?.inventoryLevel?.quantities?.[0]?.quantity ?? 0;
-    const delta = available - currentQty;
-
-    if (delta !== 0) {
-      await shopifyGraphQL(
-        `mutation AdjustInventory($input: InventoryAdjustQuantitiesInput!) {
-          inventoryAdjustQuantities(input: $input) {
-            userErrors { field message }
-          }
-        }`,
-        {
-          input: {
-            reason: "correction",
-            name: "available",
-            changes: [
-              {
-                inventoryItemId: `gid://shopify/InventoryItem/${product.shopifyInventoryItemId}`,
-                locationId: `gid://shopify/Location/${location.shopifyLocationId}`,
-                delta,
-              },
-            ],
-          },
-        }
-      );
+    const userErrors = result?.inventorySetQuantities?.userErrors ?? [];
+    if (userErrors.length > 0) {
+      throw new Error(userErrors.map((e: any) => `${e.field}: ${e.message}`).join("; "));
     }
 
     await prisma.syncLog.create({
