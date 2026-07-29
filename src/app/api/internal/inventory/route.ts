@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 /**
- * GET /api/public/inventory?sku=<SKU>
+ * GET /api/internal/inventory?sku=<SKU>
  *
  * Internal endpoint — called only by the cdi-inventory-worker Cloudflare Worker.
  * Requires the x-internal-key header to match PORTAL_INTERNAL_KEY env var.
