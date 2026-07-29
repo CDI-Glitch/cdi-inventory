@@ -1,41 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-function corsJson(data: unknown, init?: { status?: number }) {
-  return NextResponse.json(data, { ...init, headers: CORS_HEADERS });
-}
-
 /**
  * GET /api/public/inventory?sku=<SKU>
  *
- * Public read-only endpoint — no auth required.
- * Returns per-location Available quantity (onHand − reserved) for a given SKU.
- * Used by the Shopify theme to display per-warehouse stock status on the PDP.
+ * Internal endpoint — called only by the cdi-inventory-worker Cloudflare Worker.
+ * Requires the x-internal-key header to match PORTAL_INTERNAL_KEY env var.
+ * Returns per-location stock status (not exact quantities) for a given SKU.
  *
- * Response: { "brisbane": 5, "sydney": 0 }
- * Keys are location names lowercased; value is Available qty (>= 0).
+ * Response: { "brisbane": "in_stock"|"out", "sydney": "in_stock"|"out" }
+ * Keys are location names lowercased; value is "in_stock" when available > 0, else "out".
+ * The Worker layer maps "out" + inventory_policy === "continue" to "backorder" on the client.
  *
  * Error cases:
+ *   403 — missing or invalid x-internal-key
  *   404 — SKU not found or not active
  *   400 — sku param missing
  *   500 — DB error
  */
 
-// Handle CORS preflight
 export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  // Preflight is handled at the Worker layer — Portal is not called by browsers directly.
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET(req: NextRequest) {
+  // Verify shared secret — reject any caller that is not the Worker.
+  const internalKey = req.headers.get("x-internal-key");
+  const expectedKey = process.env.PORTAL_INTERNAL_KEY;
+  if (!expectedKey || internalKey !== expectedKey) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const sku = req.nextUrl.searchParams.get("sku");
   if (!sku) {
-    return corsJson({ error: "sku parameter required" }, { status: 400 });
+    return NextResponse.json({ error: "sku parameter required" }, { status: 400 });
   }
 
   const product = await prisma.product.findFirst({
@@ -44,7 +43,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (!product) {
-    return corsJson({ error: "SKU not found" }, { status: 404 });
+    return NextResponse.json({ error: "SKU not found" }, { status: 404 });
   }
 
   const locations = await prisma.location.findMany({
@@ -75,18 +74,17 @@ export async function GET(req: NextRequest) {
     movMap.set(mov.locationId, mov._sum.reservedQty ?? 0);
   }
 
-  const result: Record<string, number> = {};
+  const result: Record<string, string> = {};
   for (const loc of locations) {
     const onHand = logMap.get(loc.id) ?? 0;
     const reserved = movMap.get(loc.id) ?? 0;
     const available = Math.max(0, onHand - reserved);
-    result[loc.name.toLowerCase()] = available;
+    result[loc.name.toLowerCase()] = available > 0 ? "in_stock" : "out";
   }
 
   return NextResponse.json(result, {
     headers: {
       "Cache-Control": "public, max-age=30, stale-while-revalidate=60",
-      ...CORS_HEADERS,
     },
   });
 }
