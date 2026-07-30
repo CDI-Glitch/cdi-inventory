@@ -27,6 +27,7 @@ const STATUS_LABELS = {
 };
 
 function formatCategory(category: string) {
+  if (category === "12V") return "12V";
   return category
     .replace(/_/g, " ")
     .toLowerCase()

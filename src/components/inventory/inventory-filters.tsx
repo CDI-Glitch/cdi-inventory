@@ -6,7 +6,10 @@ import { CATEGORIES } from "@/lib/constants";
 
 const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({
   value: c,
-  label: c.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase()),
+  label:
+    c === "12V"
+      ? "12V"
+      : c.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase()),
 }));
 
 const STATUS_OPTIONS = [
