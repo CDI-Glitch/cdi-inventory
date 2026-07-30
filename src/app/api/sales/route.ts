@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 
 const SalesLineSchema = z.object({
@@ -80,16 +81,30 @@ export async function POST(req: NextRequest) {
   const location = await prisma.location.findUnique({ where: { id: data.locationId } });
   if (!location) return NextResponse.json({ error: "Location not found" }, { status: 404 });
 
-  // Validate each line's itemCode
+  // Validate each line's itemCode and, for bundles, capture a BOM snapshot at
+  // creation time (see PUT /api/sales/[id]/lines for the same pattern/rationale).
+  const snapshotByIndex: Array<Record<string, unknown>[] | null> = [];
   for (const line of data.lines) {
     if (line.lineType === "sku") {
       const product = await prisma.product.findUnique({ where: { sku: line.itemCode } });
       if (!product) return NextResponse.json({ error: `SKU not found: ${line.itemCode}` }, { status: 404 });
       if (!product.active) return NextResponse.json({ error: `SKU inactive: ${line.itemCode}` }, { status: 400 });
+      snapshotByIndex.push(null);
     } else {
-      const bundle = await prisma.bundleDefinition.findUnique({ where: { code: line.itemCode } });
+      const bundle = await prisma.bundleDefinition.findUnique({
+        where: { code: line.itemCode },
+        include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
+      });
       if (!bundle) return NextResponse.json({ error: `Bundle not found: ${line.itemCode}` }, { status: 404 });
       if (!bundle.active) return NextResponse.json({ error: `Bundle inactive: ${line.itemCode}` }, { status: 400 });
+      snapshotByIndex.push(
+        bundle.items.map((i) => ({
+          productId: i.productId,
+          sku: i.product.sku,
+          name: i.product.name,
+          qty: i.qty,
+        }))
+      );
     }
   }
 
@@ -112,6 +127,7 @@ export async function POST(req: NextRequest) {
           qty: line.qty,
           notes: line.notes,
           sortOrder: idx,
+          snapshotItems: (snapshotByIndex[idx] ?? undefined) as Prisma.InputJsonValue | undefined,
         })),
       },
     },

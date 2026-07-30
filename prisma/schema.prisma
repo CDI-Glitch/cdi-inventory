@@ -112,6 +112,11 @@ model SalesLine {
   notes         String?
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
+  // Captured BOM at the moment a "bundle" line is saved: [{ productId, sku, name, qty }].
+  // Insulates in-flight Quotes from later edits to BundleDefinition/BundleItem — reserveStock()
+  // reads this snapshot instead of the live definition when present. Null for "sku" lines and
+  // for bundle lines created before this field existed (those fall back to a live lookup).
+  snapshotItems Json?
 
   salesRecord SalesRecord @relation(fields: [salesRecordId], references: [id], onDelete: Cascade)
 

@@ -122,6 +122,16 @@ export default async function SalesDetailPage({
 
   const dateStr = record.date.toISOString().slice(0, 10);
 
+  // Resolve a bundle line's components: prefer the BOM snapshot captured when
+  // the line was saved (immune to later BundleDefinition/BundleItem edits),
+  // falling back to the live bundle definition for older lines saved before
+  // the snapshot field existed.
+  function getBundleComponents(line: { itemCode: string; snapshotItems: unknown }) {
+    const snapshot = line.snapshotItems as { sku: string; name: string; qty: number }[] | null;
+    if (snapshot && snapshot.length > 0) return snapshot;
+    return bundleMap[line.itemCode]?.items ?? [];
+  }
+
   // Build { sku → total qty } from Order lines for mismatch detection.
   // Bundle lines are expanded into their component SKUs (qty × line.qty) and
   // accumulated into the SAME map/key as plain SKU lines — so a product that
@@ -132,11 +142,8 @@ export default async function SalesDetailPage({
     if (line.lineType === "sku") {
       orderLineMap[line.itemCode] = (orderLineMap[line.itemCode] ?? 0) + line.qty;
     } else if (line.lineType === "bundle") {
-      const bundle = bundleMap[line.itemCode];
-      if (bundle) {
-        for (const item of bundle.items) {
-          orderLineMap[item.sku] = (orderLineMap[item.sku] ?? 0) + item.qty * line.qty;
-        }
+      for (const item of getBundleComponents(line)) {
+        orderLineMap[item.sku] = (orderLineMap[item.sku] ?? 0) + item.qty * line.qty;
       }
     }
   }
@@ -306,7 +313,7 @@ export default async function SalesDetailPage({
                       itemName={itemName}
                       qty={line.qty}
                       notes={line.notes}
-                      components={bundleMap[line.itemCode]?.items ?? []}
+                      components={getBundleComponents(line)}
                     />
                   );
                 }
