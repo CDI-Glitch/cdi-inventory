@@ -103,7 +103,7 @@ export function CustomSelect({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-md border border-gray-300 bg-white py-1">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full max-h-[min(28rem,70vh)] overflow-y-auto rounded-md border border-gray-300 bg-white py-1">
           {/* "All" / placeholder option */}
           <button
             type="button"
