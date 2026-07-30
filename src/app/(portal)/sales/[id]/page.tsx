@@ -7,6 +7,7 @@ import { SalesStatusActions } from "@/components/sales/sales-status-actions";
 import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
 import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
 import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor";
+import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -73,7 +74,14 @@ export default async function SalesDetailPage({
     lineBundles.length > 0
       ? prisma.bundleDefinition.findMany({
           where: { code: { in: lineBundles } },
-          select: { code: true, name: true },
+          select: {
+            code: true,
+            name: true,
+            items: {
+              select: { qty: true, product: { select: { sku: true, name: true } } },
+              orderBy: { sortOrder: "asc" },
+            },
+          },
         })
       : Promise.resolve([]),
     canEditHeader ? prisma.location.findMany({ where: { active: true } }) : Promise.resolve([]),
@@ -96,7 +104,15 @@ export default async function SalesDetailPage({
   ]);
 
   const skuMap = Object.fromEntries(skuProducts.map((p) => [p.sku, p]));
-  const bundleMap = Object.fromEntries(bundleDefs.map((b) => [b.code, b]));
+  const bundleMap = Object.fromEntries(
+    bundleDefs.map((b: any) => [
+      b.code,
+      {
+        name: b.name,
+        items: b.items.map((i: any) => ({ sku: i.product.sku, name: i.product.name, qty: i.qty })),
+      },
+    ])
+  );
 
   const bundlesForEditor = rawBundles.map((b: any) => ({
     code: b.code,
@@ -106,11 +122,22 @@ export default async function SalesDetailPage({
 
   const dateStr = record.date.toISOString().slice(0, 10);
 
-  // Build { sku → total qty } from Order lines for mismatch detection
+  // Build { sku → total qty } from Order lines for mismatch detection.
+  // Bundle lines are expanded into their component SKUs (qty × line.qty) and
+  // accumulated into the SAME map/key as plain SKU lines — so a product that
+  // appears both as a standalone line and inside a bundle is summed correctly
+  // instead of producing a false "SKU not in order lines" mismatch.
   const orderLineMap: Record<string, number> = {};
   for (const line of record.lines) {
     if (line.lineType === "sku") {
       orderLineMap[line.itemCode] = (orderLineMap[line.itemCode] ?? 0) + line.qty;
+    } else if (line.lineType === "bundle") {
+      const bundle = bundleMap[line.itemCode];
+      if (bundle) {
+        for (const item of bundle.items) {
+          orderLineMap[item.sku] = (orderLineMap[item.sku] ?? 0) + item.qty * line.qty;
+        }
+      }
     }
   }
 
@@ -269,19 +296,28 @@ export default async function SalesDetailPage({
                   line.lineType === "sku"
                     ? skuMap[line.itemCode]?.name ?? "—"
                     : bundleMap[line.itemCode]?.name ?? "—";
+
+                if (line.lineType === "bundle") {
+                  return (
+                    <BundleOrderLineRow
+                      key={line.id}
+                      idx={idx + 1}
+                      itemCode={line.itemCode}
+                      itemName={itemName}
+                      qty={line.qty}
+                      notes={line.notes}
+                      components={bundleMap[line.itemCode]?.items ?? []}
+                    />
+                  );
+                }
+
+                // lineType === "sku" from here on (bundle lines returned above)
                 return (
                   <tr key={line.id} className="border-b border-gray-100 last:border-0">
                     <td className="px-4 py-2.5 text-gray-400 text-xs">{idx + 1}</td>
                     <td className="px-4 py-2.5">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium",
-                          line.lineType === "bundle"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-gray-100 text-gray-600"
-                        )}
-                      >
-                        {line.lineType === "bundle" ? "Bundle" : "SKU"}
+                      <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+                        SKU
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
