@@ -14,6 +14,7 @@ const TYPE_OPTIONS = [
   { value: "stocktake_correction", label: "Stocktake Correction" },
   { value: "transfer_out", label: "Transfer Out" },
   { value: "transfer_in", label: "Transfer In" },
+  { value: "reservation_adjustment", label: "Reservation Adjusted" },
 ];
 
 interface AuditFiltersProps {
