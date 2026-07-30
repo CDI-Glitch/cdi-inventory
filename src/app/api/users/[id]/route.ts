@@ -22,19 +22,64 @@ export async function PATCH(
   }
 
   const { id } = await params;
-
-  // Prevent admin from deactivating themselves
-  if (id === actorId) {
-    const body = await req.json();
-    if (body.active === false) {
-      return NextResponse.json({ error: "Cannot deactivate your own account" }, { status: 400 });
-    }
-  }
-
   const body = await req.json();
   const parsed = UpdateUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { role: true },
+  });
+  if (!target) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Self-protection: an admin cannot change their own role or deactivate themselves.
+  // Prevents accidental self-lockout.
+  if (id === actorId) {
+    if (parsed.data.role !== undefined && parsed.data.role !== target.role) {
+      return NextResponse.json({ error: "Cannot change your own role" }, { status: 400 });
+    }
+    if (parsed.data.active === false) {
+      return NextResponse.json({ error: "Cannot deactivate your own account" }, { status: 400 });
+    }
+  }
+
+  // Peer-protection: an admin cannot demote or deactivate another admin.
+  // Demoting/removing an admin peer must go through direct DB access, not the UI —
+  // this prevents one admin from unilaterally stripping another admin's access.
+  if (target.role === "admin" && id !== actorId) {
+    if (parsed.data.role !== undefined && parsed.data.role !== "admin") {
+      return NextResponse.json(
+        { error: "Cannot demote another admin. Use direct database access if intentional." },
+        { status: 400 }
+      );
+    }
+    if (parsed.data.active === false) {
+      return NextResponse.json(
+        { error: "Cannot deactivate another admin. Use direct database access if intentional." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Last-admin protection: the system must always retain at least one active admin.
+  const demotingOrDeactivatingAdmin =
+    target.role === "admin" &&
+    ((parsed.data.role !== undefined && parsed.data.role !== "admin") ||
+      parsed.data.active === false);
+  if (demotingOrDeactivatingAdmin) {
+    const activeAdminCount = await prisma.user.count({
+      where: { role: "admin", active: true },
+    });
+    if (activeAdminCount <= 1) {
+      return NextResponse.json(
+        { error: "Cannot remove the last active admin" },
+        { status: 400 }
+      );
+    }
   }
 
   const data: any = {};

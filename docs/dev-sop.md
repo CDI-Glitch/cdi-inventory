@@ -191,6 +191,40 @@
 | 2026-07-27 | Shopify `inventorySetQuantities` 变量验证报错（三轮调试） | 详见下方「Shopify API Breaking Changes 记录」 |
 | 2026-07-27 | `SHOPIFY_ADMIN_API_TOKEN` 废弃，改 client credentials grant | `shopify-sync.ts` 重构 `getToken()`，Railway 变量改为 `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET` |
 | 2026-07-27 | SyncLog 需分页 + 清理功能 | GET /api/sync 加 `page` 参数，新增 DELETE 接口，Settings UI 加分页与清理按钮 |
+| 2026-07-30 | Admin 之间无保护，可互相降级/停用甚至降到零 admin | 见下方「Admin 权限保护设计」 |
+
+---
+
+## Admin 权限保护设计（2026-07-30 确立）
+
+### 问题背景
+
+早期 `PATCH /api/users/[id]` 只挡了「admin 停用自己」，没有挡：
+- admin 修改自己的 role
+- 一个 admin 降级/停用另一个 admin
+- 把系统里最后一个 admin 降掉，导致无人能管理权限
+
+行业惯例（GitHub Org、AWS IAM、Google Workspace 等）**不是限制 admin 数量上限为 1**，而是保护数量下限——单一 admin 是单点故障（忘记密码/离职/账号被锁时系统就没人能管权限了）。惯例做法是：
+
+1. 不能修改和自己同级或更高级的账号（防止同级互相博弈/误操作）
+2. 不能修改自己的角色（防止手滑自锁）
+3. 系统至少保留 1 个 active admin（防止彻底无人能管权限）
+
+### 实现（`src/app/api/users/[id]/route.ts`）
+
+| 规则 | 行为 |
+|---|---|
+| **自我保护** | admin 不能改自己的 role，也不能停用自己账号 |
+| **同级保护** | admin 不能降级/停用另一个 admin（`role !== "admin"` 的变更或 `active: false`），会返回 400 |
+| **保底保护** | 如果目标是 admin 且操作会导致 active admin 数量归零，返回 400（即使不是同级保护触发，双重兜底） |
+
+**新增 admin（提升权限）不受限制**——任何现有 admin 都能把别人提升为 admin，UI 正常操作。
+
+**降级/停用一个已存在的 admin，UI 会拒绝**，只能通过直接连数据库的脚本操作（例如 `scripts/create-bne-manager.cjs` 同款连接方式）。这是有意设计：授权风险小可以留在 UI，剥夺权限风险大，收紧到只有能操作数据库的人（开发者）才能做。
+
+### 账号隔离实践
+
+2026-07-30 起，`admin@cdi.com.au`（老板日常登录）已降级为 `editor`，新建 `dev@cdi.com.au`（admin，开发者专用）。原因：共用一个 admin 账号时，Audit Log 无法区分是谁做的操作（同步 Shopify、改权限等）。
 
 ---
 

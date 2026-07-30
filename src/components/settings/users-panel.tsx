@@ -24,6 +24,7 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [rowError, setRowError] = useState("");
 
   // New user form state
   const [newUser, setNewUser] = useState({ email: "", name: "", password: "", role: "viewer" });
@@ -54,6 +55,7 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
 
   async function toggleActive(user: User) {
     setSaving(user.id);
+    setRowError("");
     const res = await fetch(`/api/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -62,12 +64,16 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
     if (res.ok) {
       const updated = await res.json();
       setUsers(users.map((u) => (u.id === user.id ? updated : u)));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setRowError(data.error ?? "Failed to update user");
     }
     setSaving(null);
   }
 
   async function changeRole(user: User, role: string) {
     setSaving(user.id + "-role");
+    setRowError("");
     const res = await fetch(`/api/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -76,6 +82,9 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
     if (res.ok) {
       const updated = await res.json();
       setUsers(users.map((u) => (u.id === user.id ? updated : u)));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setRowError(data.error ?? "Failed to update user");
     }
     setSaving(null);
   }
@@ -160,6 +169,10 @@ export function UsersPanel({ users: initial }: { users: User[] }) {
             </button>
           </div>
         </form>
+      )}
+
+      {rowError && (
+        <p className="text-sm text-red-600 mb-3">{rowError}</p>
       )}
 
       {/* Users table */}
