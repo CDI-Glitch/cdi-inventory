@@ -70,10 +70,14 @@ export function SyncPanel({
     try {
       const res = await fetch("/api/sync", { method: "POST" });
       const data = await res.json();
-      setResult(data);
-      await fetchLogs(1);
+      if (!res.ok) {
+        setResult({ message: data.error ?? `Sync failed (${res.status})`, errors: 1 });
+      } else {
+        setResult(data);
+        await fetchLogs(1);
+      }
     } catch {
-      setResult({ message: "Network error — sync failed" });
+      setResult({ message: "Network error — sync failed", errors: 1 });
     } finally {
       setSyncing(false);
     }
@@ -128,7 +132,7 @@ export function SyncPanel({
 
         {result && (
           <div className={`mt-4 rounded-lg px-4 py-3 text-sm ${result.errors ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
-            {result.message ?? `Synced ${result.synced} SKU(s)${result.errors ? `, ${result.errors} error(s)` : " — all good"}`}
+            {result.message ?? `Synced ${result.synced ?? 0} SKU(s)${result.errors ? `, ${result.errors} error(s)` : " — all good"}`}
           </div>
         )}
       </div>
