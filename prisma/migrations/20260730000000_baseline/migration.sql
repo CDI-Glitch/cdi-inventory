@@ -1,3 +1,11 @@
+-- CDI Inventory Portal — Baseline migration
+-- Created 2026-07-30 to capture the full schema that was deployed via prisma db push.
+-- This file is marked as already applied (prisma migrate resolve --applied).
+-- DO NOT run this file manually — it would fail on a database that already has these tables.
+
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -59,12 +67,9 @@ CREATE TABLE "SalesRecord" (
     "id" TEXT NOT NULL,
     "recordId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
+    "quoteNo" TEXT,
     "invoiceNo" TEXT,
-    "orderNo" TEXT,
     "customer" TEXT NOT NULL,
-    "saleType" TEXT NOT NULL,
-    "itemCode" TEXT NOT NULL,
-    "qty" INTEGER NOT NULL DEFAULT 1,
     "status" TEXT NOT NULL DEFAULT 'quote',
     "staffNotes" TEXT,
     "locationId" TEXT NOT NULL,
@@ -74,6 +79,21 @@ CREATE TABLE "SalesRecord" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "SalesRecord_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SalesLine" (
+    "id" TEXT NOT NULL,
+    "salesRecordId" TEXT NOT NULL,
+    "lineType" TEXT NOT NULL,
+    "itemCode" TEXT NOT NULL,
+    "qty" INTEGER NOT NULL DEFAULT 1,
+    "notes" TEXT,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "snapshotItems" JSONB,
+
+    CONSTRAINT "SalesLine_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -117,14 +137,15 @@ CREATE TABLE "BundleItem" (
 -- CreateTable
 CREATE TABLE "IncomingShipment" (
     "id" TEXT NOT NULL,
-    "reference" TEXT,
-    "supplier" TEXT,
+    "poRef" TEXT NOT NULL,
+    "supplierName" TEXT NOT NULL,
+    "poNumber" TEXT,
     "trackingNo" TEXT,
     "eta" TIMESTAMP(3),
     "status" TEXT NOT NULL DEFAULT 'pending',
     "locationId" TEXT NOT NULL,
     "notes" TEXT,
-    "createdBy" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL DEFAULT 'system',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -136,8 +157,10 @@ CREATE TABLE "IncomingLine" (
     "id" TEXT NOT NULL,
     "shipmentId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
-    "expectedQty" INTEGER NOT NULL,
-    "actualQty" INTEGER,
+    "qtyOrdered" INTEGER NOT NULL,
+    "qtyReceived" INTEGER NOT NULL DEFAULT 0,
+    "unitCost" DECIMAL(65,30),
+    "notes" TEXT,
 
     CONSTRAINT "IncomingLine_pkey" PRIMARY KEY ("id")
 );
@@ -204,10 +227,16 @@ CREATE UNIQUE INDEX "SalesRecord_recordId_key" ON "SalesRecord"("recordId");
 CREATE UNIQUE INDEX "SalesRecord_shopifyOrderId_key" ON "SalesRecord"("shopifyOrderId");
 
 -- CreateIndex
+CREATE INDEX "SalesLine_salesRecordId_idx" ON "SalesLine"("salesRecordId");
+
+-- CreateIndex
 CREATE INDEX "GeneratedMovement_productId_locationId_idx" ON "GeneratedMovement"("productId", "locationId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "BundleDefinition_code_key" ON "BundleDefinition"("code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "IncomingShipment_poRef_key" ON "IncomingShipment"("poRef");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProcessedWebhook_shopifyOrderId_key" ON "ProcessedWebhook"("shopifyOrderId");
@@ -220,6 +249,9 @@ ALTER TABLE "InventoryLog" ADD CONSTRAINT "InventoryLog_locationId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "SalesRecord" ADD CONSTRAINT "SalesRecord_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "Location"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SalesLine" ADD CONSTRAINT "SalesLine_salesRecordId_fkey" FOREIGN KEY ("salesRecordId") REFERENCES "SalesRecord"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "GeneratedMovement" ADD CONSTRAINT "GeneratedMovement_salesRecordId_fkey" FOREIGN KEY ("salesRecordId") REFERENCES "SalesRecord"("id") ON DELETE CASCADE ON UPDATE CASCADE;
