@@ -196,9 +196,12 @@ export function NewSalesForm({ products, bundles, locations }: Props) {
           </div>
 
           {lines.map((line, idx) => (
-            <div key={line.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* overflow-visible required: CustomSelect / SearchableSkuSelect dropdowns are
+                position:absolute and must escape this card. overflow-hidden clipped them
+                so Bundle options appeared empty (only the placeholder row was visible). */}
+            <div key={line.id} className="bg-white rounded-lg border border-gray-200">
               {/* Card header: line number + type toggle + remove */}
-              <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 bg-gray-50 rounded-t-lg">
                 <span className="text-xs font-semibold text-gray-400 w-4 shrink-0">{idx + 1}</span>
                 <div className="flex gap-4 flex-1">
                   {(["sku", "bundle"] as const).map((t) => (
