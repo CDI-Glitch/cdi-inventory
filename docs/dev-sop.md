@@ -226,6 +226,23 @@
 
 2026-07-30 起，`admin@cdi.com.au`（老板日常登录）已降级为 `editor`，新建 `dev@cdi.com.au`（admin，开发者专用）。原因：共用一个 admin 账号时，Audit Log 无法区分是谁做的操作（同步 Shopify、改权限等）。
 
+### 权限变更的实时生效问题（2026-07-30）
+
+**问题背景：** 权限保护规则本身在后端（API 路由 + `src/lib/auth.ts` 的 `jwt()` 回调）是即时生效的——每个新请求都会重新查库确认 `role`/`active`，所以安全边界始终成立。但已经打开的浏览器标签页，其 UI（Sidebar 显示的角色、Settings 页是否可见等）依赖 Next.js App Router 的 Server Component 树，而软导航（点 Link/Tab）会命中 Router Cache，不会重新执行 `auth()`。结果是：管理员在后台把某个用户降级后，那个用户已经打开的标签页在手动硬刷新之前，UI 仍然显示旧角色（虽然任何实际操作仍会被后端正确拒绝）。
+
+**实测复现（2026-07-30）：** 在 Settings → Shopify Sync 标签页保持打开的情况下，将当前登录账号的角色改为 `editor`，不刷新页面直接点击「Sync now」——请求被服务端正确拒绝（403），确认了安全边界不受影响，UI 滞后不等于权限失效。
+
+**方案：`SessionProvider` 轮询 + `router.refresh()`（`src/components/session-watcher.tsx`）**
+
+采用 next-auth v5 官方内置机制，而不是自建 WebSocket/SSE（团队规模小，不需要毫秒级实时，过度设计）：
+
+- `SessionProvider` 的 `refetchOnWindowFocus`：用户切回该标签页时几乎立即重新拉取 `/api/auth/session`（服务端重新跑 `jwt()` 回调，天然复用已有的 DB 重查逻辑）
+- `SessionProvider` 的 `refetchInterval={60}`：即使标签页一直保持前台，最多 60 秒内也会自动刷新一次
+- 内部 `RoleWatcher` 用 `useSession()` 对比角色变化，一旦变化就调用 `router.refresh()`（清空当前路由的 Router Cache，重新执行整棵 Server Component 树，包括 `(portal)/layout.tsx` 的 Sidebar 和各页面自己的 `redirect()` 权限校验）
+- 账号被停用（session 从已登录变成未登录）时，直接 `signOut({ callbackUrl: "/login" })`，而不是仅刷新
+
+**这只是 UX 新鲜度层，不是安全层**——无论轮询延迟多久，后端每次请求都会重新校验权限，UI 滞后期间用户看到的只是过期显示，无法执行任何实际越权操作。
+
 ---
 
 ## Import 脚本连接规范（必读，2026-07-22 确立）
