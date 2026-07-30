@@ -69,6 +69,15 @@ const BINDINGS = {
   'CD-SWH':            { inventoryItemId: '55995558953259', variantId: '53908200390955' },
   'CD-SWH-SHB':        { inventoryItemId: '55995558887723', variantId: '53908200325419' },
   'CD-SWH-W':          { inventoryItemId: '55995558920491', variantId: '53908200358187' },
+
+  // ── Flared Mud Guards (Pair) ──
+  'CD-MG':             { inventoryItemId: '56732118712619', variantId: '54641578836267' },
+  'CD-MG-SHB':         { inventoryItemId: '56732118647083', variantId: '54641578770731' },
+  'CD-MG-W':           { inventoryItemId: '56732118679851', variantId: '54641578803499' },
+
+  // ── 12V Dual Colour LED Strip Light (Legacy) ──
+  'CD-LED60-MK1':      { inventoryItemId: '56764712485163', variantId: '54674065260843' },
+  'CD-LED100-MK1':     { inventoryItemId: '56764814688555', variantId: '54674166513963' },
 };
 
 async function main() {
