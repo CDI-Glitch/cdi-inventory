@@ -28,6 +28,7 @@
 - [ ] Viewer 访问 /inventory/adjust → 403
 - [ ] Editor 访问 /settings → 403
 - [ ] Session 过期 → 重定向到登录页
+- [ ] 权限/会话热更新相关改动 → 另跑 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §8 全清单
 
 ### 2. 库存计算
 
@@ -191,57 +192,20 @@
 | 2026-07-27 | Shopify `inventorySetQuantities` 变量验证报错（三轮调试） | 详见下方「Shopify API Breaking Changes 记录」 |
 | 2026-07-27 | `SHOPIFY_ADMIN_API_TOKEN` 废弃，改 client credentials grant | `shopify-sync.ts` 重构 `getToken()`，Railway 变量改为 `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET` |
 | 2026-07-27 | SyncLog 需分页 + 清理功能 | GET /api/sync 加 `page` 参数，新增 DELETE 接口，Settings UI 加分页与清理按钮 |
-| 2026-07-30 | Admin 之间无保护，可互相降级/停用甚至降到零 admin | 见下方「Admin 权限保护设计」 |
+| 2026-07-30 | Admin 之间无保护，可互相降级/停用甚至降到零 admin | 见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) |
 
 ---
 
 ## Admin 权限保护设计（2026-07-30 确立）
 
-### 问题背景
+> **完整手册：** [`docs/auth-permissions-runbook.md`](./auth-permissions-runbook.md)
+> 含：安全层 vs UX 层、Admin 三保护、账号隔离、脚本降级/提升、Session 热更新、回归清单、故障排查。
 
-早期 `PATCH /api/users/[id]` 只挡了「admin 停用自己」，没有挡：
-- admin 修改自己的 role
-- 一个 admin 降级/停用另一个 admin
-- 把系统里最后一个 admin 降掉，导致无人能管理权限
-
-行业惯例（GitHub Org、AWS IAM、Google Workspace 等）**不是限制 admin 数量上限为 1**，而是保护数量下限——单一 admin 是单点故障（忘记密码/离职/账号被锁时系统就没人能管权限了）。惯例做法是：
-
-1. 不能修改和自己同级或更高级的账号（防止同级互相博弈/误操作）
-2. 不能修改自己的角色（防止手滑自锁）
-3. 系统至少保留 1 个 active admin（防止彻底无人能管权限）
-
-### 实现（`src/app/api/users/[id]/route.ts`）
-
-| 规则 | 行为 |
-|---|---|
-| **自我保护** | admin 不能改自己的 role，也不能停用自己账号 |
-| **同级保护** | admin 不能降级/停用另一个 admin（`role !== "admin"` 的变更或 `active: false`），会返回 400 |
-| **保底保护** | 如果目标是 admin 且操作会导致 active admin 数量归零，返回 400（即使不是同级保护触发，双重兜底） |
-
-**新增 admin（提升权限）不受限制**——任何现有 admin 都能把别人提升为 admin，UI 正常操作。
-
-**降级/停用一个已存在的 admin，UI 会拒绝**，只能通过直接连数据库的脚本操作（例如 `scripts/create-bne-manager.cjs` 同款连接方式）。这是有意设计：授权风险小可以留在 UI，剥夺权限风险大，收紧到只有能操作数据库的人（开发者）才能做。
-
-### 账号隔离实践
-
-2026-07-30 起，`admin@cdi.com.au`（老板日常登录）已降级为 `editor`，新建 `dev@cdi.com.au`（admin，开发者专用）。原因：共用一个 admin 账号时，Audit Log 无法区分是谁做的操作（同步 Shopify、改权限等）。
-
-### 权限变更的实时生效问题（2026-07-30）
-
-**问题背景：** 权限保护规则本身在后端（API 路由 + `src/lib/auth.ts` 的 `jwt()` 回调）是即时生效的——每个新请求都会重新查库确认 `role`/`active`，所以安全边界始终成立。但已经打开的浏览器标签页，其 UI（Sidebar 显示的角色、Settings 页是否可见等）依赖 Next.js App Router 的 Server Component 树，而软导航（点 Link/Tab）会命中 Router Cache，不会重新执行 `auth()`。结果是：管理员在后台把某个用户降级后，那个用户已经打开的标签页在手动硬刷新之前，UI 仍然显示旧角色（虽然任何实际操作仍会被后端正确拒绝）。
-
-**实测复现（2026-07-30）：** 在 Settings → Shopify Sync 标签页保持打开的情况下，将当前登录账号的角色改为 `editor`，不刷新页面直接点击「Sync now」——请求被服务端正确拒绝（403），确认了安全边界不受影响，UI 滞后不等于权限失效。
-
-**方案：`SessionProvider` 轮询 + `router.refresh()`（`src/components/session-watcher.tsx`）**
-
-采用 next-auth v5 官方内置机制，而不是自建 WebSocket/SSE（团队规模小，不需要毫秒级实时，过度设计）：
-
-- `SessionProvider` 的 `refetchOnWindowFocus`：用户切回该标签页时几乎立即重新拉取 `/api/auth/session`（服务端重新跑 `jwt()` 回调，天然复用已有的 DB 重查逻辑）
-- `SessionProvider` 的 `refetchInterval={60}`：即使标签页一直保持前台，最多 60 秒内也会自动刷新一次
-- 内部 `RoleWatcher` 用 `useSession()` 对比角色变化，一旦变化就调用 `router.refresh()`（清空当前路由的 Router Cache，重新执行整棵 Server Component 树，包括 `(portal)/layout.tsx` 的 Sidebar 和各页面自己的 `redirect()` 权限校验）
-- 账号被停用（session 从已登录变成未登录）时，直接 `signOut({ callbackUrl: "/login" })`，而不是仅刷新
-
-**这只是 UX 新鲜度层，不是安全层**——无论轮询延迟多久，后端每次请求都会重新校验权限，UI 滞后期间用户看到的只是过期显示，无法执行任何实际越权操作。
+摘要：
+- Admin 不能改自己 / 不能降级同级 admin / 系统至少保留 1 个 active admin
+- 降级已存在的 admin → 只能走 DB 脚本（见 runbook §6）
+- `dev@cdi.com.au` = admin；`admin@cdi.com.au` = editor（老板日常）
+- 已打开标签页的角色热更新由 `session-watcher.tsx` 负责；安全边界始终在服务端即时生效
 
 ---
 

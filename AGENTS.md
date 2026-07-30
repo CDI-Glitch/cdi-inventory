@@ -10,6 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 |---|---|---|
 | **System Design Constitution** | `docs/constitution.md` | Single source of truth for architecture, data model, permission matrix, ops SOP |
 | **Dev SOP / Runbook** | `docs/dev-sop.md` | Regression checklist, DB connection troubleshooting, import script guide |
+| **Auth & Permissions Runbook** | `docs/auth-permissions-runbook.md` | Admin protection rules, session hot-refresh, account isolation, demote/promote ops |
 | **SKU Master List** | `docs/sku-master-list.md` | All current SKUs with categories and opening stock |
 
 > ⚠️ The constitution is the authoritative document for this project. Read it before making any structural changes to the database schema, state machine, or permission model.
