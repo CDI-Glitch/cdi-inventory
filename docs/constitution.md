@@ -1,8 +1,8 @@
-# CDI 库存系统 — 设计宪法 v2.0
+# CDI 库存系统 — 设计宪法 v2.1
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-07-21（SKU 导入阶段完成，权限矩阵精化，reorderPoint inline 编辑，新增 SKU 分类）
+> 最后更新：2026-07-30（Bundle BOM 快照、自动预留/释放审计、Prisma migration baseline、权限热更新）
 
 ---
 
@@ -20,6 +20,9 @@
 | 8 | 安装排期 | 不做（用 Monday.com） | 不是 Portal 该做的事 |
 | 9 | 收款记录 | 不做（用 Zoho Invoice） | 不是 Portal 该做的事 |
 | 10 | 库存/销售默认视图 | 按仓库 Tab 分开展示；editor 默认自己仓库，admin/viewer 默认 All | 避免 Brisbane 和 Sydney 数据混在一起难以阅读 |
+| 11 | Bundle 策略 | Soft BOM + 行级 `snapshotItems`；硬件快捷包优先，整车 BOM 留给 Phase 2 Configurator | 车型/颜色/尺寸组合不可穷举；改 Bundle 定义不得回溯改 quote 期已保存的行 |
+| 12 | 自动预留审计 | `reserveStock` / `releaseReservations` 每条组件写 `reservation_adjustment`（delta=0） | Audit Log 与手动换料路径一致，避免「有预留但无 Log」误解 |
+| 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
 
 ---
 
@@ -52,7 +55,7 @@
 
 ### User（用户）
 ```
-id, email, passwordHash, name, role(viewer|editor|admin), active, createdAt
+id, email, passwordHash, name, role(viewer|sales|editor|admin), active, createdAt
 ```
 
 ### Location（仓库位置）
@@ -84,12 +87,21 @@ adminNotes, shopifyInventoryItemId, shopifyVariantId, createdAt, updatedAt
 | `CANOPY_ACCESSORY` | Canopy 配件（Jerry Can / Spare Wheel 等） |
 | `FITTING_KIT` | 安装套件（Bolt & Nut Kit / FK） |
 | `UNISTRUT` | C Channel 导轨（Canopy Top C Channel） |
+| `DROP_SIDES` | 侧栏板 |
+| `12V` | 12V 电气件（LED 灯带等） |
 
 ### InventoryLog（库存变动日志）— 核心表
 ```
 id, productId, locationId, type, delta(+/-), reference, enteredBy, notes, createdAt
 ```
-type 枚举：`opening_stock | receive_stock | sales_deduction | adjustment_in | adjustment_out | write_off | stocktake_correction | transfer_out | transfer_in`
+type 枚举：`opening_stock | receive_stock | sales_deduction | adjustment_in | adjustment_out | write_off | stocktake_correction | transfer_out | transfer_in | reservation_adjustment`
+
+**`reservation_adjustment`（delta 恒为 0）：**
+- 不改变 On Hand；只记录 Reserved 语义变动，供 Audit Log 透明展示
+- 写入路径（三处必须齐全）：
+  1. `quote → deposit_paid` 自动预留（`reserveStock`）
+  2. `→ cancelled` 自动释放（`releaseReservations`）
+  3. Admin 在 deposit_paid / fully_paid 手动换料（`movements` API）
 
 ### SalesRecord（销售记录）
 ```
@@ -108,27 +120,44 @@ status：`quote | deposit_paid | fully_paid | completed | cancelled`
 
 ### SalesLine（销售行）
 ```
-id, salesRecordId, lineType("sku"|"bundle"), itemCode, qty, notes, sortOrder, createdAt
+id, salesRecordId, lineType("sku"|"bundle"), itemCode, qty, notes, sortOrder,
+snapshotItems(Json?), createdAt
 ```
 - 一张 SalesRecord 对应多条 SalesLine（最少 1 条）
 - **语义：客户订的 / Invoice 依据** — `quote` 状态下可编辑，`deposit_paid` 后永久锁定
-- `lineType = "bundle"` 时，`reserveStock()` 自动按 BOM 展开预留所有组件
+- `lineType = "bundle"` 时：
+  - 保存行时把当时的 BOM 写入 `snapshotItems`：`[{productId, sku, name, qty}, ...]`
+  - `reserveStock()` **优先读 `snapshotItems`**；无快照的旧行才回退查 live `BundleDefinition`
+  - 之后改 Bundle 定义 **不会**改变已保存行的展开结果
+- Sales detail 的 Order lines 可折叠查看组件；Fulfillment 对比时须把 bundle 组件 qty 与独立 SKU 行 **合并计数**
 
 ### GeneratedMovement（履约预留 / 实际发货层）
 ```
 id, salesRecordId, productId, locationId, reservedQty, createdAt
 ```
 - **语义：实际要从仓库拿的货** — 与 SalesLine 分开，允许分叉（换料场景）
-- `quote → deposit_paid` 时首次生成（按 SalesLine 展开）
+- `quote → deposit_paid` 时首次生成（按 SalesLine / snapshot 展开）并写 `reservation_adjustment` 审计
 - `deposit_paid` / `fully_paid` 阶段：**Admin 可调整**（换料/增减），每次写 `reservation_adjustment` 日志（delta=0，不影响 On Hand）
 - `fully_paid → completed` 时：按此层扣减 On Hand（`sales_deduction` 写入 InventoryLog）
-- `→ cancelled`：`reservedQty` 归零（释放）
+- `→ cancelled`：`reservedQty` 归零（释放）并写 `reservation_adjustment` 审计
 - 两层分叉时，Sales detail 页面显示 ⚠ 标记，所有 Staff 可见
 
 ### BundleDefinition（Bundle 定义）
 ```
 id, code(唯一), name, productFamily, active, createdAt
 ```
+
+**设计约定（Soft BOM / 快捷包）：**
+- Phase 1 Bundle = **硬件快捷包**，不是整车穷举 BOM（车型×颜色×尺寸会组合爆炸）
+- CMS 当前包 **不包含** 主车厢 SKU；主车厢单独加 SKU 行；`FK-Ex` 等车型相关件展开后再手动加
+- 已上线硬件包：
+
+| code | 用途 | 组件（每包 qty） |
+|---|---|---|
+| `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，CXH×1 |
+| `BDL-CMS-HW-SINGLECAB` | Single Cab 硬件快捷包 | FK×4，其余同上 |
+
+- Phase 2：规则型 Configurator（选车型/配件 → 生成可编辑草案清单），仍应写 `snapshotItems`
 
 ### BundleItem（Bundle 组件）
 ```
@@ -198,11 +227,11 @@ id, shopifyOrderId(唯一), topic, processedAt
 
 | 转换 | 自动执行 |
 |---|---|
-| `quote → deposit_paid` | 迭代所有 SalesLine → 展开组件 → 创建 GeneratedMovement |
+| `quote → deposit_paid` | 迭代所有 SalesLine → 按 `snapshotItems`（或 live BOM）展开 → 创建 GeneratedMovement + 每组件 `reservation_adjustment` |
 | `deposit_paid` / `fully_paid` 期间 | Admin 可调整 GeneratedMovement（换料）→ 写 `reservation_adjustment` 日志 |
 | `deposit_paid → fully_paid` | 无库存操作 |
 | `fully_paid → completed` | reservedQty 归零 + InventoryLog(`sales_deduction`) |
-| `→ cancelled` | reservedQty 归零（释放） |
+| `→ cancelled` | reservedQty 归零（释放）+ 每组件 `reservation_adjustment` |
 
 ### C2. 到货发货单
 
@@ -344,7 +373,7 @@ Shopify 客户下单付款 → orders/paid Webhook → Portal 接收（HMAC 验�
 | 1 | 并发修改同一记录 | 乐观锁 → 409 冲突提示 |
 | 2 | Webhook 到达时宕机 | Shopify 48h 重试 + 唯一约束防重复 |
 | 3 | On Hand < Reserved | 允许；仪表板 WARNING；Shopify 显示缺货 |
-| 4 | Bundle 修改后对旧订单 | SalesLine 是不可变客户订单快照；GeneratedMovement（履约层）Admin 可独立调整 |
+| 4 | Bundle 修改后对旧订单 | 保存行时已写入 `snapshotItems`；`deposit_paid` 按快照展开，不读新 BOM。无快照的旧行才回退 live 定义。履约层仍可由 Admin 单独调整 |
 | 5 | 标完成但未取走 | `stocktake_correction` 冲正 |
 | 6 | Shopify 产品被删 | SyncLog 404 → 仪表板告警 |
 | 7 | 调货途中丢失 | 取消调货 + `write_off` |

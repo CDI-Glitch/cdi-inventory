@@ -281,6 +281,13 @@
 | `TT-QBX-73-R-SHB` | T-Profile Front Underbody Toolbox 2400 RHS Sahara Black | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R-W` | T-Profile Front Underbody Toolbox 2400 RHS Splash White | Each | 0 | 0 | 10 |
 
+## 12V (2)
+
+| SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
+|-----|------|------|:---:|:---:|:---:|
+| `CD-LED100-MK1` | LED Strip Light 1000mm 12V Dual Colour (Legacy) | Each | 50 | 0 | 10 |
+| `CD-LED60-MK1` | LED Strip Light 600mm 12V Dual Colour (Legacy) | Each | 48 | 0 | 10 |
+
 ## UNISTRUT (6)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
@@ -291,4 +298,15 @@
 | `4122*1800` | 41*22 C Channel 1800mm Raw Alloy | Each | 0 | 0 | 10 |
 | `4122*1800-SHB` | 41*22 C Channel 1800mm Sahara Black | Each | 0 | 0 | 10 |
 | `4122*1800-W` | 41*22 C Channel 1800mm Splash White | Each | 0 | 0 | 10 |
+
+---
+
+## Hardware Bundles（快捷包，非整车 BOM）
+
+| Bundle code | Name | Components |
+|---|---|---|
+| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，CXH×1 |
+| `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上 |
+
+说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。
 

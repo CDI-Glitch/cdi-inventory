@@ -50,23 +50,28 @@
 ### 4. 销售记录状态机
 
 - [ ] 创建默认 `quote` → 无库存影响
-- [ ] `quote → deposit_paid` → GeneratedMovement 创建，Reserved 增加
+- [ ] `quote → deposit_paid` → GeneratedMovement 创建，Reserved 增加；**每组件一条** `reservation_adjustment`（delta=0）出现在 Audit Log
 - [ ] `deposit_paid → fully_paid` → 无库存变化
 - [ ] `fully_paid → completed` → InventoryLog 写入，On Hand 减少，Reserved 释放
-- [ ] `任何状态 → cancelled` → Reserved 释放
+- [ ] `任何状态 → cancelled` → Reserved 释放；**每组件一条** `reservation_adjustment`（released on cancel）
 - [ ] 非法转换拒绝（`quote → completed` 等）
 - [ ] 终态无法再转换
 - [ ] 并发编辑 → 409 冲突（第二个保存失败并提示）
 - [ ] SKU 类型的销售记录：直接对 Product 预留
 - [ ] Bundle 类型的销售记录：展开所有组件，对每个组件预留
+- [ ] 同一 SKU 既出现在独立行又出现在 Bundle 组件 → Fulfillment 对比 **合并计数**，不误报 mismatch
 
 ### 5. Bundle 展开
 
 - [ ] N 组件 Bundle → 生成 N 条 GeneratedMovement
-- [ ] 数量正确：SalesRecord.qty × BundleItem.qty
+- [ ] 数量正确：SalesLine.qty × 组件 qty（来自 `snapshotItems` 或 BundleItem）
+- [ ] 保存 bundle 行时写入 `snapshotItems`（创建销售 / 编辑 quote 行均写）
 - [ ] 组件 SKU 未激活（active=false）→ 转换被拒绝
 - [ ] Bundle 代码不存在 → 转换被拒绝
-- [ ] 修改 Bundle 定义 → 不影响已有订单的 GeneratedMovement
+- [ ] 修改 Bundle 定义 → **不影响**已有 `snapshotItems` 的 quote/订单在 deposit 时的展开
+- [ ] 无快照的旧行 → 回退 live `BundleDefinition`（兼容路径）
+- [ ] Sales detail：bundle 行可折叠查看组件；Order lines vs Fulfillment 合并后无假阳性 mismatch
+- [ ] CMS 硬件包：`BDL-CMS-HW-DUALCAB`（FK×3）/ `BDL-CMS-HW-SINGLECAB`（FK×4）可加入销售行
 
 ### 6. Shopify Webhook
 
@@ -119,10 +124,13 @@
 
 - [ ] 显示所有 InventoryLog 条目
 - [ ] 可按 SKU 筛选
-- [ ] 可按类型筛选
+- [ ] 可按类型筛选（含 **Reservation Adjusted**）
 - [ ] 可按操作人筛选
 - [ ] 可按日期范围筛选
 - [ ] 每条记录的 reference 可点击跳转到来源
+- [ ] `deposit_paid` 后：纯 SKU 行与 Bundle 组件都能在 Log 中看到 `reservation_adjustment`
+- [ ] `cancelled` 释放后：对应 `reservation_adjustment` notes 含 released on cancel
+- [ ] `reservation_adjustment` 的 delta 恒为 0（不影响 On Hand 合计）
 
 ### 12. SKU 导入规范
 
@@ -137,7 +145,7 @@
 6. 若有 SKU 命名错误需修正：先删除旧记录（含 InventoryLog），再重新创建
 
 **category 值完整列表（`src/lib/constants.ts`）：**
-`CANOPY` | `TRAY_DECK` | `SERVICE_BODY` | `UNDERBODY_TOOLBOX` | `CHASSIS_PANEL` | `CHASSIS_DRAWER` | `HEADBOARD` | `MUDGUARD` | `ROOF_RACK` | `REAR_RACK` | `CANOPY_ACCESSORY` | `FITTING_KIT` | `UNISTRUT`
+`CANOPY` | `TRAY_DECK` | `HEADBOARD` | `DROP_SIDES` | `REAR_RACK` | `CHASSIS_PANEL` | `CHASSIS_DRAWER` | `MUDGUARD` | `UNDERBODY_TOOLBOX` | `ROOF_RACK` | `CANOPY_ACCESSORY` | `SERVICE_BODY` | `FITTING_KIT` | `UNISTRUT` | `12V`
 
 ---
 
@@ -193,6 +201,10 @@
 | 2026-07-27 | `SHOPIFY_ADMIN_API_TOKEN` 废弃，改 client credentials grant | `shopify-sync.ts` 重构 `getToken()`，Railway 变量改为 `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET` |
 | 2026-07-27 | SyncLog 需分页 + 清理功能 | GET /api/sync 加 `page` 参数，新增 DELETE 接口，Settings UI 加分页与清理按钮 |
 | 2026-07-30 | Admin 之间无保护，可互相降级/停用甚至降到零 admin | 见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) |
+| 2026-07-30 | `deposit_paid` 有 GeneratedMovement 但 Audit Log 无预留痕迹 | `reserveStock` / `releaseReservations` 补写 `reservation_adjustment` |
+| 2026-07-30 | 改 Bundle 定义会静默影响仍处 `quote` 的订单展开 | SalesLine 增加 `snapshotItems`；保存时快照 BOM |
+| 2026-07-30 | Bundle 组件与独立 SKU 同码时 Fulfillment 误报 mismatch | Sales detail 合并计数 + 折叠展示组件 |
+| 2026-07-30 | Prisma `migrate dev` 报 drift 并诱导 `reset` | 生产库历来用 `db push`、无 `_prisma_migrations`；已 baseline，见下方「Prisma Migration Baseline」|
 
 ---
 
@@ -206,6 +218,40 @@
 - 降级已存在的 admin → 只能走 DB 脚本（见 runbook §6）
 - `dev@cdi.com.au` = admin；`admin@cdi.com.au` = editor（老板日常）
 - 已打开标签页的角色热更新由 `session-watcher.tsx` 负责；安全边界始终在服务端即时生效
+- **降级 / 热更新不会改密码，也不会永久锁登录**；`Invalid email or password` = 密码错或 `active=false`（与「是否已被踢下线」无关）
+
+---
+
+## Prisma Migration Baseline（2026-07-30 确立）
+
+### 背景
+
+生产 Railway DB 早期全程使用 `prisma db push`，从未写入 `_prisma_migrations`。本地曾有孤立的 `migrations/*.sql` 文件，与真实库无关。运行 `migrate dev` 会误报 drift 并提示危险的 `migrate reset`。
+
+### 当前状态
+
+| 项 | 状态 |
+|---|---|
+| 权威 migration | `prisma/migrations/20260730000000_baseline/`（完整当前 schema，含 `SalesLine.snapshotItems`） |
+| DB 追踪表 | `_prisma_migrations` 已存在；baseline 已 `migrate resolve --applied` |
+| `prisma migrate status` | 应显示 `Database schema is up to date!` |
+
+### 以后改 schema 的正确姿势
+
+```bash
+# ✅ 本地开发：生成 migration 文件并应用到连接的 DB
+npx prisma migrate dev --name short_description
+
+# ❌ 不要再对有真实数据的生产库依赖 db push 作为唯一手段
+# ❌ 永远不要对生产库跑 prisma migrate reset
+```
+
+Railway 部署若仍只跑 `db push`，短期可继续，但新变更应先有 migration 文件入库，避免再次漂移。
+
+### 安全红线
+
+- `migrate reset` = **清空全部数据**。任何提示 reset 的流程必须先停手并告知负责人。
+- Baseline SQL 仅用于历史对齐；**禁止**对已有库手动执行 baseline 里的 `CREATE TABLE`。
 
 ---
 
