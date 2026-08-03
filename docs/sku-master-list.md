@@ -2,11 +2,11 @@
 
 > 生成时间：2026-07-22  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：216 个活跃 SKU，14 个分类
+> 总计：221 个活跃 SKU，14 个分类
 
 ---
 
-## CANOPY (56)
+## CANOPY (61)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -20,9 +20,11 @@
 | `CD-2D-17148-SHB` | 2 Door Base Canopy 1775 x 1400 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17148-W` | 2 Door Base Canopy 1775 x 1400 x 850 Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17168` | 2 Door Base Canopy 1775 x 1600 x 850 Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17168H` | 2 Door Base Canopy 1775 x 1600 x 850 Raw Alloy Checker Plate | Each | 0 | 0 | 2 |
 | `CD-2D-17168-SHB` | 2 Door Base Canopy 1775 x 1600 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17168-W` | 2 Door Base Canopy 1775 x 1600 x 850 Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17188` | 2 Door Base Canopy 1775 x 1800 x 850 Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17188H` | 2 Door Base Canopy 1775 x 1800 x 850 Raw Alloy Checker Plate | Each | 0 | 0 | 2 |
 | `CD-2D-17188-SHB` | 2 Door Base Canopy 1775 x 1800 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17188-W` | 2 Door Base Canopy 1775 x 1800 x 850 Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17218` | 2 Door Base Canopy 1775 x 2100 x 850 Raw Alloy | Each | 0 | 0 | 2 |
@@ -66,6 +68,9 @@
 | `LC-2D-181810-SHB` | LC79 Jack Off Factory Tray Canopy 1800 Sahara Black | Each | 0 | 0 | 1 |
 | `LC-2D-181810-ST` | LC79 Jack Off Factory Tray Canopy 1800 Sandy Taupe | Each | 0 | 0 | 1 |
 | `LC-2D-181810-W` | LC79 Jack Off Factory Tray Canopy 1800 Splash White | Each | 0 | 0 | 1 |
+| `R3D-17188F` | 1.8m 3-Door Flat Plate Canopy Raw Alloy (Legacy) | Each | 0 | 0 | 0 |
+| `R3D-17188JKCB` | 1.8m 3-Door Jack Off Canopy Scylla Black (Legacy) | Each | 3 | 0 | 0 |
+| `R3D-17188JKCW` | 1.8m 3-Door Jack Off Canopy Splash White (Legacy) | Each | 3 | 0 | 0 |
 
 ## CANOPY ACCESSORY (6)
 

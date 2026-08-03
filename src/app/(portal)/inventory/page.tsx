@@ -6,7 +6,7 @@ import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
 export default async function InventoryPage({
   searchParams,
