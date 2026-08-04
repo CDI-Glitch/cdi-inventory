@@ -186,7 +186,7 @@
 - [ ] 已处于 Forecast 模式时点击"Exit forecast" → 直接退出，不弹窗
 - [ ] Forecast 模式下 Name 列消失，SKU 与 Category 之间/之后插入货柜列
 - [ ] 货柜列数 = 该仓库 `status IN (shipped,in_transit,arrived) AND eta 不为空` 的记录数，上限 5
-- [ ] 货柜列按 ETA 升序排列（最近到港在前），新建的货柜按 ETA 插入正确位置，不按创建时间排
+- [ ] 货柜列按 ETA 取最近 5 个后反转显示（最近到港在右、紧贴 On Hand；最远在左），新建的货柜按 ETA 插入正确位置，不按创建时间排
 - [ ] 某 SKU 在某货柜没有对应行 → 该列显示 "—" / qty 0，不报错
 - [ ] 同一货柡同一 SKU 多行 → 该列 qty 为多行 `qtyOrdered` 之和
 - [ ] 每列 Future Available = 上一列 Future Available + 本列 qty（第一列基准为当前 Available）

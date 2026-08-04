@@ -110,7 +110,10 @@ export function InventoryTable({
         {forecast &&
           containers.map((c, i) => (
             <div key={c.id} className={cn(headerCellCenter, "leading-tight")}>
-              <div className="text-[10px] uppercase tracking-wide text-gray-400">Next {i + 1}</div>
+              {/* Display order is far→near; Next 1 = nearest (rightmost), Next N = farthest (leftmost) */}
+              <div className="text-[10px] uppercase tracking-wide text-gray-400">
+                Next {containers.length - i}
+              </div>
               {canLinkContainers ? (
                 <Link
                   href={`/incoming/${c.id}`}

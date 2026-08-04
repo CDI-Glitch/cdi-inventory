@@ -23,7 +23,7 @@
 | 11 | Bundle 策略 | Soft BOM + 行级 `snapshotItems`；硬件快捷包优先，整车 BOM 留给 Phase 2 Configurator | 车型/颜色/尺寸组合不可穷举；改 Bundle 定义不得回溯改 quote 期已保存的行 |
 | 12 | 自动预留审计 | `reserveStock` / `releaseReservations` 每条组件写 `reservation_adjustment`（delta=0） | Audit Log 与手动换料路径一致，避免「有预留但无 Log」误解 |
 | 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
-| 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列，按 ETA 升序）；`Future Available = On Hand − Reserved + Σ qtyOrdered(货柜 1..N)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
+| 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列）；显示顺序为最远 ETA 在左、最近 ETA 在右（紧贴 On Hand）；`Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(ETA ≤ 该列)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；最近到港贴在当前库存旁更直觉；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
 | 15 | 外购辅材（CONSUMABLE） | 复用现有 Product/InventoryLog/IncomingShipment 表，新增 `category = "CONSUMABLE"`；不做独立表 | 辅材仍需走 Incoming 发货单+Forecast，独立表会被迫复制整套 Incoming/Forecast 逻辑；用 Category 硬性排除 Bundle 与 Sales 已足够隔离 |
 
 ---
@@ -157,7 +157,7 @@ id, code(唯一), name, productFamily, active, createdAt
 
 | code | 用途 | 组件（每包 qty） |
 |---|---|---|
-| `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，CXH×1 |
+| `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1 |
 | `BDL-CMS-HW-SINGLECAB` | Single Cab 硬件快捷包 | FK×4，其余同上 |
 
 - Phase 2：规则型 Configurator（选车型/配件 → 生成可编辑草案清单），仍应写 `snapshotItems`
@@ -289,15 +289,16 @@ Available = On Hand - Reserved
 
 ```
 适用货柜：status IN (shipped, in_transit, arrived) AND eta IS NOT NULL
-排序：eta ASC（最近到港排最前）
+排序：eta ASC 取最近 5 个，显示时反转（最远在左、最近在右，紧贴 On Hand）
 列数上限：5（累计 Future Available 同样封顶在第 5 列，不隐藏额外累加）
 
 同一货柜同一 SKU 多行 → 先按 productId 汇总 qtyOrdered，再计算
 
-Future Available[i] = On Hand − Reserved + Σ qtyOrdered(货柜 1..i)
+Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(所有 ETA ≤ 该列 的货柜)
+（显示上：越靠右 = 越近的时间；越靠左 = 更远的未来，累计供应更多）
 ```
 
-- **列模型**：共享货柜列——同一仓库的所有 SKU 在 Forecast 视图里看到相同的最多 5 个时间列；某 SKU 在某货柜没有行，该列显示 0/空（不是"每个 SKU 独立的下一批到货"）。
+- **列模型**：共享货柜列——同一仓库的所有 SKU 在 Forecast 视图里看到相同的最多 5 个时间列；某 SKU 在某货柜没有行，该列显示 0/空（不是"每个 SKU 独立的下一批到货"）。显示顺序：最远 ETA 在左、最近 ETA 在右（`Next 1` = 最近一柜，紧贴 On Hand）。
 - **仓库范围**：Forecast Mode 仅在单一仓库视图下可用（当前 Inventory 页本身就是单仓库范围，没有"All locations"聚合模式，因此不存在需要额外禁用的跨仓聚合场景）。
 - **可见性 vs 编辑权限**：所有角色（含 sales/viewer）都能查看 Forecast 列（只读展示）；只有 editor+ 能调整 ETA 或录入/纠正 shippedAt。
 - **免责声明**：每次点击开启 Forecast Mode 都会弹出一次性可关闭的提示弹窗，说明数字仅为估算，不是对特定货柜的锁定预留。

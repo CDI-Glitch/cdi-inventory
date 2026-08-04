@@ -10,7 +10,7 @@ function cuid() {
   return 'c' + randomBytes(11).toString('hex');
 }
 
-const COMPONENT_SKUS = ['FK', 'TT-BN-BX/MG', 'TT-BN-DNP', 'TT-BN-FK', 'CXH'];
+const COMPONENT_SKUS = ['FK', 'TT-BN-BX/MG', 'TT-BN-DNP', 'TT-BN-FK', 'TT-BN-FKT', 'CXH'];
 
 const BUNDLES = [
   {
@@ -22,6 +22,7 @@ const BUNDLES = [
       { sku: 'TT-BN-BX/MG', qty: 1 },
       { sku: 'TT-BN-DNP', qty: 1 },
       { sku: 'TT-BN-FK', qty: 1 },
+      { sku: 'TT-BN-FKT', qty: 1 },
       { sku: 'CXH', qty: 1 },
     ],
   },
@@ -34,6 +35,7 @@ const BUNDLES = [
       { sku: 'TT-BN-BX/MG', qty: 1 },
       { sku: 'TT-BN-DNP', qty: 1 },
       { sku: 'TT-BN-FK', qty: 1 },
+      { sku: 'TT-BN-FKT', qty: 1 },
       { sku: 'CXH', qty: 1 },
     ],
   },

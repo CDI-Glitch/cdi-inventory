@@ -44,11 +44,12 @@ export default async function InventoryPage({
 
   // Forecast Mode: read-only projection, scoped to the single active location. No new
   // reservation/pegging concept — see docs/constitution.md decision log for the full
-  // reasoning. Eligible containers: status shipped/in_transit/arrived AND eta known,
-  // sorted by ETA ascending (closest first), capped at 5 columns.
+  // reasoning. Eligible containers: status shipped/in_transit/arrived AND eta known.
+  // Query nearest 5 by ETA ascending, then reverse for display so the nearest ETA sits
+  // immediately left of On Hand (farther future on the left → nearer on the right).
   const forecastActive = params.forecast === "1";
 
-  const forecastContainers = forecastActive && activeLocation
+  const forecastContainersAsc = forecastActive && activeLocation
     ? await prisma.incomingShipment.findMany({
         where: {
           locationId: activeLocation.id,
@@ -61,15 +62,19 @@ export default async function InventoryPage({
       })
     : [];
 
+  // Display order: farthest ETA first (left) → nearest ETA last (right, next to On Hand)
+  const forecastContainers = [...forecastContainersAsc].reverse();
+
   const containers = forecastContainers.map((c) => ({
     id: c.id,
     poRef: c.poRef,
     eta: c.eta!.toISOString(),
   }));
 
-  // productId -> qtyOrdered per container column (summed across multiple lines of the
+  // productId -> qtyOrdered per display column (summed across multiple lines of the
   // same SKU within one container). Sized to containers.length so every product row
   // gets a fixed-length array, even for containers it has no line in (stays 0).
+  // Indices match the reversed display order above.
   const forecastQtyMap = new Map<string, number[]>();
   forecastContainers.forEach((container, idx) => {
     const perProduct = new Map<string, number>();
@@ -138,15 +143,15 @@ export default async function InventoryPage({
     if (available <= 0) status = "OUT_OF_STOCK";
     else if (available <= product.reorderPoint) status = "REORDER";
 
-    // Future Available = onHand − reserved + cumulative qtyOrdered up to this column.
-    // `reserved` is a static snapshot at request time (supply forecast, not demand
-    // forecast) — recomputed live on every page load, never written anywhere.
+    // Future Available = onHand − reserved + cumulative qtyOrdered for all containers
+    // with ETA ≤ this column's ETA. Display order is far→near, so accumulate from the
+    // right (nearest) leftward; each cell still shows "Avail as of that ETA".
     const forecastQtys = forecastQtyMap.get(product.id) ?? new Array(containers.length).fill(0);
-    const forecastAvailable: number[] = [];
+    const forecastAvailable: number[] = new Array(forecastQtys.length);
     let cumulative = available;
-    for (const qty of forecastQtys) {
-      cumulative += qty;
-      forecastAvailable.push(cumulative);
+    for (let i = forecastQtys.length - 1; i >= 0; i--) {
+      cumulative += forecastQtys[i];
+      forecastAvailable[i] = cumulative;
     }
 
     return {

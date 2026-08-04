@@ -310,7 +310,7 @@
 
 | Bundle code | Name | Components |
 |---|---|---|
-| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，CXH×1 |
+| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1 |
 | `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上 |
 
 说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。
