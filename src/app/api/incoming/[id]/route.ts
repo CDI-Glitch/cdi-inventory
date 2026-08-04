@@ -6,6 +6,7 @@ import { INCOMING_TRANSITIONS, type IncomingStatus } from "@/lib/constants";
 
 const TransitionSchema = z.object({
   status: z.enum(["pending", "shipped", "in_transit", "arrived", "confirmed", "cancelled"]),
+  shippedAt: z.string().optional(),
 });
 
 export async function GET(
@@ -44,7 +45,7 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { status: newStatus } = parsed.data;
+  const { status: newStatus, shippedAt } = parsed.data;
 
   const shipment = await prisma.incomingShipment.findUniqueOrThrow({
     where: { id },
@@ -58,6 +59,22 @@ export async function PATCH(
       { error: `Cannot transition from "${currentStatus}" to "${newStatus}"` },
       { status: 400 }
     );
+  }
+
+  const updateData: { status: string; shippedAt?: Date } = { status: newStatus };
+
+  // shippedAt is captured once, on the first pending -> shipped transition. Once the
+  // shipment already has a shippedAt value, any shippedAt passed in a later request
+  // (e.g. a regular editor re-submitting this route) is silently ignored — it can only
+  // be changed afterward through the admin-only /shipped-at correction endpoint.
+  if (newStatus === "shipped" && shipment.shippedAt === null) {
+    if (!shippedAt) {
+      return NextResponse.json(
+        { error: "Shipped date is required when marking a shipment as shipped." },
+        { status: 400 }
+      );
+    }
+    updateData.shippedAt = new Date(shippedAt);
   }
 
   // When confirmed: require at least one line with qtyReceived > 0
@@ -89,7 +106,7 @@ export async function PATCH(
 
   const updated = await prisma.incomingShipment.update({
     where: { id },
-    data: { status: newStatus },
+    data: updateData,
     include: {
       location: true,
       lines: { include: { product: true }, orderBy: { id: "asc" } },

@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-07-30（Bundle BOM 快照、自动预留/释放审计、Prisma migration baseline、权限热更新）
+> 最后更新：2026-08-04（Forecast Mode 未来库存预测、IncomingShipment.shippedAt 计划/实际日期分离）
 
 ---
 
@@ -23,6 +23,7 @@
 | 11 | Bundle 策略 | Soft BOM + 行级 `snapshotItems`；硬件快捷包优先，整车 BOM 留给 Phase 2 Configurator | 车型/颜色/尺寸组合不可穷举；改 Bundle 定义不得回溯改 quote 期已保存的行 |
 | 12 | 自动预留审计 | `reserveStock` / `releaseReservations` 每条组件写 `reservation_adjustment`（delta=0） | Audit Log 与手动换料路径一致，避免「有预留但无 Log」误解 |
 | 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
+| 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列，按 ETA 升序）；`Future Available = On Hand − Reserved + Σ qtyOrdered(货柜 1..N)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
 
 ---
 
@@ -275,6 +276,30 @@ Available = On Hand - Reserved
 ```
 
 无快照表。无缓存值。永远从源头实时计算。
+
+---
+
+## D2. Forecast Mode（未来库存预测 — 只读投影）
+
+行业对照：MRP/ERP 系统的 Time-Phased Available-to-Promise（时间分段可用量），把未来供应事件（货柜到港）按时间顺序排列，滚动累计"截至该事件时的可用量"。
+
+**核心原则：Forecast Mode 不产生任何数据库写入**（除了 ETA/shippedAt 本身的编辑，那属于 IncomingShipment 主数据维护，不是"预测"逻辑）。每次页面加载都从当前真实数据重新计算，因此 ETA 调整、货柜取消、短装、预留取消等都会在下次查看时自动反映——不存在"未来预留"需要释放的边界问题，因为从未创建过预留。
+
+```
+适用货柜：status IN (shipped, in_transit, arrived) AND eta IS NOT NULL
+排序：eta ASC（最近到港排最前）
+列数上限：5（累计 Future Available 同样封顶在第 5 列，不隐藏额外累加）
+
+同一货柜同一 SKU 多行 → 先按 productId 汇总 qtyOrdered，再计算
+
+Future Available[i] = On Hand − Reserved + Σ qtyOrdered(货柜 1..i)
+```
+
+- **列模型**：共享货柜列——同一仓库的所有 SKU 在 Forecast 视图里看到相同的最多 5 个时间列；某 SKU 在某货柜没有行，该列显示 0/空（不是"每个 SKU 独立的下一批到货"）。
+- **仓库范围**：Forecast Mode 仅在单一仓库视图下可用（当前 Inventory 页本身就是单仓库范围，没有"All locations"聚合模式，因此不存在需要额外禁用的跨仓聚合场景）。
+- **可见性 vs 编辑权限**：所有角色（含 sales/viewer）都能查看 Forecast 列（只读展示）；只有 editor+ 能调整 ETA 或录入/纠正 shippedAt。
+- **免责声明**：每次点击开启 Forecast Mode 都会弹出一次性可关闭的提示弹窗，说明数字仅为估算，不是对特定货柜的锁定预留。
+- **`shippedAt`（实际发货日）**：在 `pending → shipped` 转换时首次必填录入；录入后对普通 editor 锁定（无法通过状态转换接口覆盖），仅 admin 能通过独立的 `/api/incoming/[id]/shipped-at` 纠正接口修改，且每次修改都会为该发货单涉及的每个不同 `productId` 写一条 `delta:0` 的 `InventoryLog`（`type: shipped_at_correction`），可在 `/audit-log` 按 SKU 或类型筛选查看。此字段纯记录用途，从不参与库存数学计算。这是 SAP/NetSuite 等系统里 Planned（ETA）vs Actual（shippedAt）日期模式的落地。
 
 ---
 

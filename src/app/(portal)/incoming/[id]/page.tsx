@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { IncomingStatusActions } from "@/components/incoming/incoming-status-actions";
 import { IncomingLinesEditor } from "@/components/incoming/incoming-lines-editor";
 import { IncomingLinesFullEditor } from "@/components/incoming/incoming-lines-full-editor";
+import { EtaEditor, ShippedAtDisplay } from "@/components/incoming/incoming-date-controls";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -54,6 +55,9 @@ export default async function IncomingDetailPage({
 
   if (!shipment) notFound();
 
+  const canEditEta = (role === "admin" || role === "editor") && !["confirmed", "cancelled"].includes(shipment.status);
+  const isAdmin = role === "admin";
+
   // Three-branch edit logic
   const canFullEdit = ["pending", "shipped", "in_transit"].includes(shipment.status);
   const canEditReceived = shipment.status === "arrived";
@@ -99,15 +103,17 @@ export default async function IncomingDetailPage({
               {STATUS_LABELS[shipment.status] ?? shipment.status}
             </span>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">ETA</span>
-              <p className="font-medium text-gray-900 mt-0.5">
-                {shipment.eta
-                  ? new Date(shipment.eta).toLocaleDateString("en-AU")
-                  : "Not set"}
-              </p>
-            </div>
+          <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
+            <EtaEditor
+              id={shipment.id}
+              eta={shipment.eta ? shipment.eta.toISOString() : null}
+              canEdit={canEditEta}
+            />
+            <ShippedAtDisplay
+              id={shipment.id}
+              shippedAt={shipment.shippedAt ? shipment.shippedAt.toISOString() : null}
+              isAdmin={isAdmin}
+            />
             <div>
               <span className="text-gray-500">Created</span>
               <p className="font-medium text-gray-900 mt-0.5">
@@ -129,6 +135,7 @@ export default async function IncomingDetailPage({
             id={shipment.id}
             currentStatus={shipment.status}
             hasReceivedQty={shipment.lines.some((l) => l.qtyReceived > 0)}
+            hasShippedAt={shipment.shippedAt !== null}
           />
         )}
 

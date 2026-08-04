@@ -17,6 +17,7 @@ const TYPE_LABELS: Record<string, string> = {
   transfer_out: "Transfer Out",
   transfer_in: "Transfer In",
   reservation_adjustment: "Reservation Adjusted",
+  shipped_at_correction: "Shipped Date Corrected",
 };
 
 const TYPE_STYLES: Record<string, string> = {
@@ -30,6 +31,7 @@ const TYPE_STYLES: Record<string, string> = {
   transfer_out: "bg-yellow-50 text-yellow-700",
   transfer_in: "bg-teal-50 text-teal-700",
   reservation_adjustment: "bg-indigo-50 text-indigo-700",
+  shipped_at_correction: "bg-gray-100 text-gray-600",
 };
 
 export default async function AuditLogPage({

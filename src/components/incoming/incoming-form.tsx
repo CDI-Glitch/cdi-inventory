@@ -72,12 +72,18 @@ export function IncomingForm({ products, locations }: Props) {
       return;
     }
 
+    if (!eta) {
+      setError("ETA is required");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
 
     const body = {
       supplierName: formData.get("supplierName"),
       poNumber: formData.get("poNumber") || undefined,
-      eta: eta || undefined,
+      eta,
       notes: formData.get("notes") || undefined,
       locationId,
       lines: lines.map((l) => ({
@@ -141,9 +147,9 @@ export function IncomingForm({ products, locations }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">ETA</label>
+            <label className="block text-sm font-medium text-gray-700">ETA *</label>
             <div className="mt-1">
-              <DatePicker name="eta" value={eta} onChange={setEta} placeholder="Select ETA" />
+              <DatePicker name="eta" value={eta} onChange={setEta} placeholder="Select ETA" required />
             </div>
           </div>
         </div>
@@ -227,7 +233,7 @@ export function IncomingForm({ products, locations }: Props) {
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={loading || !locationId}
+          disabled={loading || !locationId || !eta}
           className="rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
         >
           {loading ? "Creating..." : "Create shipment"}

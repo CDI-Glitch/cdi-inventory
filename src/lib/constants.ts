@@ -31,6 +31,7 @@ export const INVENTORY_LOG_TYPES = [
   "transfer_out",
   "transfer_in",
   "reservation_adjustment",
+  "shipped_at_correction",
 ] as const;
 export type InventoryLogType = (typeof INVENTORY_LOG_TYPES)[number];
 

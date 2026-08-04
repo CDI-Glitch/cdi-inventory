@@ -23,6 +23,7 @@ interface InventoryFiltersProps {
   defaultCategory?: string;
   defaultStatus?: string;
   currentLoc?: string;
+  currentForecast?: string;
 }
 
 export function InventoryFilters({
@@ -30,6 +31,7 @@ export function InventoryFilters({
   defaultCategory = "",
   defaultStatus = "",
   currentLoc = "",
+  currentForecast = "",
 }: InventoryFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -40,8 +42,9 @@ export function InventoryFilters({
 
   return (
     <form ref={formRef} method="GET" className="flex flex-wrap gap-2 mb-4">
-      {/* Preserve current location tab across filter submissions */}
+      {/* Preserve current location tab and forecast mode across filter submissions */}
       {currentLoc && <input type="hidden" name="loc" value={currentLoc} />}
+      {currentForecast && <input type="hidden" name="forecast" value={currentForecast} />}
       <input
         name="search"
         defaultValue={defaultSearch}

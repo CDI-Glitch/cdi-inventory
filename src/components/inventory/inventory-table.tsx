@@ -12,6 +12,16 @@ interface StockRow {
   byLocation: Record<string, { onHand: number; reserved: number; available: number }>;
   totalAvailable: number;
   status: "OK" | "REORDER" | "OUT_OF_STOCK";
+  /** Qty arriving in each forecast column, 0 if this SKU has no line in that container */
+  forecastQtys?: number[];
+  /** Cumulative Future Available as of each forecast column (onHand − reserved + Σ qty) */
+  forecastAvailable?: number[];
+}
+
+interface ForecastContainer {
+  id: string;
+  poRef: string;
+  eta: string;
 }
 
 const STATUS_STYLES = {
@@ -34,21 +44,41 @@ function formatCategory(category: string) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// SKU grows | Name grows | Category grows | On Hand | Reserved | Available | Status
-const COLS =
-  "grid-cols-[minmax(9rem,1fr)_minmax(12rem,2fr)_minmax(8rem,1fr)_5.5rem_5.5rem_5.5rem_7.5rem]";
+function formatEta(iso: string) {
+  return new Date(iso).toLocaleDateString("en-AU", { day: "2-digit", month: "short" });
+}
 
 const cell = "px-3 py-2.5 text-sm min-w-0";
 const cellCenter = cn(cell, "text-center tabular-nums");
 const headerCell = cn(cell, "font-medium text-gray-600 whitespace-nowrap");
 const headerCellCenter = cn(cellCenter, "font-medium text-gray-600 whitespace-nowrap");
 
+// Fixed-width tail shared by both modes: On Hand | Reserved | Available | Status
+const TAIL_COLS = ["5.5rem", "5.5rem", "5.5rem", "7.5rem"];
+
+function buildGridTemplate(forecast: boolean, containerCount: number) {
+  const cols = ["minmax(9rem,1fr)"]; // SKU
+  if (!forecast) cols.push("minmax(12rem,2fr)"); // Name (hidden in forecast mode)
+  cols.push("minmax(8rem,1fr)"); // Category
+  if (forecast) {
+    for (let i = 0; i < containerCount; i++) cols.push("7.5rem");
+  }
+  cols.push(...TAIL_COLS);
+  return cols.join(" ");
+}
+
 export function InventoryTable({
   rows,
   locationName,
+  forecast = false,
+  containers = [],
+  canLinkContainers = false,
 }: {
   rows: StockRow[];
   locationName: string;
+  forecast?: boolean;
+  containers?: ForecastContainer[];
+  canLinkContainers?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -58,13 +88,42 @@ export function InventoryTable({
     );
   }
 
+  const gridTemplateColumns = buildGridTemplate(forecast, containers.length);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+      {forecast && containers.length === 0 && (
+        <div className="shrink-0 border-b border-gray-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+          No upcoming shipments in transit for {locationName}. Future Available currently equals
+          today&apos;s Available.
+        </div>
+      )}
+
       {/* Pinned column header */}
-      <div className={cn("grid shrink-0 items-center border-b border-gray-200 bg-gray-50", COLS)}>
+      <div
+        className="grid shrink-0 items-center border-b border-gray-200 bg-gray-50"
+        style={{ gridTemplateColumns }}
+      >
         <div className={headerCell}>SKU</div>
-        <div className={headerCell}>Name</div>
+        {!forecast && <div className={headerCell}>Name</div>}
         <div className={headerCell}>Category</div>
+        {forecast &&
+          containers.map((c, i) => (
+            <div key={c.id} className={cn(headerCellCenter, "leading-tight")}>
+              <div className="text-[10px] uppercase tracking-wide text-gray-400">Next {i + 1}</div>
+              {canLinkContainers ? (
+                <Link
+                  href={`/incoming/${c.id}`}
+                  className="font-mono text-xs text-[#2563EB] hover:underline"
+                >
+                  {c.poRef}
+                </Link>
+              ) : (
+                <span className="font-mono text-xs text-gray-700">{c.poRef}</span>
+              )}
+              <div className="text-[10px] text-gray-400">{formatEta(c.eta)}</div>
+            </div>
+          ))}
         <div className={headerCellCenter}>On Hand</div>
         <div className={headerCellCenter}>Reserved</div>
         <div className={headerCellCenter}>Available</div>
@@ -78,7 +137,8 @@ export function InventoryTable({
           return (
             <div
               key={row.id}
-              className={cn("grid items-center border-b border-gray-100 hover:bg-gray-50", COLS)}
+              className="grid items-center border-b border-gray-100 hover:bg-gray-50"
+              style={{ gridTemplateColumns }}
             >
               <div className={cn(cell, "font-mono")}>
                 <Link
@@ -88,12 +148,29 @@ export function InventoryTable({
                   {row.sku}
                 </Link>
               </div>
-              <div className={cn(cell, "truncate text-gray-900")} title={row.name}>
-                {row.name}
-              </div>
+              {!forecast && (
+                <div className={cn(cell, "truncate text-gray-900")} title={row.name}>
+                  {row.name}
+                </div>
+              )}
               <div className={cn(cell, "truncate text-gray-500")}>
                 {formatCategory(row.category)}
               </div>
+              {forecast &&
+                containers.map((c, i) => {
+                  const qty = row.forecastQtys?.[i] ?? 0;
+                  const avail = row.forecastAvailable?.[i] ?? s.available;
+                  return (
+                    <div key={c.id} className={cn(cellCenter, "leading-tight")}>
+                      <div className={qty > 0 ? "font-medium text-green-700" : "text-gray-300"}>
+                        {qty > 0 ? `+${qty}` : "—"}
+                      </div>
+                      <div className={cn("text-[11px]", avail <= 0 ? "text-red-500" : "text-gray-400")}>
+                        Avail {avail}
+                      </div>
+                    </div>
+                  );
+                })}
               <div className={cellCenter}>{s.onHand}</div>
               <div className={cn(cellCenter, "text-orange-600")}>
                 {s.reserved > 0 ? s.reserved : "—"}

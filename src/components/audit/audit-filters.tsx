@@ -15,6 +15,7 @@ const TYPE_OPTIONS = [
   { value: "transfer_out", label: "Transfer Out" },
   { value: "transfer_in", label: "Transfer In" },
   { value: "reservation_adjustment", label: "Reservation Adjusted" },
+  { value: "shipped_at_correction", label: "Shipped Date Corrected" },
 ];
 
 interface AuditFiltersProps {

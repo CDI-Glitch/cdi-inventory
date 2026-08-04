@@ -6,7 +6,7 @@ import { z } from "zod";
 const CreateIncomingSchema = z.object({
   supplierName: z.string().min(1),
   poNumber: z.string().optional(),
-  eta: z.string().optional(),
+  eta: z.string().min(1, "ETA is required"),
   notes: z.string().optional(),
   locationId: z.string().min(1),
   lines: z.array(z.object({
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       poRef,
       supplierName: shipmentData.supplierName,
       poNumber: shipmentData.poNumber,
-      eta: shipmentData.eta ? new Date(shipmentData.eta) : null,
+      eta: new Date(shipmentData.eta),
       notes: shipmentData.notes,
       locationId: shipmentData.locationId,
       status: "pending",

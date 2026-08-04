@@ -2,16 +2,27 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
+import { ForecastToggle } from "@/components/inventory/forecast-toggle";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
+
+const FORECAST_ELIGIBLE_STATUSES = ["shipped", "in_transit", "arrived"];
+const FORECAST_MAX_CONTAINERS = 5;
 
 const PAGE_SIZE = 50;
 
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; status?: string; search?: string; loc?: string; page?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    status?: string;
+    search?: string;
+    loc?: string;
+    page?: string;
+    forecast?: string;
+  }>;
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role;
@@ -30,6 +41,48 @@ export default async function InventoryPage({
 
   const activeLoc = defaultLoc;
   const activeLocation = locations.find((l) => l.name === activeLoc) ?? locations[0] ?? null;
+
+  // Forecast Mode: read-only projection, scoped to the single active location. No new
+  // reservation/pegging concept — see docs/constitution.md decision log for the full
+  // reasoning. Eligible containers: status shipped/in_transit/arrived AND eta known,
+  // sorted by ETA ascending (closest first), capped at 5 columns.
+  const forecastActive = params.forecast === "1";
+
+  const forecastContainers = forecastActive && activeLocation
+    ? await prisma.incomingShipment.findMany({
+        where: {
+          locationId: activeLocation.id,
+          status: { in: FORECAST_ELIGIBLE_STATUSES },
+          eta: { not: null },
+        },
+        orderBy: { eta: "asc" },
+        take: FORECAST_MAX_CONTAINERS,
+        include: { lines: true },
+      })
+    : [];
+
+  const containers = forecastContainers.map((c) => ({
+    id: c.id,
+    poRef: c.poRef,
+    eta: c.eta!.toISOString(),
+  }));
+
+  // productId -> qtyOrdered per container column (summed across multiple lines of the
+  // same SKU within one container). Sized to containers.length so every product row
+  // gets a fixed-length array, even for containers it has no line in (stays 0).
+  const forecastQtyMap = new Map<string, number[]>();
+  forecastContainers.forEach((container, idx) => {
+    const perProduct = new Map<string, number>();
+    for (const line of container.lines) {
+      perProduct.set(line.productId, (perProduct.get(line.productId) ?? 0) + line.qtyOrdered);
+    }
+    for (const [productId, qty] of perProduct) {
+      if (!forecastQtyMap.has(productId)) {
+        forecastQtyMap.set(productId, new Array(containers.length).fill(0));
+      }
+      forecastQtyMap.get(productId)![idx] = qty;
+    }
+  });
 
   const products = await prisma.product.findMany({
     where: {
@@ -85,6 +138,17 @@ export default async function InventoryPage({
     if (available <= 0) status = "OUT_OF_STOCK";
     else if (available <= product.reorderPoint) status = "REORDER";
 
+    // Future Available = onHand − reserved + cumulative qtyOrdered up to this column.
+    // `reserved` is a static snapshot at request time (supply forecast, not demand
+    // forecast) — recomputed live on every page load, never written anywhere.
+    const forecastQtys = forecastQtyMap.get(product.id) ?? new Array(containers.length).fill(0);
+    const forecastAvailable: number[] = [];
+    let cumulative = available;
+    for (const qty of forecastQtys) {
+      cumulative += qty;
+      forecastAvailable.push(cumulative);
+    }
+
     return {
       ...product,
       byLocation,
@@ -92,6 +156,8 @@ export default async function InventoryPage({
       totalReserved: reserved,
       totalAvailable: available,
       status,
+      forecastQtys,
+      forecastAvailable,
     };
   });
 
@@ -108,7 +174,17 @@ export default async function InventoryPage({
     category: params.category || undefined,
     status: params.status || undefined,
     search: params.search || undefined,
+    forecast: forecastActive ? "1" : undefined,
   };
+
+  // Toggle target URL: preserves every other current param, only flips `forecast`
+  const forecastToggleParams = new URLSearchParams();
+  if (activeLoc) forecastToggleParams.set("loc", activeLoc);
+  if (params.category) forecastToggleParams.set("category", params.category);
+  if (params.status) forecastToggleParams.set("status", params.status);
+  if (params.search) forecastToggleParams.set("search", params.search);
+  if (!forecastActive) forecastToggleParams.set("forecast", "1");
+  const forecastToggleHref = `/inventory?${forecastToggleParams.toString()}`;
 
   return (
     // Fill portal viewport: fixed chrome + table card (pinned header, scrolling rows) + pagination
@@ -117,6 +193,7 @@ export default async function InventoryPage({
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <div className="flex gap-2">
+            <ForecastToggle active={forecastActive} href={forecastToggleHref} />
             {role === "admin" && (
               <Link
                 href="/inventory/new"
@@ -143,6 +220,7 @@ export default async function InventoryPage({
           defaultCategory={params.category}
           defaultStatus={params.status}
           currentLoc={activeLoc}
+          currentForecast={forecastActive ? "1" : undefined}
         />
       </div>
 
@@ -150,6 +228,9 @@ export default async function InventoryPage({
         <InventoryTable
           rows={paginated}
           locationName={locationName}
+          forecast={forecastActive}
+          containers={containers}
+          canLinkContainers={role === "admin" || role === "editor"}
         />
       </div>
 

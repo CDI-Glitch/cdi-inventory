@@ -170,6 +170,33 @@
 - [ ] Brisbane Editor 仍可手动点击 Sydney 或 All 查看
 - [ ] Sydney Editor 登录 → 默认显示 Sydney Tab
 
+### 14. Forecast Mode（未来库存预测，2026-08-04 新增）
+
+**到货发货单 — ETA / shippedAt：**
+- [ ] 新建到货单：ETA 为必填项，不填不能提交（前端 + API 双重校验）
+- [ ] 老记录（无 ETA）不受影响，不强制补录
+- [ ] 首次 `pending → shipped`：必须先选择"发货日期"才能提交，否则 400
+- [ ] 已有 `shippedAt` 后再次调用状态转换接口传 `shippedAt` → 被静默忽略，值不变
+- [ ] Editor/Admin 可在发货单详情页随时修改 ETA（`confirmed`/`cancelled` 状态下按钮不出现，接口也拒绝）
+- [ ] 普通 Editor 在详情页看不到 `shippedAt` 的编辑图标（只读展示）
+- [ ] Admin 在详情页能看到 `shippedAt` 编辑图标，修改后 `/audit-log` 出现一条 `shipped_at_correction`（delta=0），可按该发货单任一 SKU 或按类型筛选到
+
+**库存页 — Forecast 开关：**
+- [ ] 点击"Forecast"按钮 → 每次都弹出免责弹窗（"仅为估算，非锁定预留"），点击确认才跳转
+- [ ] 已处于 Forecast 模式时点击"Exit forecast" → 直接退出，不弹窗
+- [ ] Forecast 模式下 Name 列消失，SKU 与 Category 之间/之后插入货柜列
+- [ ] 货柜列数 = 该仓库 `status IN (shipped,in_transit,arrived) AND eta 不为空` 的记录数，上限 5
+- [ ] 货柜列按 ETA 升序排列（最近到港在前），新建的货柜按 ETA 插入正确位置，不按创建时间排
+- [ ] 某 SKU 在某货柜没有对应行 → 该列显示 "—" / qty 0，不报错
+- [ ] 同一货柡同一 SKU 多行 → 该列 qty 为多行 `qtyOrdered` 之和
+- [ ] 每列 Future Available = 上一列 Future Available + 本列 qty（第一列基准为当前 Available）
+- [ ] 该仓库没有符合条件的货柜 → 显示"无在途货柜"提示，不渲染任何货柜列
+- [ ] 切换 Category/Status/搜索筛选、翻页时，`forecast=1` 保留在 URL 中
+- [ ] 切换仓库 Tab 时，`forecast=1` 保留，货柜列按新仓库重新计算
+- [ ] Sales/Viewer 角色能看到 Forecast 列（只读），但看不到货柜列头的 PO 链接（纯文字）
+- [ ] Editor/Admin 能点击货柜列头的 PO 号跳转到对应到货发货单详情页
+- [ ] Forecast 模式**不**在数据库产生任何写入（除 ETA/shippedAt 本身的编辑操作）——刷新页面后数字应随 ETA/预留/取消的最新状态自动变化
+
 ---
 
 ## 每日收工检查
