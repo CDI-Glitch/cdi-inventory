@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TrendingUp } from "lucide-react";
 
 interface Props {
   active: boolean;
@@ -35,10 +36,11 @@ export function ForecastToggle({ active, href }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        className={`rounded-md px-3 py-2 text-sm font-medium text-white transition-colors ${
-          active ? "bg-[#0F766E] hover:bg-[#115E59]" : "bg-[#0D9488] hover:bg-[#0F766E]"
+        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-white transition-colors ${
+          active ? "bg-[#0D9488] hover:bg-[#0F766E]" : "bg-[#14B8A6] hover:bg-[#0D9488]"
         }`}
       >
+        <TrendingUp size={15} strokeWidth={2.25} aria-hidden="true" />
         {active ? "Exit forecast" : "Forecast"}
       </button>
 
@@ -63,8 +65,9 @@ export function ForecastToggle({ active, href }: Props) {
               <button
                 type="button"
                 onClick={confirm}
-                className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#14B8A6] px-3 py-2 text-sm font-medium text-white hover:bg-[#0D9488]"
               >
+                <TrendingUp size={15} strokeWidth={2.25} aria-hidden="true" />
                 Got it, show forecast
               </button>
             </div>
