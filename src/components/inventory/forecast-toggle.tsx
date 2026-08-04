@@ -35,10 +35,8 @@ export function ForecastToggle({ active, href }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-          active
-            ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
-            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+        className={`rounded-md px-3 py-2 text-sm font-medium text-white transition-colors ${
+          active ? "bg-[#0F766E] hover:bg-[#115E59]" : "bg-[#0D9488] hover:bg-[#0F766E]"
         }`}
       >
         {active ? "Exit forecast" : "Forecast"}
