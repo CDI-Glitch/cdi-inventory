@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
       const product = await prisma.product.findUnique({ where: { sku: line.itemCode } });
       if (!product) return NextResponse.json({ error: `SKU not found: ${line.itemCode}` }, { status: 404 });
       if (!product.active) return NextResponse.json({ error: `SKU inactive: ${line.itemCode}` }, { status: 400 });
+      if (product.category === "CONSUMABLE") {
+        return NextResponse.json({ error: `SKU not sellable: ${line.itemCode}` }, { status: 400 });
+      }
       snapshotByIndex.push(null);
     } else {
       const bundle = await prisma.bundleDefinition.findUnique({

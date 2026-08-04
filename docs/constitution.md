@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-04（Forecast Mode 未来库存预测、IncomingShipment.shippedAt 计划/实际日期分离）
+> 最后更新：2026-08-04（Forecast Mode 未来库存预测、IncomingShipment.shippedAt 计划/实际日期分离；CONSUMABLE 辅材类别）
 
 ---
 
@@ -24,6 +24,7 @@
 | 12 | 自动预留审计 | `reserveStock` / `releaseReservations` 每条组件写 `reservation_adjustment`（delta=0） | Audit Log 与手动换料路径一致，避免「有预留但无 Log」误解 |
 | 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
 | 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列，按 ETA 升序）；`Future Available = On Hand − Reserved + Σ qtyOrdered(货柜 1..N)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
+| 15 | 外购辅材（CONSUMABLE） | 复用现有 Product/InventoryLog/IncomingShipment 表，新增 `category = "CONSUMABLE"`；不做独立表 | 辅材仍需走 Incoming 发货单+Forecast，独立表会被迫复制整套 Incoming/Forecast 逻辑；用 Category 硬性排除 Bundle 与 Sales 已足够隔离 |
 
 ---
 
@@ -90,6 +91,7 @@ adminNotes, shopifyInventoryItemId, shopifyVariantId, createdAt, updatedAt
 | `UNISTRUT` | C Channel 导轨（Canopy Top C Channel） |
 | `DROP_SIDES` | 侧栏板 |
 | `12V` | 12V 电气件（LED 灯带等） |
+| `CONSUMABLE` | 外购辅材/耗材（螺栓、垫片等，手动扣减，见 §D3） |
 
 ### InventoryLog（库存变动日志）— 核心表
 ```
@@ -300,6 +302,30 @@ Future Available[i] = On Hand − Reserved + Σ qtyOrdered(货柜 1..i)
 - **可见性 vs 编辑权限**：所有角色（含 sales/viewer）都能查看 Forecast 列（只读展示）；只有 editor+ 能调整 ETA 或录入/纠正 shippedAt。
 - **免责声明**：每次点击开启 Forecast Mode 都会弹出一次性可关闭的提示弹窗，说明数字仅为估算，不是对特定货柜的锁定预留。
 - **`shippedAt`（实际发货日）**：在 `pending → shipped` 转换时首次必填录入；录入后对普通 editor 锁定（无法通过状态转换接口覆盖），仅 admin 能通过独立的 `/api/incoming/[id]/shipped-at` 纠正接口修改，且每次修改都会为该发货单涉及的每个不同 `productId` 写一条 `delta:0` 的 `InventoryLog`（`type: shipped_at_correction`），可在 `/audit-log` 按 SKU 或类型筛选查看。此字段纯记录用途，从不参与库存数学计算。这是 SAP/NetSuite 等系统里 Planned（ETA）vs Actual（shippedAt）日期模式的落地。
+
+---
+
+## D3. 外购辅材（CONSUMABLE）— 手动库存
+
+**背景**：外六角螺栓、尼龙垫片等外购五金/耗材，采购数量大（如 M8*25 一次 1000 颗），实际消耗跟具体某台车/某个 Bundle 无固定对应关系，不适合走 Bundle 组件互斥/绑定规则或按销售单自动预留，而是靠仓库人员在生产消耗后手动在 Adjust Stock 页面扣减。
+
+**设计：不建独立表，复用现有 Product/InventoryLog/IncomingShipment，新增 `category = "CONSUMABLE"`**：
+
+```
+参与（无需改动，直接复用现有逻辑）：
+  - Incoming 发货单 + Forecast Mode      → IncomingLine.productId 本来就是任意 Product 的 FK
+  - Adjust Stock（手动增减）              → 日常消耗的正确入口
+  - Dashboard 低库存预警 / Inventory REORDER 状态 → 正常参与，跟普通 SKU 一样提醒补货
+  - Shopify 同步                          → 天然不同步，只要不绑定 shopifyInventoryItemId
+
+硬性排除（代码层面 UI + API 双重校验）：
+  - Bundle 组件选择器 + POST/PUT /api/bundles      → category === "CONSUMABLE" 时 400
+  - 销售单 SKU 行选择器 + POST /api/sales, PUT /api/sales/[id]/lines → category === "CONSUMABLE" 时 400（"SKU not sellable"）
+```
+
+**SKU 命名约定**：`sku` 字段对辅材类只是一个无实际含义的递增代号（如 `CSM0001`、`CSM0002`），真实信息放在 `name` 字段的中文描述里（如"尼龙垫片M13*50*10"）。不引入额外的 schema 校验，纯数据录入约定。
+
+**为什么不用独立表**：`IncomingLine.productId` 已经是无 Category 限制的通用 FK，Forecast Mode/ETA/shippedAt 全部挂在这条关系上；独立表意味着要么把整套 Incoming/Forecast 复制一份，要么让 `IncomingLine` 支持多态外键（Prisma 不直接支持，需手写兼容层）。一个 Category 字段 + 两处硬性排除，已经达到"不跟 Bundle 互斥/绑定规则挂钩、靠手动扣减"的全部诉求，且零额外维护成本。
 
 ---
 

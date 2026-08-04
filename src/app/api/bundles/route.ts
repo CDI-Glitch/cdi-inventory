@@ -47,6 +47,18 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.bundleDefinition.findUnique({ where: { code } });
   if (existing) return NextResponse.json({ error: "Bundle code already exists" }, { status: 409 });
 
+  // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
+  const consumableProducts = await prisma.product.findMany({
+    where: { id: { in: items.map((i) => i.productId) }, category: "CONSUMABLE" },
+    select: { sku: true },
+  });
+  if (consumableProducts.length > 0) {
+    return NextResponse.json(
+      { error: `Consumable SKUs cannot be added to bundles: ${consumableProducts.map((p) => p.sku).join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   const bundle = await prisma.bundleDefinition.create({
     data: {
       code,

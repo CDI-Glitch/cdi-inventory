@@ -8,7 +8,8 @@ export default async function NewBundlePage() {
   if ((session?.user as any)?.role !== "admin") redirect("/dashboard");
 
   const products = await prisma.product.findMany({
-    where: { active: true },
+    // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
+    where: { active: true, category: { not: "CONSUMABLE" } },
     orderBy: { sku: "asc" },
   });
 

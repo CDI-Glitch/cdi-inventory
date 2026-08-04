@@ -54,6 +54,20 @@ export async function PUT(
 
   const { items, ...rest } = parsed.data;
 
+  // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
+  if (items !== undefined && items.length > 0) {
+    const consumableProducts = await prisma.product.findMany({
+      where: { id: { in: items.map((i) => i.productId) }, category: "CONSUMABLE" },
+      select: { sku: true },
+    });
+    if (consumableProducts.length > 0) {
+      return NextResponse.json(
+        { error: `Consumable SKUs cannot be added to bundles: ${consumableProducts.map((p) => p.sku).join(", ")}` },
+        { status: 400 }
+      );
+    }
+  }
+
   // If items provided, replace all items
   if (items !== undefined) {
     await prisma.bundleItem.deleteMany({ where: { bundleId: id } });

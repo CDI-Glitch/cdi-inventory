@@ -86,8 +86,9 @@ export default async function SalesDetailPage({
       : Promise.resolve([]),
     canEditHeader ? prisma.location.findMany({ where: { active: true } }) : Promise.resolve([]),
     canEditLines || canEditFulfillment
-      ? prisma.product.findMany({
-          where: { active: true },
+      ? // CONSUMABLE items (bulk hardware, manually deducted) are not sellable sales lines
+        prisma.product.findMany({
+          where: { active: true, category: { not: "CONSUMABLE" } },
           orderBy: { sku: "asc" },
           select: { sku: true, name: true, category: true },
         })

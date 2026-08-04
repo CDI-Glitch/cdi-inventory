@@ -17,6 +17,7 @@ export const CATEGORIES = [
   "FITTING_KIT",
   "UNISTRUT",
   "12V",
+  "CONSUMABLE",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 

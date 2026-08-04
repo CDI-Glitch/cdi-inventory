@@ -19,7 +19,11 @@ export default async function BundleDetailPage({
       where: { id },
       include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
     }),
-    prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),
+    // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
+    prisma.product.findMany({
+      where: { active: true, category: { not: "CONSUMABLE" } },
+      orderBy: { sku: "asc" },
+    }),
   ]);
 
   if (!bundle) notFound();
