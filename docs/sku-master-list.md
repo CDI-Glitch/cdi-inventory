@@ -95,7 +95,10 @@
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
-| `DTLMB-1850S` | C Profile No-Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
+| `DTLMB-1775` | C Profile No-Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
+| `DTLMB-1775SHB` | C Profile No-Drawer Panel Sahara Black | Each | 0 | 0 | 10 |
+| `DTLMB-1775W` | C Profile No-Drawer Panel Splash White | Each | 0 | 0 | 10 |
+| `DTLMB-1850` | C Profile No-Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
 | `DTLMB-1850SHB` | C Profile No-Drawer Panel Sahara Black | Each | 0 | 0 | 10 |
 | `DTLMB-1850W` | C Profile No-Drawer Panel Splash White | Each | 0 | 0 | 10 |
 | `TT-MB` | T Profile VTD Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
@@ -107,6 +110,9 @@
 | `TT-WDB` | T Profile Tail Light Panel Raw Alloy | Pair | 0 | 0 | 10 |
 | `TT-WDB-SHB` | T Profile Tail Light Panel Sahara Black | Pair | 5 | 0 | 10 |
 | `TT-WDB-W` | T Profile Tail Light Panel Splash White | Pair | 0 | 0 | 10 |
+| `VTD-DTLMB-1775-SHB` | C Profile VTD Drawer Panel Sahara Black | Each | 0 | 0 | 10 |
+| `VTD-DTLMB-1775-W` | C Profile VTD Drawer Panel Splash White | Each | 0 | 0 | 5 |
+| `VTD-DTLMB-1850` | C Profile VTD Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
 | `VTD-DTLMB-1850-SHB` | C Profile VTD Drawer Panel Sahara Black | Each | 6 | 0 | 10 |
 | `VTD-DTLMB-1850-W` | C Profile VTD Drawer Panel Splash White | Each | 4 | 0 | 5 |
 | `WDB-DTL-SHB` | C Profile Devil Tail Light Panel Sahara Black | Pair | 6 | 0 | 10 |
@@ -285,6 +291,9 @@
 | `TT-QBX-73-R` | T-Profile Front Underbody Toolbox 2400 RHS Raw Alloy | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R-SHB` | T-Profile Front Underbody Toolbox 2400 RHS Sahara Black | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R-W` | T-Profile Front Underbody Toolbox 2400 RHS Splash White | Each | 0 | 0 | 10 |
+| `TT-QBX-73-R-ZSB` | QBX-73 RHS Infill Panel Raw Alloy | Each | 0 | 0 | 10 |
+| `TT-QBX-73-R-ZSB-SHB` | QBX-73 RHS Infill Panel Sahara Black | Each | 0 | 0 | 10 |
+| `TT-QBX-73-R-ZSB-W` | QBX-73 RHS Infill Panel Splash White | Each | 0 | 0 | 10 |
 
 ## 12V (2)
 
@@ -303,6 +312,66 @@
 | `4122*1800` | 41*22 C Channel 1800mm Raw Alloy | Each | 0 | 0 | 10 |
 | `4122*1800-SHB` | 41*22 C Channel 1800mm Sahara Black | Each | 0 | 0 | 10 |
 | `4122*1800-W` | 41*22 C Channel 1800mm Splash White | Each | 0 | 0 | 10 |
+
+## CONSUMABLE
+
+辅材/耗材：不进 Bundle / Sales SKU 行；手动 Adjust 扣减。CSM#### = 五金递增代号；WH-TL-* = 车型尾灯即插即用线束。
+
+| SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
+|-----|------|------|:---:|:---:|:---:|
+| `CSM0001` | 外六角螺栓M8*25 | Each | 1000 | 0 | 50 |
+| `CSM0002` | 外六角螺栓M8*20 | Each | 500 | 0 | 50 |
+| `CSM0003` | 外六角螺栓M8*50 | Each | 200 | 0 | 50 |
+| `CSM0004` | 外六角螺栓M8*35 | Each | 500 | 0 | 50 |
+| `CSM0005` | 10.9级GB5787达克罗细牙外六角法兰螺丝 凹脑平底M12x1.25x50半牙 | Each | 100 | 0 | 50 |
+| `CSM0006` | 尼龙垫片M13*50*10 | Each | 215 | 0 | 50 |
+| `CSM0007` | 尼龙垫片M13*50*25 | Each | 404 | 0 | 50 |
+| `CSM0008` | 弹簧螺母M8 35x20x6mm | Each | 0 | 0 | 50 |
+| `CSM0009` | T型螺丝M8X24X1.25 (34X20X6) | Each | 0 | 0 | 50 |
+| `CSM0010` | 欧标弹片螺母30*M8 | Each | 0 | 0 | 50 |
+| `CSM0011` | M12*40*40*4垫片 | Each | 0 | 0 | 50 |
+| `CSM0012` | 达克罗螺丝M12*80 | Each | 0 | 0 | 50 |
+| `CSM0013` | 挡泥皮 | Each | 0 | 0 | 50 |
+| `CSM0014` | SB02C legacy | Each | 0 | 0 | 50 |
+| `CSM0015` | SB021 legacy | Each | 0 | 0 | 50 |
+| `CSM0016` | SB023 legacy | Each | 0 | 0 | 50 |
+| `CSM0017` | SB024 legacy | Each | 0 | 0 | 50 |
+| `CSM0018` | SBV024 legacy | Each | 0 | 0 | 50 |
+| `CSM0019` | SB025A legacy | Each | 0 | 0 | 50 |
+| `CSM0020` | SB025B legacy | Each | 0 | 0 | 50 |
+| `CSM0021` | SB026 legacy | Each | 0 | 0 | 50 |
+| `CSM0022` | SB215A legacy | Each | 0 | 0 | 50 |
+| `CSM0023` | SB215B legacy | Each | 0 | 0 | 50 |
+| `CSM0024` | SBV216A legacy | Each | 0 | 0 | 50 |
+| `CSM0025` | SBV216B legacy | Each | 0 | 0 | 50 |
+| `CSM0026` | SB00C legacy | Each | 0 | 0 | 50 |
+| `CSM0027` | CB00CV2_A legacy | Each | 0 | 0 | 50 |
+| `CSM0028` | CB00CV2_B legacy | Each | 0 | 0 | 50 |
+| `CSM0029` | CB00L_A legacy | Each | 0 | 0 | 50 |
+| `CSM0030` | CB00L_B legacy | Each | 0 | 0 | 50 |
+| `CSM0031` | CB001_A legacy | Each | 0 | 0 | 50 |
+| `CSM0032` | CB001_B legacy | Each | 0 | 0 | 50 |
+| `CSM0033` | CB003_A legacy | Each | 0 | 0 | 50 |
+| `CSM0034` | CB003_B legacy | Each | 0 | 0 | 50 |
+| `CSM0035` | CB003R_A legacy | Each | 0 | 0 | 50 |
+| `CSM0036` | CB003R_B legacy | Each | 0 | 0 | 50 |
+| `CSM0037` | CB016_A legacy | Each | 0 | 0 | 50 |
+| `CSM0038` | CB016_B legacy | Each | 0 | 0 | 50 |
+| `CSM0039` | CB004_A legacy | Each | 0 | 0 | 50 |
+| `CSM0040` | CB004_B legacy | Each | 0 | 0 | 50 |
+| `CSM0041` | CB005_A legacy | Each | 0 | 0 | 50 |
+| `CSM0042` | CB005_B legacy | Each | 0 | 0 | 50 |
+| `CSM0043` | SB028 legacy | Each | 0 | 0 | 50 |
+| `WH-TL-HILUX` | Hilux Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-TRITON` | Triton Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-RANGER-PX` | PX Ranger Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-RANGER-NG` | Next Gen Ranger Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-DMAX` | D-MAX Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-CANNON` | GWM Cannon Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-NAVARA` | Navara Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-AMAROK` | Amarok Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-COLORADO` | Colorado Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `WH-TL-MUSSO` | Musso Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 
 ---
 

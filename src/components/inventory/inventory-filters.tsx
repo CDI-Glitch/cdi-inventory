@@ -12,7 +12,10 @@ const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({
       : c.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase()),
 }));
 
+// IN_STOCK is a UI-only combined filter (OK + REORDER, i.e. everything except
+// OUT_OF_STOCK). It never appears as an actual row status value.
 const STATUS_OPTIONS = [
+  { value: "IN_STOCK", label: "In stock" },
   { value: "OK", label: "OK" },
   { value: "REORDER", label: "Reorder" },
   { value: "OUT_OF_STOCK", label: "Out of stock" },
@@ -22,6 +25,7 @@ interface InventoryFiltersProps {
   defaultSearch?: string;
   defaultCategory?: string;
   defaultStatus?: string;
+  defaultIncomingOnly?: string;
   currentLoc?: string;
   currentForecast?: string;
 }
@@ -30,6 +34,7 @@ export function InventoryFilters({
   defaultSearch = "",
   defaultCategory = "",
   defaultStatus = "",
+  defaultIncomingOnly = "",
   currentLoc = "",
   currentForecast = "",
 }: InventoryFiltersProps) {
@@ -65,6 +70,18 @@ export function InventoryFilters({
         placeholder="All statuses"
         onChange={submitForm}
       />
+      {currentForecast && (
+        <label className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            name="incomingOnly"
+            value="1"
+            defaultChecked={defaultIncomingOnly === "1"}
+            onChange={submitForm}
+          />
+          Incoming only
+        </label>
+      )}
       <button
         type="submit"
         className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"

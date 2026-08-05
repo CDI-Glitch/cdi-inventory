@@ -22,6 +22,7 @@ export default async function InventoryPage({
     loc?: string;
     page?: string;
     forecast?: string;
+    incomingOnly?: string;
   }>;
 }) {
   const session = await auth();
@@ -166,7 +167,20 @@ export default async function InventoryPage({
     };
   });
 
-  const filtered = params.status ? rows.filter((r) => r.status === params.status) : rows;
+  // "IN_STOCK" is a UI-only combined filter (OK + REORDER, i.e. not out of stock).
+  let filtered = !params.status
+    ? rows
+    : params.status === "IN_STOCK"
+      ? rows.filter((r) => r.status !== "OUT_OF_STOCK")
+      : rows.filter((r) => r.status === params.status);
+
+  // Forecast Mode "Incoming only": narrow to SKUs with at least one nonzero
+  // forecast column, so sales (no access to /incoming) can see at a glance
+  // which SKUs actually have something arriving.
+  const incomingOnlyActive = forecastActive && params.incomingOnly === "1";
+  if (incomingOnlyActive) {
+    filtered = filtered.filter((r) => r.forecastQtys.some((qty) => qty > 0));
+  }
 
   // Pagination
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
@@ -180,6 +194,7 @@ export default async function InventoryPage({
     status: params.status || undefined,
     search: params.search || undefined,
     forecast: forecastActive ? "1" : undefined,
+    incomingOnly: incomingOnlyActive ? "1" : undefined,
   };
 
   // Toggle target URL: preserves every other current param, only flips `forecast`
@@ -188,7 +203,10 @@ export default async function InventoryPage({
   if (params.category) forecastToggleParams.set("category", params.category);
   if (params.status) forecastToggleParams.set("status", params.status);
   if (params.search) forecastToggleParams.set("search", params.search);
-  if (!forecastActive) forecastToggleParams.set("forecast", "1");
+  if (!forecastActive) {
+    forecastToggleParams.set("forecast", "1");
+  }
+  if (incomingOnlyActive) forecastToggleParams.set("incomingOnly", "1");
   const forecastToggleHref = `/inventory?${forecastToggleParams.toString()}`;
 
   return (
@@ -224,6 +242,7 @@ export default async function InventoryPage({
           defaultSearch={params.search}
           defaultCategory={params.category}
           defaultStatus={params.status}
+          defaultIncomingOnly={incomingOnlyActive ? "1" : undefined}
           currentLoc={activeLoc}
           currentForecast={forecastActive ? "1" : undefined}
         />

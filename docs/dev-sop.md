@@ -197,6 +197,14 @@
 - [ ] Editor/Admin 能点击货柜列头的 PO 号跳转到对应到货发货单详情页
 - [ ] Forecast 模式**不**在数据库产生任何写入（除 ETA/shippedAt 本身的编辑操作）——刷新页面后数字应随 ETA/预留/取消的最新状态自动变化
 
+**库存页 — 筛选增强（2026-08-05 新增）：**
+- [ ] Status 下拉新增"In stock"选项 → 结果为 `OK` + `REORDER`（即排除 `OUT_OF_STOCK`）
+- [ ] "In stock"筛选与 Category/搜索/仓库 Tab 组合使用，翻页时 `status=IN_STOCK` 保留在 URL 中
+- [ ] 非 Forecast 模式下不显示"Incoming only"复选框
+- [ ] Forecast 模式下显示"Incoming only"复选框，勾选后仅显示至少一个货柜列 qty > 0 的 SKU
+- [ ] 勾选"Incoming only"后切换 Category/Status/搜索/翻页/仓库 Tab，`incomingOnly=1` 保留在 URL 中
+- [ ] 退出 Forecast 模式（Exit forecast）后，`incomingOnly` 筛选自动失效（即使 URL 残留参数也不生效）
+
 ---
 
 ## 每日收工检查
