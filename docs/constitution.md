@@ -360,6 +360,7 @@ Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(所有 ETA ≤ 该�
   - Dashboard 新增独立面板"At-risk reservations"，含 All/Brisbane/Sydney 筛选（`?loc=`），以及一张统计卡（有告警时变红）。
   - Inventory 页新增与 Forecast Mode 平行的独立模式（`?backorder=1`），只显示当前仓库里被标记的 SKU，多两列"Aged"/"Next supply"。两个模式互斥（不叠加显示），避免同一行同时塞入 Forecast 的多货柜列和 Aging 的年龄列导致过挤。
 - **阈值管理**：14 天 / 21 天目前是 `src/lib/constants.ts` 里的常量，不做 Settings 页面可调——内部小系统暂不需要（渐进复杂度原则），真有旺季/淡季调整需求再加。
+- **操作 / 排障手册**：[`docs/aging-reservations-runbook.md`](./aging-reservations-runbook.md)
 
 ---
 

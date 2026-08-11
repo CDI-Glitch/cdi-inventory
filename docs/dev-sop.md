@@ -29,6 +29,7 @@
 - [ ] Editor 访问 /settings → 403
 - [ ] Session 过期 → 重定向到登录页
 - [ ] 权限/会话热更新相关改动 → 另跑 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §8 全清单
+- [ ] 逾期预留 / 缺货预警相关改动 → 另跑 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §7 + 本文件 §15
 
 ### 2. 库存计算
 
@@ -207,6 +208,8 @@
 
 ### 15. 逾期预留 / 缺货预警（Aging Reservations & Backorder Alerts，2026-08-11 新增）
 
+> **完整手册（排障 / 公式 / QA）：** [`aging-reservations-runbook.md`](./aging-reservations-runbook.md)
+
 **计算逻辑（`src/lib/reservation-aging.ts`）：**
 - [ ] 建一条 `deposit_paid` 订单后，`GeneratedMovement.createdAt` 立刻等于当前时间；把该行手动改到 14/21 天前（QA 用直连 DB 改 `createdAt`，不影响正式流程）可分别触发 AGING / STALE 徽标
 - [ ] 只统计 `status ∈ {deposit_paid, fully_paid}` 且 `reservedQty > 0` 的行；`completed`/`cancelled` 后该行从清单消失（无需手动清理）
@@ -261,6 +264,7 @@
 | 2026-07-30 | 改 Bundle 定义会静默影响仍处 `quote` 的订单展开 | SalesLine 增加 `snapshotItems`；保存时快照 BOM |
 | 2026-07-30 | Bundle 组件与独立 SKU 同码时 Fulfillment 误报 mismatch | Sales detail 合并计数 + 折叠展示组件 |
 | 2026-07-30 | Prisma `migrate dev` 报 drift 并诱导 `reset` | 生产库历来用 `db push`、无 `_prisma_migrations`；已 baseline，见下方「Prisma Migration Baseline」|
+| 2026-08-11 | 宪法 H#3「On Hand < Reserved → 仪表板 WARNING」从未落地；预留逾期 / 缺货无可见提醒 | 落地 Aging Reservations & Backorder Alerts（commit `ef3d561`）。完整手册见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md)；规格见 constitution 决策 #16 / §D4；回归清单 §15 |
 
 ---
 
