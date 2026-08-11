@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getAgingReservations } from "@/lib/reservation-aging";
 
 const SALES_STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-600",
@@ -19,9 +20,15 @@ const SALES_STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ loc?: string }>;
+}) {
   const session = await auth();
   const role = (session?.user as any)?.role;
+  const params = await searchParams;
+  const agingLoc = params.loc ?? "all";
 
   const [
     totalProducts,
@@ -31,6 +38,7 @@ export default async function DashboardPage() {
     recentSales,
     pendingIncoming,
     lowStockItems,
+    locations,
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.location.count({ where: { active: true } }),
@@ -55,7 +63,15 @@ export default async function DashboardPage() {
       orderBy: { sku: "asc" },
       take: 50,
     }),
+    prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
+
+  const agingLocation = agingLoc !== "all" ? locations.find((l) => l.name === agingLoc) : undefined;
+  const agingReservations = await getAgingReservations(
+    agingLocation ? { locationId: agingLocation.id } : {}
+  );
+  const agingToggleHref = (loc: string) => `/dashboard?loc=${loc}`;
+  const inventoryAlertHref = `/inventory?loc=${agingLocation?.name ?? locations[0]?.name ?? ""}&backorder=1`;
 
   // Compute available for low-stock check
   const [allLogs, allMovements] = await Promise.all([
@@ -81,26 +97,131 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { label: "Active SKUs", value: totalProducts, href: "/inventory" },
           { label: "Locations", value: totalLocations },
           { label: "Active bundles", value: totalBundles, href: "/bundles" },
           { label: "Open orders", value: activeSalesRecords, href: "/sales" },
+          {
+            label: "At-risk reservations",
+            value: agingReservations.length,
+            href: inventoryAlertHref,
+            alert: agingReservations.length > 0,
+          },
         ].map((card) => (
           <div
             key={card.label}
-            className="rounded-lg border border-gray-200 bg-white p-5"
+            className={cn(
+              "rounded-lg border bg-white p-5",
+              card.alert ? "border-red-200" : "border-gray-200"
+            )}
           >
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{card.value}</p>
+            <p className={cn("mt-2 text-3xl font-bold", card.alert ? "text-red-600" : "text-gray-900")}>
+              {card.value}
+            </p>
             {card.href && (
-              <Link href={card.href} className="mt-2 text-xs text-[#2563EB] hover:underline block">
+              <Link
+                href={card.href}
+                className={cn(
+                  "mt-2 text-xs hover:underline block",
+                  card.alert ? "text-red-600" : "text-[#2563EB]"
+                )}
+              >
                 View all →
               </Link>
             )}
           </div>
         ))}
+      </div>
+
+      {/* At-risk reservations — aging deposits and/or backordered stock, per constitution H#3 */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700">
+            At-risk reservations ({agingReservations.length})
+          </h2>
+          <div className="flex items-center gap-0 rounded-md border border-gray-200 overflow-hidden">
+            {["all", ...locations.map((l) => l.name)].map((name) => (
+              <Link
+                key={name}
+                href={agingToggleHref(name)}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium transition-colors",
+                  agingLoc === name
+                    ? "bg-[#2563EB] text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                {name === "all" ? "All" : name}
+              </Link>
+            ))}
+          </div>
+        </div>
+        {agingReservations.length === 0 ? (
+          <p className="px-5 py-4 text-sm text-gray-400">No aging or backordered reservations</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {agingReservations.slice(0, 10).map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                <div>
+                  <Link href={`/inventory/${r.sku}`} className="text-sm font-mono font-medium text-[#2563EB] hover:underline">
+                    {r.sku}
+                  </Link>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    <Link href={`/sales/${r.salesRecordDbId}`} className="text-[#2563EB] hover:underline">
+                      {r.recordId}
+                    </Link>
+                    {" · "}
+                    {r.customer}
+                    {" · "}
+                    {r.locationName}
+                  </p>
+                  {r.stockSignal === "BACKORDERED" && (
+                    <p className="text-xs mt-0.5">
+                      {r.nearestIncoming ? (
+                        <span className="text-gray-500">
+                          Next supply: <span className="font-mono">{r.nearestIncoming.poRef}</span>
+                          {" · "}
+                          ETA {new Date(r.nearestIncoming.eta).toLocaleDateString("en-AU", { day: "2-digit", month: "short" })}
+                          {" · "}
+                          +{r.nearestIncoming.qtyOrdered}
+                        </span>
+                      ) : (
+                        <span className="font-medium text-red-600">No incoming stock</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {r.ageSignal && (
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+                        r.ageSignal === "STALE" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                      )}
+                    >
+                      Aged {r.ageDays}d
+                    </span>
+                  )}
+                  {r.stockSignal === "BACKORDERED" && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 whitespace-nowrap">
+                      Short {Math.abs(r.available)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {agingReservations.length > 0 && (
+          <div className="px-5 py-2.5 border-t border-gray-100">
+            <Link href={inventoryAlertHref} className="text-xs text-[#2563EB] hover:underline">
+              View all in Inventory →
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

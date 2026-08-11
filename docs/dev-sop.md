@@ -205,6 +205,27 @@
 - [ ] 勾选"Incoming only"后切换 Category/Status/搜索/翻页/仓库 Tab，`incomingOnly=1` 保留在 URL 中
 - [ ] 退出 Forecast 模式（Exit forecast）后，`incomingOnly` 筛选自动失效（即使 URL 残留参数也不生效）
 
+### 15. 逾期预留 / 缺货预警（Aging Reservations & Backorder Alerts，2026-08-11 新增）
+
+**计算逻辑（`src/lib/reservation-aging.ts`）：**
+- [ ] 建一条 `deposit_paid` 订单后，`GeneratedMovement.createdAt` 立刻等于当前时间；把该行手动改到 14/21 天前（QA 用直连 DB 改 `createdAt`，不影响正式流程）可分别触发 AGING / STALE 徽标
+- [ ] 只统计 `status ∈ {deposit_paid, fully_paid}` 且 `reservedQty > 0` 的行；`completed`/`cancelled` 后该行从清单消失（无需手动清理）
+- [ ] 某 SKU+仓库 Available 变成负数（不管预留新旧）→ 立刻出现在清单里，带 `BACKORDERED` 标签，即使刚建的新预留也一样
+- [ ] `BACKORDERED` 行若该仓有符合 Forecast 资格的在途货柜 → 显示最近一个的 `poRef`/ETA/数量；若没有 → 显示红色"无在途货柜/None incoming"
+
+**Dashboard 面板：**
+- [ ] 顶部统计卡"At-risk reservations"：数量 > 0 时变红并可点击跳转 Inventory 对应仓库的 Backorder 模式
+- [ ] 面板内 All/Brisbane/Sydney 筛选按钮，点击后 `?loc=` 切换且仅显示该仓库的行
+- [ ] 无逾期/缺货记录时显示"No aging or backordered reservations"，不显示统计卡红色
+
+**Inventory 页 — Backorder alerts 开关：**
+- [ ] 点击"Backorder alerts"按钮直接跳转（无需二次确认弹窗，因为是实时数据非预测）
+- [ ] Backorder 模式下表格只显示 `Available < 0` 或有逾期预留的 SKU；其余 SKU 不显示
+- [ ] Backorder 模式下多两列"Aged"（点击跳转对应销售单）与"Next supply"
+- [ ] 点击 Forecast 按钮会清除 `backorder=1`；点击 Backorder 按钮会清除 `forecast=1`（两模式互斥，不叠加显示）
+- [ ] 切换仓库 Tab / Category / Status / 搜索时，`backorder=1` 保留在 URL 中
+- [ ] 退出 Backorder 模式后正常显示全部 SKU，不残留过滤
+
 ---
 
 ## 每日收工检查

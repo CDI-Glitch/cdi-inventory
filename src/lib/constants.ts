@@ -63,6 +63,11 @@ export const TRANSFER_STATUSES = [
 ] as const;
 export type TransferStatus = (typeof TRANSFER_STATUSES)[number];
 
+// Reservation aging thresholds (days since GeneratedMovement.createdAt, i.e. since
+// the sales record entered deposit_paid). See src/lib/reservation-aging.ts.
+export const RESERVATION_AGING_WARNING_DAYS = 14;
+export const RESERVATION_AGING_CRITICAL_DAYS = 21;
+
 export const COMPONENT_ROLES = [
   "main_body",
   "body_attachment",

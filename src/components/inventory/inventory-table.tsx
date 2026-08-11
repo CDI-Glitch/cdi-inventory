@@ -24,6 +24,14 @@ interface ForecastContainer {
   eta: string;
 }
 
+interface AgingEntry {
+  ageDays: number;
+  ageSignal: "AGING" | "STALE" | null;
+  recordId: string;
+  salesRecordDbId: string;
+  nearestIncoming: { poRef: string; eta: string; qtyOrdered: number } | null;
+}
+
 const STATUS_STYLES = {
   OK: "bg-green-100 text-green-800",
   REORDER: "bg-yellow-100 text-yellow-800",
@@ -56,7 +64,7 @@ const headerCellCenter = cn(cellCenter, "font-medium text-gray-600 whitespace-no
 // Fixed-width tail shared by both modes: On Hand | Reserved | Available | Status
 const TAIL_COLS = ["5.5rem", "5.5rem", "5.5rem", "7.5rem"];
 
-function buildGridTemplate(forecast: boolean, containerCount: number) {
+function buildGridTemplate(forecast: boolean, containerCount: number, backorder: boolean) {
   const cols = ["minmax(9rem,1fr)"]; // SKU
   if (!forecast) cols.push("minmax(12rem,2fr)"); // Name (hidden in forecast mode)
   cols.push("minmax(8rem,1fr)"); // Category
@@ -64,6 +72,7 @@ function buildGridTemplate(forecast: boolean, containerCount: number) {
     for (let i = 0; i < containerCount; i++) cols.push("7.5rem");
   }
   cols.push(...TAIL_COLS);
+  if (backorder) cols.push("6rem", "11rem"); // Aged | Next supply
   return cols.join(" ");
 }
 
@@ -72,12 +81,16 @@ export function InventoryTable({
   locationName,
   forecast = false,
   containers = [],
+  backorder = false,
+  agingByProductId = {},
   canLinkContainers = false,
 }: {
   rows: StockRow[];
   locationName: string;
   forecast?: boolean;
   containers?: ForecastContainer[];
+  backorder?: boolean;
+  agingByProductId?: Record<string, AgingEntry>;
   canLinkContainers?: boolean;
 }) {
   if (rows.length === 0) {
@@ -88,7 +101,7 @@ export function InventoryTable({
     );
   }
 
-  const gridTemplateColumns = buildGridTemplate(forecast, containers.length);
+  const gridTemplateColumns = buildGridTemplate(forecast, containers.length, backorder);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -131,6 +144,12 @@ export function InventoryTable({
         <div className={headerCellCenter}>Reserved</div>
         <div className={headerCellCenter}>Available</div>
         <div className={headerCellCenter}>Status</div>
+        {backorder && (
+          <>
+            <div className={headerCellCenter}>Aged</div>
+            <div className={headerCell}>Next supply</div>
+          </>
+        )}
       </div>
 
       {/* Scrollable rows */}
@@ -197,6 +216,47 @@ export function InventoryTable({
                   {STATUS_LABELS[row.status]}
                 </span>
               </div>
+              {backorder && (() => {
+                const aging = agingByProductId[row.id];
+                return (
+                  <>
+                    <div className={cn(cellCenter, "flex justify-center")}>
+                      {aging?.ageSignal ? (
+                        <Link
+                          href={`/sales/${aging.salesRecordDbId}`}
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap hover:underline",
+                            aging.ageSignal === "STALE"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
+                          )}
+                        >
+                          {aging.ageDays}d
+                        </Link>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </div>
+                    <div className={cn(cell, "leading-tight")}>
+                      {s.available < 0 ? (
+                        aging?.nearestIncoming ? (
+                          <span className="text-[11px] text-gray-500">
+                            <span className="font-mono">{aging.nearestIncoming.poRef}</span>
+                            {" · "}
+                            {formatEta(aging.nearestIncoming.eta)}
+                            {" · "}
+                            +{aging.nearestIncoming.qtyOrdered}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-medium text-red-600">None incoming</span>
+                        )
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           );
         })}

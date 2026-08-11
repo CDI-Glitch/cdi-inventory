@@ -3,9 +3,11 @@ import { prisma } from "@/lib/db";
 import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { ForecastToggle } from "@/components/inventory/forecast-toggle";
+import { BackorderToggle } from "@/components/inventory/backorder-toggle";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
+import { getAgingReservations, type AgingReservationRow } from "@/lib/reservation-aging";
 
 const FORECAST_ELIGIBLE_STATUSES = ["shipped", "in_transit", "arrived"];
 const FORECAST_MAX_CONTAINERS = 5;
@@ -23,6 +25,7 @@ export default async function InventoryPage({
     page?: string;
     forecast?: string;
     incomingOnly?: string;
+    backorder?: string;
   }>;
 }) {
   const session = await auth();
@@ -49,6 +52,12 @@ export default async function InventoryPage({
   // Query nearest 5 by ETA ascending, then reverse for display so the nearest ETA sits
   // immediately left of On Hand (farther future on the left → nearer on the right).
   const forecastActive = params.forecast === "1";
+
+  // Backorder alerts mode: parallel to Forecast Mode, but shows live aging
+  // reservations / backordered SKUs instead of a future projection. The two modes are
+  // mutually exclusive (forecast wins if both params are somehow present) so the table
+  // never has to cram forecast columns and aging columns into the same row.
+  const backorderActive = params.backorder === "1" && !forecastActive;
 
   const forecastContainersAsc = forecastActive && activeLocation
     ? await prisma.incomingShipment.findMany({
@@ -167,6 +176,20 @@ export default async function InventoryPage({
     };
   });
 
+  // Backorder alerts mode: fetch aging/backordered reservations for the active
+  // location only, keep the worst-rank row per SKU, and narrow the table to just the
+  // SKUs that are actually flagged (available < 0 OR an aged reservation exists).
+  const agingRows = backorderActive && activeLocation
+    ? await getAgingReservations({ locationId: activeLocation.id })
+    : [];
+  const agingByProductId = new Map<string, AgingReservationRow>();
+  for (const r of agingRows) {
+    const existing = agingByProductId.get(r.productId);
+    if (!existing || r.rank > existing.rank || (r.rank === existing.rank && r.ageDays > existing.ageDays)) {
+      agingByProductId.set(r.productId, r);
+    }
+  }
+
   // "IN_STOCK" is a UI-only combined filter (OK + REORDER, i.e. not out of stock).
   let filtered = !params.status
     ? rows
@@ -182,6 +205,10 @@ export default async function InventoryPage({
     filtered = filtered.filter((r) => r.forecastQtys.some((qty) => qty > 0));
   }
 
+  if (backorderActive) {
+    filtered = filtered.filter((r) => r.totalAvailable < 0 || agingByProductId.has(r.id));
+  }
+
   // Pagination
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -195,9 +222,11 @@ export default async function InventoryPage({
     search: params.search || undefined,
     forecast: forecastActive ? "1" : undefined,
     incomingOnly: incomingOnlyActive ? "1" : undefined,
+    backorder: backorderActive ? "1" : undefined,
   };
 
   // Toggle target URL: preserves every other current param, only flips `forecast`
+  // (and clears `backorder` — the two modes are mutually exclusive)
   const forecastToggleParams = new URLSearchParams();
   if (activeLoc) forecastToggleParams.set("loc", activeLoc);
   if (params.category) forecastToggleParams.set("category", params.category);
@@ -209,6 +238,18 @@ export default async function InventoryPage({
   if (incomingOnlyActive) forecastToggleParams.set("incomingOnly", "1");
   const forecastToggleHref = `/inventory?${forecastToggleParams.toString()}`;
 
+  // Toggle target URL: preserves every other current param, only flips `backorder`
+  // (and clears `forecast`/`incomingOnly` — the two modes are mutually exclusive)
+  const backorderToggleParams = new URLSearchParams();
+  if (activeLoc) backorderToggleParams.set("loc", activeLoc);
+  if (params.category) backorderToggleParams.set("category", params.category);
+  if (params.status) backorderToggleParams.set("status", params.status);
+  if (params.search) backorderToggleParams.set("search", params.search);
+  if (!backorderActive) {
+    backorderToggleParams.set("backorder", "1");
+  }
+  const backorderToggleHref = `/inventory?${backorderToggleParams.toString()}`;
+
   return (
     // Fill portal viewport: fixed chrome + table card (pinned header, scrolling rows) + pagination
     <div className="-m-8 flex h-screen flex-col">
@@ -217,6 +258,7 @@ export default async function InventoryPage({
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <div className="flex gap-2">
             <ForecastToggle active={forecastActive} href={forecastToggleHref} />
+            <BackorderToggle active={backorderActive} href={backorderToggleHref} />
             {role === "admin" && (
               <Link
                 href="/inventory/new"
@@ -245,6 +287,7 @@ export default async function InventoryPage({
           defaultIncomingOnly={incomingOnlyActive ? "1" : undefined}
           currentLoc={activeLoc}
           currentForecast={forecastActive ? "1" : undefined}
+          currentBackorder={backorderActive ? "1" : undefined}
         />
       </div>
 
@@ -254,6 +297,8 @@ export default async function InventoryPage({
           locationName={locationName}
           forecast={forecastActive}
           containers={containers}
+          backorder={backorderActive}
+          agingByProductId={Object.fromEntries(agingByProductId)}
           canLinkContainers={role === "admin" || role === "editor"}
         />
       </div>
