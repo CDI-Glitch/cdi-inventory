@@ -86,9 +86,22 @@
 | `dev@cdi.com.au` | **admin** | 开发者专用；改权限、Shopify Sync、绑定 Inventory Item ID |
 | `admin@cdi.com.au` | **editor** | 老板日常业务登录（禁止共用 admin，否则 Audit Log 分不清操作人） |
 | `brisbane@cdi.com` / `sydney@cdi.com` | editor | 仓管 |
-| `salesmanager.bne@cdi.com.au` | sales | 销售 |
+| `salesmanager.bne@cdi.com.au` | sales | 销售（BNE） |
+| `cyrus@cdi.com.au` | sales | 销售（Sydney） |
 
 若发现 `admin@cdi.com.au` 又被提升为 admin，按 §6 降回 editor。
+
+### 5.1 初始密码存档（运营账号）
+
+> 仅记录**创建时的初始密码**，供运维找回参考。员工自行改密后以数据库 `passwordHash` 为准，本表不再强制同步。  
+> 创建脚本：仓管见 `prisma/seed.ts`；BNE 销售见 `scripts/create-bne-manager.cjs`；Sydney 销售见 `scripts/create-cyrus-sales.cjs`。
+
+| 账号 | 初始密码 | 创建日期 | 备注 |
+|---|---|---|---|
+| `brisbane@cdi.com` | `Cdi@Bne2026$` | seed | 仓管 |
+| `sydney@cdi.com` | `Cdi@Syd2026$` | seed | 仓管 |
+| `salesmanager.bne@cdi.com.au` | `cdi2026manager!` | 见 create 脚本 | BNE 销售 |
+| `cyrus@cdi.com.au` | `Cyrus$yd#Inv2026` | 2026-08-10 | Sydney 销售；显示名 Cyrus；role=`sales` |
 
 ---
 
@@ -199,7 +212,27 @@ SELECT email, role, active FROM "User" ORDER BY email;
 
 ---
 
-## 11. 变更纪律
+## 11. 故障案例：sales 角色可绕过页面级权限直接访问 Incoming/Transfers（2026-08-11）
+
+**现象：** sales 角色用户直接在地址栏输入 `/incoming`、`/transfers` 等 URL 可以正常打开页面并看到供应商名称、PO 号、ETA、单件成本 (`unitCost`)、调货明细，以及编辑表单和状态操作按钮——尽管 Sidebar 导航里根本看不到这两个入口的链接。
+
+**根因：** 权限判断分散在三层，新增 `sales` 角色时只更新了其中两层：
+
+| 层 | 文件 | 是否正确排除 sales |
+|---|---|---|
+| Sidebar 导航过滤 | `src/components/sidebar.tsx` | 是（`roles: ["editor", "admin"]`） |
+| 写入 API | `src/app/api/incoming/*`、`src/app/api/transfers/*` | 是（`role === "viewer" \|\| role === "sales"` → 403） |
+| **页面级 `redirect` 守卫** | `incoming/page.tsx`、`incoming/[id]/page.tsx`、`incoming/new/page.tsx`、`transfers/page.tsx`、`transfers/[id]/page.tsx`、`transfers/new/page.tsx` | **否**——6 个文件全部只写了 `if (role === "viewer") redirect("/dashboard")`，遗漏了 sales |
+
+页面层的检查很可能是在系统还只有 viewer/editor/admin 三级角色时写的，后续加入 `sales` 角色并收紧到"到货/调货 sales 不能"（`docs/constitution.md` §G）时，API 层和 Sidebar 都同步更新了，唯独这 6 处页面守卫被漏改——典型的"权限判断点分散、新增角色未逐一核对"问题。
+
+**修复：** 6 个文件统一改为 `if (role === "viewer" || role === "sales") redirect("/dashboard")`，与 API 层写法完全一致。不影响 editor/admin 的正常访问，也不需要改 Sidebar 或写入 API（它们本来就是对的）。
+
+**后续建议（未采纳，仅记录）：** 若之后再新增角色或调整某功能的权限范围，应该把"谁能进这个功能"收敛成一两个共享判断函数（如 `canAccessIncoming(role)`），而不是在 6 个文件里各写一份，减少下次漏改的概率。这次未做此重构，只做了最小范围的定点修复。
+
+---
+
+## 12. 变更纪律
 
 改以下任一文件前，必须读完本 runbook §1–§3，并跑完 §8 清单：
 
@@ -209,6 +242,7 @@ SELECT email, role, active FROM "User" ORDER BY email;
 - `src/app/(portal)/layout.tsx` / `settings/page.tsx`
 - `src/components/settings/sync-panel.tsx`
 - `src/components/sidebar.tsx` 的 `roles` 白名单
+- `src/app/(portal)/incoming/**/page.tsx`、`src/app/(portal)/transfers/**/page.tsx` 的角色 `redirect` 守卫（见 §11 教训——务必与对应 API 路由的角色检查保持一致）
 
 **禁止：**
 

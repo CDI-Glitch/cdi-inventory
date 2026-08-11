@@ -35,7 +35,7 @@ export default async function IncomingPage({
 }) {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (role === "viewer") redirect("/dashboard");
+  if (role === "viewer" || role === "sales") redirect("/dashboard");
 
   const params = await searchParams;
 

@@ -21,7 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function TransfersPage() {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (role === "viewer") redirect("/dashboard");
+  if (role === "viewer" || role === "sales") redirect("/dashboard");
 
   const transfers = await prisma.transfer.findMany({
     include: { fromLocation: true, toLocation: true, product: true },

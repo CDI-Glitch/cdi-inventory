@@ -6,7 +6,7 @@ import { IncomingForm } from "@/components/incoming/incoming-form";
 export default async function NewIncomingPage() {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (role === "viewer") redirect("/dashboard");
+  if (role === "viewer" || role === "sales") redirect("/dashboard");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({

@@ -6,7 +6,7 @@ import { TransferForm } from "@/components/transfers/transfer-form";
 export default async function NewTransferPage() {
   const session = await auth();
   const role = (session?.user as any)?.role;
-  if (role === "viewer") redirect("/dashboard");
+  if (role === "viewer" || role === "sales") redirect("/dashboard");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),

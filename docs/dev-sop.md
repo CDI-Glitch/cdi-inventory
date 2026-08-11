@@ -30,6 +30,7 @@
 - [ ] Session 过期 → 重定向到登录页
 - [ ] 权限/会话热更新相关改动 → 另跑 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §8 全清单
 - [ ] 逾期预留 / 缺货预警相关改动 → 另跑 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §7 + 本文件 §15
+- [ ] sales 直接访问 `/incoming`、`/incoming/[id]`、`/incoming/new`、`/transfers`、`/transfers/[id]`、`/transfers/new` → 全部 redirect 到 `/dashboard`（新增角色时必须同时核对 Sidebar 过滤、页面级 redirect 守卫、写入 API 三层，见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11）
 
 ### 2. 库存计算
 
@@ -265,6 +266,7 @@
 | 2026-07-30 | Bundle 组件与独立 SKU 同码时 Fulfillment 误报 mismatch | Sales detail 合并计数 + 折叠展示组件 |
 | 2026-07-30 | Prisma `migrate dev` 报 drift 并诱导 `reset` | 生产库历来用 `db push`、无 `_prisma_migrations`；已 baseline，见下方「Prisma Migration Baseline」|
 | 2026-08-11 | 宪法 H#3「On Hand < Reserved → 仪表板 WARNING」从未落地；预留逾期 / 缺货无可见提醒 | 落地 Aging Reservations & Backorder Alerts（commit `ef3d561`）。完整手册见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md)；规格见 constitution 决策 #16 / §D4；回归清单 §15 |
+| 2026-08-11 | 新增 `sales` 角色时，Sidebar 过滤和写入 API 都同步排除了 sales，但 6 个 Incoming/Transfers 页面的 `redirect` 守卫漏改，sales 可直接输入 URL 查看供应商名/PO/成本等敏感信息 | 6 个 page.tsx 统一改为 `role === "viewer" \|\| role === "sales"` 时 redirect；详见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11 |
 
 ---
 
