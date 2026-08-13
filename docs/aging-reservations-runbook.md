@@ -144,8 +144,8 @@ QA：导出行数应等于该仓 `Available < 0` 的 active SKU 数（可与 Bac
 ### 5.4 Inventory Backorder 模式空表 / 行数不对
 
 1. 确认 URL 有 `backorder=1` 且**没有**被 Forecast 抢占（`forecast=1` 存在时 Backorder 渲染关闭）。
-2. 过滤是在现有 Category / Status / Search 之后再收窄的——若 Status 选了 `OK`，透支行（`OUT_OF_STOCK`）会被先滤掉。
-3. 筛选表单提交后模式丢了 → 检查 `inventory-filters.tsx` 是否还有 hidden `name="backorder"`。
+2. **Status=Reorder 会藏掉真正缺货的行**（2026-08-13 已修）。`Available < 0` 的 Status 永远是 `OUT_OF_STOCK`，不是 Reorder。进入 Backorder 会丢掉 `status`，模式内不再套用 Status 下拉。若仍觉得列表偏短，先看表上方 `N alerts · X short`，再对 Factory list CSV。
+3. Category / Search 仍会收窄。筛选表单提交后模式丢了 → 检查 `inventory-filters.tsx` 是否还有 hidden `name="backorder"`。
 
 ### 5.5 「Aged」天数突然变小 / 变成新日期
 

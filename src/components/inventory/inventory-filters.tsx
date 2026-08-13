@@ -29,6 +29,7 @@ interface InventoryFiltersProps {
   currentLoc?: string;
   currentForecast?: string;
   currentBackorder?: string;
+  hideStatus?: boolean;
 }
 
 export function InventoryFilters({
@@ -39,6 +40,7 @@ export function InventoryFilters({
   currentLoc = "",
   currentForecast = "",
   currentBackorder = "",
+  hideStatus = false,
 }: InventoryFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -66,13 +68,15 @@ export function InventoryFilters({
         placeholder="All categories"
         onChange={submitForm}
       />
-      <CustomSelect
-        name="status"
-        value={defaultStatus}
-        options={STATUS_OPTIONS}
-        placeholder="All statuses"
-        onChange={submitForm}
-      />
+      {!hideStatus && (
+        <CustomSelect
+          name="status"
+          value={defaultStatus}
+          options={STATUS_OPTIONS}
+          placeholder="All statuses"
+          onChange={submitForm}
+        />
+      )}
       {currentForecast && (
         <label className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700">
           <input

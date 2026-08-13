@@ -191,8 +191,11 @@ export default async function InventoryPage({
     }
   }
 
-  // "IN_STOCK" is a UI-only combined filter (OK + REORDER, i.e. not out of stock).
-  let filtered = !params.status
+  // Status filter is for the normal inventory list. In Backorder mode it is a
+  // footgun: Available < 0 is always OUT_OF_STOCK, so Reorder / In stock / OK
+  // would hide the actual shortages (screws, etc.) and leave only aged rows
+  // that still have stock. Ignore status while this mode is on.
+  let filtered = backorderActive || !params.status
     ? rows
     : params.status === "IN_STOCK"
       ? rows.filter((r) => r.status !== "OUT_OF_STOCK")
@@ -209,6 +212,9 @@ export default async function InventoryPage({
   if (backorderActive) {
     filtered = filtered.filter((r) => r.totalAvailable < 0 || agingByProductId.has(r.id));
   }
+  const shortCount = backorderActive
+    ? filtered.filter((r) => r.totalAvailable < 0).length
+    : 0;
 
   // Pagination
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
@@ -244,8 +250,12 @@ export default async function InventoryPage({
   const backorderToggleParams = new URLSearchParams();
   if (activeLoc) backorderToggleParams.set("loc", activeLoc);
   if (params.category) backorderToggleParams.set("category", params.category);
-  if (params.status) backorderToggleParams.set("status", params.status);
   if (params.search) backorderToggleParams.set("search", params.search);
+  // Entering alerts: drop status so a leftover Reorder filter cannot hide shorts.
+  // Leaving alerts: restore the previous status if they had one.
+  if (backorderActive && params.status) {
+    backorderToggleParams.set("status", params.status);
+  }
   if (!backorderActive) {
     backorderToggleParams.set("backorder", "1");
   }
@@ -290,10 +300,20 @@ export default async function InventoryPage({
           currentLoc={activeLoc}
           currentForecast={forecastActive ? "1" : undefined}
           currentBackorder={backorderActive ? "1" : undefined}
+          hideStatus={backorderActive}
         />
       </div>
 
       <div className="mx-8 flex min-h-0 flex-1 flex-col">
+        {backorderActive && (
+          <p className="mb-2 shrink-0 text-sm text-gray-500">
+            {filtered.length} alert{filtered.length === 1 ? "" : "s"}
+            {shortCount > 0 ? ` · ${shortCount} short` : ""}
+            {filtered.length - shortCount > 0
+              ? ` · ${filtered.length - shortCount} aging only`
+              : ""}
+          </p>
+        )}
         <InventoryTable
           rows={paginated}
           locationName={locationName}

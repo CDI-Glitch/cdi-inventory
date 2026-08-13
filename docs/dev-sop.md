@@ -227,7 +227,8 @@
 - [ ] Backorder 模式下表格只显示 `Available < 0` 或有逾期预留的 SKU；其余 SKU 不显示
 - [ ] Backorder 模式下多两列"Aged"（点击跳转对应销售单）与"Next supply"
 - [ ] 点击 Forecast 按钮会清除 `backorder=1`；点击 Backorder 按钮会清除 `forecast=1`（两模式互斥，不叠加显示）
-- [ ] 切换仓库 Tab / Category / Status / 搜索时，`backorder=1` 保留在 URL 中
+- [ ] 切换仓库 Tab / Category / 搜索时，`backorder=1` 保留在 URL 中
+- [ ] Backorder 模式不显示 Status 下拉；从带 `status=REORDER` 的库存页点进 Alerts 后，缺货行（Available&lt;0，含螺丝）仍出现，不被 Reorder 滤掉
 - [ ] 退出 Backorder 模式后正常显示全部 SKU，不残留过滤
 
 **工厂缺货 CSV（试用）：**
