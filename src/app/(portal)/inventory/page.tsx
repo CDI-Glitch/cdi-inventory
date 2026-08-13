@@ -27,6 +27,7 @@ export default async function InventoryPage({
     forecast?: string;
     incomingOnly?: string;
     backorder?: string;
+    alert?: string;
   }>;
 }) {
   const session = await auth();
@@ -212,9 +213,24 @@ export default async function InventoryPage({
   if (backorderActive) {
     filtered = filtered.filter((r) => r.totalAvailable < 0 || agingByProductId.has(r.id));
   }
+
+  // Header counts stay on the full alert set so switching Short/Aging does not
+  // look like the warehouse suddenly has fewer exceptions.
+  const alertCount = backorderActive ? filtered.length : 0;
   const shortCount = backorderActive
     ? filtered.filter((r) => r.totalAvailable < 0).length
     : 0;
+  const agingOnlyCount = alertCount - shortCount;
+
+  const alertMode =
+    backorderActive && (params.alert === "short" || params.alert === "aging")
+      ? params.alert
+      : "all";
+  if (alertMode === "short") {
+    filtered = filtered.filter((r) => r.totalAvailable < 0);
+  } else if (alertMode === "aging") {
+    filtered = filtered.filter((r) => agingByProductId.get(r.id)?.ageSignal != null);
+  }
 
   // Pagination
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
@@ -225,11 +241,12 @@ export default async function InventoryPage({
   const paginationParams: Record<string, string | undefined> = {
     loc: activeLoc || undefined,
     category: params.category || undefined,
-    status: params.status || undefined,
+    status: backorderActive ? undefined : params.status || undefined,
     search: params.search || undefined,
     forecast: forecastActive ? "1" : undefined,
     incomingOnly: incomingOnlyActive ? "1" : undefined,
     backorder: backorderActive ? "1" : undefined,
+    alert: backorderActive && alertMode !== "all" ? alertMode : undefined,
   };
 
   // Toggle target URL: preserves every other current param, only flips `forecast`
@@ -296,22 +313,20 @@ export default async function InventoryPage({
           defaultSearch={params.search}
           defaultCategory={params.category}
           defaultStatus={params.status}
+          defaultAlert={alertMode}
           defaultIncomingOnly={incomingOnlyActive ? "1" : undefined}
           currentLoc={activeLoc}
           currentForecast={forecastActive ? "1" : undefined}
           currentBackorder={backorderActive ? "1" : undefined}
-          hideStatus={backorderActive}
         />
       </div>
 
       <div className="mx-8 flex min-h-0 flex-1 flex-col">
         {backorderActive && (
           <p className="mb-2 shrink-0 text-sm text-gray-500">
-            {filtered.length} alert{filtered.length === 1 ? "" : "s"}
+            {alertCount} alert{alertCount === 1 ? "" : "s"}
             {shortCount > 0 ? ` · ${shortCount} short` : ""}
-            {filtered.length - shortCount > 0
-              ? ` · ${filtered.length - shortCount} aging only`
-              : ""}
+            {agingOnlyCount > 0 ? ` · ${agingOnlyCount} aging only` : ""}
           </p>
         )}
         <InventoryTable

@@ -74,7 +74,7 @@ nearestIncoming（仅 BACKORDERED 行查询）
 | `src/app/(portal)/inventory/page.tsx` | `backorder=1` 模式：过滤行、与 Forecast 互斥、组装 `agingByProductId` |
 | `src/components/inventory/backorder-toggle.tsx` | 红色「Backorder alerts / Exit alerts」按钮 |
 | `src/components/inventory/inventory-table.tsx` | Backorder 模式下的「Aged」「Next supply」列 |
-| `src/components/inventory/inventory-filters.tsx` | hidden `backorder` 参数透传，避免筛选时丢模式 |
+| `src/components/inventory/inventory-filters.tsx` | hidden `backorder` 透传；Backorder 下用 `alert=` 三档替换 Status |
 | `src/components/inventory/forecast-toggle.tsx` | 对照件：Forecast 有免责弹窗；Backorder **无**弹窗（实时数据） |
 | `src/lib/shortage-report.ts` | 工厂 CSV：`getShortageRows`，只出 Available < 0 |
 | `src/app/api/inventory/shortage-export/route.ts` | CSV 下载；任意已登录角色 |
@@ -93,9 +93,14 @@ nearestIncoming（仅 BACKORDERED 行查询）
 
 ### 4.2 Inventory Backorder alerts 模式
 
-- URL：`/inventory?loc=<仓库名>&backorder=1`
-- 与 Forecast 互斥：点 Forecast 会清掉 `backorder`；点 Backorder 会清掉 `forecast` / `incomingOnly`；若两参数同时存在，**Forecast 优先渲染**
-- 表格只保留：`Available < 0` **或** 有逾期预留的 SKU
+- URL：`/inventory?loc=<仓库名>&backorder=1`；可选 `alert=short` / `alert=aging`（缺省或 `alert=all` = 全量警报）
+- 与 Forecast 互斥：点 Forecast 会清掉 `backorder`；点 Backorder 会清掉 `forecast` / `incomingOnly`；进出模式时 **不带 `alert`**（回到 All alerts）；若两参数同时存在，**Forecast 优先渲染**
+- 模式内用独立下拉，**不用**全库 Status（OK / Reorder / Out of stock）：
+  - All alerts：`Available < 0` **或** 有逾期预留
+  - Short only：`Available < 0`
+  - Aging only：`ageSignal != null`（AGING/STALE）。不能只看 `agingByProductId.has`——map 里也有纯缺货、无逾期的行
+- 表头 `N alerts · X short · Y aging only` 始终按**未按 alert= 收窄前**的全量计，避免切档后误以为总警报变少
+- 翻页 / 换仓 / Category / Search 保留当前 `alert`；一行可同时进 Short 和 Aging
 - 同一 SKU 多条逾期预留时：保留 **rank 最高**、同 rank 则 **ageDays 最大** 的那条做「Aged」列展示
 - 「Aged」列可点进对应 `/sales/[id]`；无年龄信号时显示 `—`（行仅因 Available<0 进入）
 - 「Next supply」列只对 `Available < 0` 有意义；非缺货行显示 `—`
@@ -104,7 +109,7 @@ nearestIncoming（仅 BACKORDERED 行查询）
 
 内部 Backorder 屏给仓管/销售催客户；工厂要的是按 SKU 汇总的下料清单，不带客户名和销售单。
 
-- 入口：Backorder 模式下的 **Factory list** 按钮 → `GET /api/inventory/shortage-export?loc=<仓库名>`
+- 入口：Backorder 模式下的 **Factory list** 按钮 → `GET /api/inventory/shortage-export?loc=<仓库名>`。**不跟屏幕 `alert=` 走**，永远只导出 Short（`Available < 0`）。不做 Aging CSV、不做「按当前筛选导出」
 - 计算：`src/lib/shortage-report.ts` 的 `getShortageRows(locationId)`。只出 **active** 且该仓 `Available < 0` 的 SKU；`Short qty = max(0, Reserved − On Hand)`
 - 在途资格与 Forecast / Aging 相同：`shipped` / `in_transit` / `arrived` 且 ETA 已知；每 SKU 只带**最近一柜**
 - 不含客户、销售单、Aged 天数。含 CONSUMABLE（未特判）
@@ -144,8 +149,9 @@ QA：导出行数应等于该仓 `Available < 0` 的 active SKU 数（可与 Bac
 ### 5.4 Inventory Backorder 模式空表 / 行数不对
 
 1. 确认 URL 有 `backorder=1` 且**没有**被 Forecast 抢占（`forecast=1` 存在时 Backorder 渲染关闭）。
-2. **Status=Reorder 会藏掉真正缺货的行**（2026-08-13 已修）。`Available < 0` 的 Status 永远是 `OUT_OF_STOCK`，不是 Reorder。进入 Backorder 会丢掉 `status`，模式内不再套用 Status 下拉。若仍觉得列表偏短，先看表上方 `N alerts · X short`，再对 Factory list CSV。
-3. Category / Search 仍会收窄。筛选表单提交后模式丢了 → 检查 `inventory-filters.tsx` 是否还有 hidden `name="backorder"`。
+2. **先看表头再看下拉**。表头是全量警报；当前列表可能已被 `alert=short` / `alert=aging` 收窄。切回 All alerts 再对 Factory list CSV。
+3. **不要用 Status=Reorder 解释空表**。进入 Backorder 会丢掉 `status`，模式内换成 `alert=`。`Available < 0` 的 Status 永远是 `OUT_OF_STOCK`，不是 Reorder。
+4. Category / Search 仍会收窄。筛选表单提交后模式丢了 → 检查 `inventory-filters.tsx` 是否还有 hidden `name="backorder"`。翻页后 `alert` 丢了 → 检查 `paginationParams` 是否带了 `alert`。
 
 ### 5.5 「Aged」天数突然变小 / 变成新日期
 
@@ -197,7 +203,8 @@ WHERE id = '<movement_id>';
 
 - [ ] Dashboard 统计卡数量与面板列表一致（同 `loc` 筛选）
 - [ ] All / Brisbane / Sydney 切换只影响本面板，不误伤 Open orders / Low stock 的全局聚合语义
-- [ ] Inventory：`backorder=1` ↔ Forecast 互斥；筛选 / 翻页 / 换仓后 `backorder=1` 仍在 URL
+- [ ] Inventory：`backorder=1` ↔ Forecast 互斥；筛选 / 翻页 / 换仓后 `backorder=1` 仍在 URL；`alert=` 翻页保留、进出模式重置
+- [ ] All / Short / Aging 三档：Aging 不含纯缺货无逾期行；表头计数不随档变
 - [ ] 双徽标独立：可出现「只有 Aged」「只有 Short」「两者都有」
 - [ ] BACKORDERED + 有在途柜 → Next supply 有 `poRef`/ETA/qty；无柜 → 红色 None incoming
 - [ ] `completed` / `cancelled` 后告警消失；不需要人工「标记已处理」
@@ -212,6 +219,7 @@ WHERE id = '<movement_id>';
 | 日期 | 发现 | 处理 |
 |---|---|---|
 | 2026-08-11 | 宪法 H#3 仪表板 WARNING 从未实现；预留逾期 / 缺货无可见提醒 | 初版落地（`ef3d561`）：共享 helper + Dashboard 面板 + Inventory Backorder 模式；双信号分开展示；缺货行带最近在途货柜提示 |
+| 2026-08-13 | Backorder 屏套用全库 Status=Reorder 会藏掉 Available&lt;0 的螺丝等缺货行 | 进 Alerts 丢掉 `status`；模式内改用 `alert=`（All / Short / Aging）；Factory list 仍只出 Short |
 
 ---
 

@@ -228,12 +228,14 @@
 - [ ] Backorder 模式下多两列"Aged"（点击跳转对应销售单）与"Next supply"
 - [ ] 点击 Forecast 按钮会清除 `backorder=1`；点击 Backorder 按钮会清除 `forecast=1`（两模式互斥，不叠加显示）
 - [ ] 切换仓库 Tab / Category / 搜索时，`backorder=1` 保留在 URL 中
-- [ ] Backorder 模式不显示 Status 下拉；从带 `status=REORDER` 的库存页点进 Alerts 后，缺货行（Available&lt;0，含螺丝）仍出现，不被 Reorder 滤掉
-- [ ] 退出 Backorder 模式后正常显示全部 SKU，不残留过滤
+- [ ] Backorder 模式用 All alerts / Short only / Aging only，不显示全库 Status；从带 `status=REORDER` 的库存页点进 Alerts 后，缺货行（Available&lt;0，含螺丝）仍出现
+- [ ] 默认 All alerts；`alert=short` 只留 Available&lt;0；`alert=aging` 只留 `ageSignal != null`（含「逾期但仍有货」，不含纯缺货无逾期）
+- [ ] 表头 `N alerts · X short` 不随当前档变；翻页保留 `alert=`；进出 Forecast/Backorder 重置为 All
+- [ ] 退出 Backorder 模式后正常显示全部 SKU，不残留 `alert` / Status 过滤
 
 **工厂缺货 CSV（试用）：**
 - [ ] Backorder 模式下出现 **Factory list**；退出该模式后按钮消失
-- [ ] 下载的 CSV 行数 = 该仓 `Available < 0` 的 active SKU 数（不含「仅逾期、有货」行）
+- [ ] 下载的 CSV 行数 = 该仓 `Available < 0` 的 active SKU 数（不含「仅逾期、有货」行）；屏幕切 Aging only 后再点 Factory list，CSV 仍是 Short 全量
 - [ ] 未登录访问 `/api/inventory/shortage-export?loc=Brisbane` → 401
 - [ ] 缺 `loc` → 400；不存在的仓名 → 404
 
@@ -275,6 +277,7 @@
 | 2026-08-11 | 宪法 H#3「On Hand < Reserved → 仪表板 WARNING」从未落地；预留逾期 / 缺货无可见提醒 | 落地 Aging Reservations & Backorder Alerts（commit `ef3d561`）。完整手册见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md)；规格见 constitution 决策 #16 / §D4；回归清单 §15 |
 | 2026-08-11 | 新增 `sales` 角色时，Sidebar 过滤和写入 API 都同步排除了 sales，但 6 个 Incoming/Transfers 页面的 `redirect` 守卫漏改，sales 可直接输入 URL 查看供应商名/PO/成本等敏感信息 | 6 个 page.tsx 统一改为 `role === "viewer" \|\| role === "sales"` 时 redirect；详见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11 |
 | 2026-08-13 | 工厂无法用浏览器打印 Backorder 屏排产（overflow + 分页截断）；需要按 SKU 汇总的下料清单 | 试用版 CSV：`getShortageRows` + `/api/inventory/shortage-export`；Backorder 模式「Factory list」。见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §4.3 |
+| 2026-08-13 | Backorder 警报需要按「缺货 / 逾期」分开看，但不能把 Reorder 请回来，也不能让工厂文件跟屏幕筛选走 | Inventory `alert=` 三档（默认 All）；Factory list 仍只出 Available&lt;0 |
 
 ---
 

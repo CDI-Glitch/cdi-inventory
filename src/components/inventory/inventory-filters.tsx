@@ -21,26 +21,32 @@ const STATUS_OPTIONS = [
   { value: "OUT_OF_STOCK", label: "Out of stock" },
 ];
 
+const ALERT_OPTIONS = [
+  { value: "all", label: "All alerts" },
+  { value: "short", label: "Short only" },
+  { value: "aging", label: "Aging only" },
+];
+
 interface InventoryFiltersProps {
   defaultSearch?: string;
   defaultCategory?: string;
   defaultStatus?: string;
+  defaultAlert?: string;
   defaultIncomingOnly?: string;
   currentLoc?: string;
   currentForecast?: string;
   currentBackorder?: string;
-  hideStatus?: boolean;
 }
 
 export function InventoryFilters({
   defaultSearch = "",
   defaultCategory = "",
   defaultStatus = "",
+  defaultAlert = "all",
   defaultIncomingOnly = "",
   currentLoc = "",
   currentForecast = "",
   currentBackorder = "",
-  hideStatus = false,
 }: InventoryFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -68,7 +74,15 @@ export function InventoryFilters({
         placeholder="All categories"
         onChange={submitForm}
       />
-      {!hideStatus && (
+      {currentBackorder ? (
+        <CustomSelect
+          name="alert"
+          value={defaultAlert}
+          options={ALERT_OPTIONS}
+          placeholder="All alerts"
+          onChange={submitForm}
+        />
+      ) : (
         <CustomSelect
           name="status"
           value={defaultStatus}
