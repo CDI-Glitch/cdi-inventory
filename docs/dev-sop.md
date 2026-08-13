@@ -230,6 +230,12 @@
 - [ ] 切换仓库 Tab / Category / Status / 搜索时，`backorder=1` 保留在 URL 中
 - [ ] 退出 Backorder 模式后正常显示全部 SKU，不残留过滤
 
+**工厂缺货 CSV（试用）：**
+- [ ] Backorder 模式下出现 **Factory list**；退出该模式后按钮消失
+- [ ] 下载的 CSV 行数 = 该仓 `Available < 0` 的 active SKU 数（不含「仅逾期、有货」行）
+- [ ] 未登录访问 `/api/inventory/shortage-export?loc=Brisbane` → 401
+- [ ] 缺 `loc` → 400；不存在的仓名 → 404
+
 ---
 
 ## 每日收工检查
@@ -267,6 +273,7 @@
 | 2026-07-30 | Prisma `migrate dev` 报 drift 并诱导 `reset` | 生产库历来用 `db push`、无 `_prisma_migrations`；已 baseline，见下方「Prisma Migration Baseline」|
 | 2026-08-11 | 宪法 H#3「On Hand < Reserved → 仪表板 WARNING」从未落地；预留逾期 / 缺货无可见提醒 | 落地 Aging Reservations & Backorder Alerts（commit `ef3d561`）。完整手册见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md)；规格见 constitution 决策 #16 / §D4；回归清单 §15 |
 | 2026-08-11 | 新增 `sales` 角色时，Sidebar 过滤和写入 API 都同步排除了 sales，但 6 个 Incoming/Transfers 页面的 `redirect` 守卫漏改，sales 可直接输入 URL 查看供应商名/PO/成本等敏感信息 | 6 个 page.tsx 统一改为 `role === "viewer" \|\| role === "sales"` 时 redirect；详见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11 |
+| 2026-08-13 | 工厂无法用浏览器打印 Backorder 屏排产（overflow + 分页截断）；需要按 SKU 汇总的下料清单 | 试用版 CSV：`getShortageRows` + `/api/inventory/shortage-export`；Backorder 模式「Factory list」。见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §4.3 |
 
 ---
 

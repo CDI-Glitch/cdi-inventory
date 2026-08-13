@@ -2,7 +2,7 @@
 
 > 配套文件：`constitution.md`（决策 #16 / §D4 权威规格）、`dev-sop.md`（日常回归清单 §15）
 > 确立日期：2026-08-11（commit `ef3d561`）
-> 用途：维护、排查 Dashboard「At-risk reservations」与 Inventory「Backorder alerts」模式时的唯一操作手册
+> 用途：维护、排查 Dashboard「At-risk reservations」、Inventory「Backorder alerts」，以及工厂缺货 CSV（§4.3）时的操作手册
 
 ---
 
@@ -76,6 +76,9 @@ nearestIncoming（仅 BACKORDERED 行查询）
 | `src/components/inventory/inventory-table.tsx` | Backorder 模式下的「Aged」「Next supply」列 |
 | `src/components/inventory/inventory-filters.tsx` | hidden `backorder` 参数透传，避免筛选时丢模式 |
 | `src/components/inventory/forecast-toggle.tsx` | 对照件：Forecast 有免责弹窗；Backorder **无**弹窗（实时数据） |
+| `src/lib/shortage-report.ts` | 工厂 CSV：`getShortageRows`，只出 Available < 0 |
+| `src/app/api/inventory/shortage-export/route.ts` | CSV 下载；任意已登录角色 |
+| `src/components/inventory/factory-list-button.tsx` | Backorder 模式下的 Factory list 按钮 |
 
 ---
 
@@ -96,6 +99,19 @@ nearestIncoming（仅 BACKORDERED 行查询）
 - 同一 SKU 多条逾期预留时：保留 **rank 最高**、同 rank 则 **ageDays 最大** 的那条做「Aged」列展示
 - 「Aged」列可点进对应 `/sales/[id]`；无年龄信号时显示 `—`（行仅因 Available<0 进入）
 - 「Next supply」列只对 `Available < 0` 有意义；非缺货行显示 `—`
+
+### 4.3 工厂缺货 CSV（试用，2026-08-13）
+
+内部 Backorder 屏给仓管/销售催客户；工厂要的是按 SKU 汇总的下料清单，不带客户名和销售单。
+
+- 入口：Backorder 模式下的 **Factory list** 按钮 → `GET /api/inventory/shortage-export?loc=<仓库名>`
+- 计算：`src/lib/shortage-report.ts` 的 `getShortageRows(locationId)`。只出 **active** 且该仓 `Available < 0` 的 SKU；`Short qty = max(0, Reserved − On Hand)`
+- 在途资格与 Forecast / Aging 相同：`shipped` / `in_transit` / `arrived` 且 ETA 已知；每 SKU 只带**最近一柜**
+- 不含客户、销售单、Aged 天数。含 CONSUMABLE（未特判）
+- 权限：任意已登录角色（与 Inventory 页一致）。文件带 UTF-8 BOM，Excel 可直接打开中文表头
+- 打印页 / PDF 本轮不做
+
+QA：导出行数应等于该仓 `Available < 0` 的 active SKU 数（可与 Backorder 表交叉核对，但 Backorder 还会多出「仅逾期、有货」的行，那些不应出现在 CSV）
 
 ---
 
@@ -185,6 +201,7 @@ WHERE id = '<movement_id>';
 - [ ] 双徽标独立：可出现「只有 Aged」「只有 Short」「两者都有」
 - [ ] BACKORDERED + 有在途柜 → Next supply 有 `poRef`/ETA/qty；无柜 → 红色 None incoming
 - [ ] `completed` / `cancelled` 后告警消失；不需要人工「标记已处理」
+- [ ] Factory list CSV 行数 = 该仓 Available < 0 的 active SKU；不含仅逾期有货行
 
 ---
 
@@ -207,3 +224,4 @@ WHERE id = '<movement_id>';
 | Forecast + Backorder 同屏 | 互斥 | 表格列过多；缺货行已内嵌最近一柜提示 |
 | 告警「已处理」勾选 | 无 | 实时投影：问题解决后自动消失，避免僵尸勾选 |
 | 邮件 / 推送通知 | 无 | 当前仅 Portal 内可见；需要时另开决策 |
+| 工厂打印页 / PDF | 无，仅 CSV | 试用阶段先验证列与分组；打印页作 fast-follow |

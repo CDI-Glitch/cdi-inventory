@@ -4,6 +4,7 @@ import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { ForecastToggle } from "@/components/inventory/forecast-toggle";
 import { BackorderToggle } from "@/components/inventory/backorder-toggle";
+import { FactoryListButton } from "@/components/inventory/factory-list-button";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
@@ -259,6 +260,7 @@ export default async function InventoryPage({
           <div className="flex gap-2">
             <ForecastToggle active={forecastActive} href={forecastToggleHref} />
             <BackorderToggle active={backorderActive} href={backorderToggleHref} />
+            {backorderActive && activeLoc && <FactoryListButton loc={activeLoc} />}
             {role === "admin" && (
               <Link
                 href="/inventory/new"
