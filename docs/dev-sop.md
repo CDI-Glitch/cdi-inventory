@@ -98,11 +98,14 @@
 - [ ] 创建主表 + 多行明细
 - [ ] 状态推进顺序正确：pending → shipped → in_transit → arrived → confirmed
 - [ ] arrived 前可编辑明细行
-- [ ] arrived 后只能填 actualQty
+- [ ] arrived 后只能填 Received（Ordered 锁定）。**工厂偏差只改 Received，不要改 Ordered / 换 SKU**
+- [ ] arrived 可用「Receive remaining as ordered」：只填 Received 仍为 0 的行，已手改行不动；弹窗确认已对照实物
+- [ ] Received 允许大于 Ordered（超收橙色、短装红色）
+- [ ] Confirm 必须勾选「已核对实物」；弹窗列出齐货 / 短装 / 超收 / 仍为 0
 - [ ] confirmed 后完全不可编辑
-- [ ] 确认 → 每行 actualQty > 0 生成 InventoryLog (receive_stock)
+- [ ] 确认 → 每行 Received > 0 生成 InventoryLog (receive_stock)；Received=0 不入库
 - [ ] 不能重复确认（确认后按钮消失）
-- [ ] actualQty 和 expectedQty 不一致时正常处理（以 actualQty 为准）
+- [ ] 换 SKU 到货：Incoming 行保留原 SKU、Received=0；实物走 Adjust `adjustment_in`，reference=PO，notes 写清 substitution
 
 ### 9. 调货
 
@@ -278,6 +281,7 @@
 | 2026-08-11 | 新增 `sales` 角色时，Sidebar 过滤和写入 API 都同步排除了 sales，但 6 个 Incoming/Transfers 页面的 `redirect` 守卫漏改，sales 可直接输入 URL 查看供应商名/PO/成本等敏感信息 | 6 个 page.tsx 统一改为 `role === "viewer" \|\| role === "sales"` 时 redirect；详见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11 |
 | 2026-08-13 | 工厂无法用浏览器打印 Backorder 屏排产（overflow + 分页截断）；需要按 SKU 汇总的下料清单 | 试用版 CSV：`getShortageRows` + `/api/inventory/shortage-export`；Backorder 模式「Factory list」。见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §4.3 |
 | 2026-08-13 | Backorder 警报需要按「缺货 / 逾期」分开看，但不能把 Reorder 请回来，也不能让工厂文件跟屏幕筛选走 | Inventory `alert=` 三档（默认 All）；Factory list 仍只出 Available&lt;0 |
+| 2026-08-14 | Confirm 无弹窗 + Received 不能超收，经理在 shipped 改 Ordered 掩盖工厂偏差；PO-0004 已 Confirm 无法在页面改 | arrived「Receive remaining as ordered」+ Confirm 核对弹窗；允许超收。PO-0004 用 `scripts/fix-po-0004-receive.cjs` 留痕纠正（先 dry-run，`--apply` 才写库） |
 
 ---
 
