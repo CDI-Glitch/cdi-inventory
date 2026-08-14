@@ -136,6 +136,12 @@ export default async function IncomingDetailPage({
             currentStatus={shipment.status}
             hasReceivedQty={shipment.lines.some((l) => l.qtyReceived > 0)}
             hasShippedAt={shipment.shippedAt !== null}
+            receiveSummary={{
+              match: shipment.lines.filter((l) => l.qtyReceived === l.qtyOrdered).length,
+              short: shipment.lines.filter((l) => l.qtyReceived > 0 && l.qtyReceived < l.qtyOrdered).length,
+              over: shipment.lines.filter((l) => l.qtyReceived > l.qtyOrdered).length,
+              zero: shipment.lines.filter((l) => l.qtyReceived === 0).length,
+            }}
           />
         )}
 
@@ -209,9 +215,11 @@ export default async function IncomingDetailPage({
                     <td className="px-4 py-2 text-right">
                       <span
                         className={
-                          line.qtyReceived < line.qtyOrdered
+                          line.qtyReceived > line.qtyOrdered
                             ? "text-orange-600"
-                            : "text-green-600"
+                            : line.qtyReceived < line.qtyOrdered
+                              ? "text-red-600"
+                              : "text-green-600"
                         }
                       >
                         {line.qtyReceived}

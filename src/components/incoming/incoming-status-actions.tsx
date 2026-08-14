@@ -18,6 +18,13 @@ const BTN_STYLES: Record<string, string> = {
   cancelled: "border border-red-300 text-red-600 hover:bg-red-50",
 };
 
+interface ReceiveSummary {
+  match: number;
+  short: number;
+  over: number;
+  zero: number;
+}
+
 interface Props {
   id: string;
   currentStatus: string;
@@ -25,14 +32,23 @@ interface Props {
   hasReceivedQty?: boolean;
   /** Whether shippedAt has already been captured — controls the one-time date prompt */
   hasShippedAt?: boolean;
+  receiveSummary?: ReceiveSummary;
 }
 
-export function IncomingStatusActions({ id, currentStatus, hasReceivedQty = true, hasShippedAt = false }: Props) {
+export function IncomingStatusActions({
+  id,
+  currentStatus,
+  hasReceivedQty = true,
+  hasShippedAt = false,
+  receiveSummary,
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [showShippedAtPicker, setShowShippedAtPicker] = useState(false);
   const [shippedAtValue, setShippedAtValue] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [checkedCount, setCheckedCount] = useState(false);
 
   const allowed = INCOMING_TRANSITIONS[currentStatus as IncomingStatus] ?? [];
 
@@ -66,7 +82,21 @@ export function IncomingStatusActions({ id, currentStatus, hasReceivedQty = true
       setShowShippedAtPicker(true);
       return;
     }
+    if (next === "confirmed") {
+      setCheckedCount(false);
+      setShowConfirmModal(true);
+      return;
+    }
     transition(next);
+  }
+
+  function confirmReceive() {
+    if (!checkedCount) {
+      setError("Tick the checkbox to confirm you have checked received quantities.");
+      return;
+    }
+    setShowConfirmModal(false);
+    transition("confirmed");
   }
 
   function confirmShipped() {
@@ -142,6 +172,59 @@ export function IncomingStatusActions({ id, currentStatus, hasReceivedQty = true
         </div>
       )}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+            <h3 className="text-sm font-semibold text-gray-900">Confirm & receive stock</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              This posts inventory and locks the shipment. Check the Received column against the
+              physical count before continuing.
+            </p>
+            {receiveSummary && (
+              <ul className="mt-3 space-y-1 text-sm text-gray-700">
+                <li>{receiveSummary.match} line{receiveSummary.match === 1 ? "" : "s"} match ordered</li>
+                <li className={receiveSummary.short > 0 ? "text-red-600" : ""}>
+                  {receiveSummary.short} short (received &lt; ordered)
+                </li>
+                <li className={receiveSummary.over > 0 ? "text-orange-600" : ""}>
+                  {receiveSummary.over} over (received &gt; ordered)
+                </li>
+                <li className={receiveSummary.zero > 0 ? "text-amber-600" : ""}>
+                  {receiveSummary.zero} still 0 — will not add stock
+                </li>
+              </ul>
+            )}
+            <label className="mt-4 flex items-start gap-2 text-sm text-gray-800">
+              <input
+                type="checkbox"
+                checked={checkedCount}
+                onChange={(e) => { setCheckedCount(e.target.checked); setError(""); }}
+                className="mt-0.5"
+              />
+              I have checked received quantities against the physical count
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={loading !== null}
+                onClick={() => { setShowConfirmModal(false); setCheckedCount(false); }}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={loading !== null || !checkedCount}
+                onClick={confirmReceive}
+                className="rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading === "confirmed" ? "..." : "Confirm & receive stock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
