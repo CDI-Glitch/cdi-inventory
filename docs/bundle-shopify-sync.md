@@ -62,15 +62,15 @@ Bar/box grouping is independent of FK count:
 | 2150 | `T-Tray-2105` | `TT-BSG-89` / `TT-BX-90` | 3 |
 | 2450 | `T-Tray-2405` | `TT-BSG-67` / `TT-BX-68` | 4 |
 
-Seed codes: `BDL-TT-{size}-RAW` / `-SHB` / `-W`. Live Shopify `sellableSku` (black/white only so far):
+Seed codes: `BDL-TT-{size}-RAW` / `-SHB` / `-W`. Live Shopify variant SKU = the same Portal code:
 
-| Portal code | Shopify variant SKU |
+| Portal / Shopify SKU | Meaning |
 |---|---|
-| `BDL-TT-1650-SHB` / `-W` | `BND-T-TRAY-16DC-HB-SHB` / `-W` |
-| `BDL-TT-1850-SHB` / `-W` | `BND-T-TRAY-18DC-HB-SHB` / `-W` |
-| `BDL-TT-2450-SHB` / `-W` | `BND-T-TRAY-24SC-HB-SHB` / `-W` |
+| `BDL-TT-1650-SHB` / `-W` | Dual cab 1650 + headboard |
+| `BDL-TT-1850-SHB` / `-W` | Dual cab 1850 + headboard |
+| `BDL-TT-2450-SHB` / `-W` | Single cab 2450 + headboard |
 
-Raw alloy, 2150 extra cab, and Inventory Item IDs are not bound until those variants go live.
+Raw alloy, 2150 extra cab, and Inventory Item IDs are not bound until those variants go live. Do not keep a second `BND-T-TRAY-…` SKU on the variant — PDP queries `variant.sku`.
 
 ---
 

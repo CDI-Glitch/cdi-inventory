@@ -27,14 +27,14 @@ const SIZES = [
   { size: "2450", cab: "24SC", deck: "2405", bar: "TT-BSG-67", box: "TT-BX-68", fk: 4 },
 ] as const;
 
-/** Currently live on Shopify: black/white for 16DC, 18DC, 24SC only. */
+/** Currently live on Shopify: black/white for 1650 / 1850 / 2450. SKU = Portal code. */
 const LIVE_SELLABLE: Record<string, string> = {
-  "BDL-TT-1650-SHB": "BND-T-TRAY-16DC-HB-SHB",
-  "BDL-TT-1650-W": "BND-T-TRAY-16DC-HB-W",
-  "BDL-TT-1850-SHB": "BND-T-TRAY-18DC-HB-SHB",
-  "BDL-TT-1850-W": "BND-T-TRAY-18DC-HB-W",
-  "BDL-TT-2450-SHB": "BND-T-TRAY-24SC-HB-SHB",
-  "BDL-TT-2450-W": "BND-T-TRAY-24SC-HB-W",
+  "BDL-TT-1650-SHB": "BDL-TT-1650-SHB",
+  "BDL-TT-1650-W": "BDL-TT-1650-W",
+  "BDL-TT-1850-SHB": "BDL-TT-1850-SHB",
+  "BDL-TT-1850-W": "BDL-TT-1850-W",
+  "BDL-TT-2450-SHB": "BDL-TT-2450-SHB",
+  "BDL-TT-2450-W": "BDL-TT-2450-W",
 };
 
 function withColour(base: string, suffix: string) {

@@ -11,27 +11,27 @@ const prisma = new PrismaClient({ adapter } as any);
 
 const LIVE: Record<string, { sellableSku: string; name: string }> = {
   "BDL-TT-1650-SHB": {
-    sellableSku: "BND-T-TRAY-16DC-HB-SHB",
+    sellableSku: "BDL-TT-1650-SHB",
     name: "T-Tray 1650 Dual Cab + HB Sahara Black",
   },
   "BDL-TT-1650-W": {
-    sellableSku: "BND-T-TRAY-16DC-HB-W",
+    sellableSku: "BDL-TT-1650-W",
     name: "T-Tray 1650 Dual Cab + HB Splash White",
   },
   "BDL-TT-1850-SHB": {
-    sellableSku: "BND-T-TRAY-18DC-HB-SHB",
+    sellableSku: "BDL-TT-1850-SHB",
     name: "T-Tray 1850 Dual Cab + HB Sahara Black",
   },
   "BDL-TT-1850-W": {
-    sellableSku: "BND-T-TRAY-18DC-HB-W",
+    sellableSku: "BDL-TT-1850-W",
     name: "T-Tray 1850 Dual Cab + HB Splash White",
   },
   "BDL-TT-2450-SHB": {
-    sellableSku: "BND-T-TRAY-24SC-HB-SHB",
+    sellableSku: "BDL-TT-2450-SHB",
     name: "T-Tray 2450 Single Cab + HB Sahara Black",
   },
   "BDL-TT-2450-W": {
-    sellableSku: "BND-T-TRAY-24SC-HB-W",
+    sellableSku: "BDL-TT-2450-W",
     name: "T-Tray 2450 Single Cab + HB Splash White",
   },
 };
