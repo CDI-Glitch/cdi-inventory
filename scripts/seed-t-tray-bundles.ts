@@ -21,11 +21,21 @@ const COLOURS: Colour[] = [
 ];
 
 const SIZES = [
-  { size: "1650", deck: "1605", bar: "TT-BSG-67", box: "TT-BX-68", fk: 3 },
-  { size: "1850", deck: "1805", bar: "TT-BSG-89", box: "TT-BX-90", fk: 3 },
-  { size: "2150", deck: "2105", bar: "TT-BSG-89", box: "TT-BX-90", fk: 3 },
-  { size: "2450", deck: "2405", bar: "TT-BSG-67", box: "TT-BX-68", fk: 4 },
+  { size: "1650", cab: "16DC", deck: "1605", bar: "TT-BSG-67", box: "TT-BX-68", fk: 3 },
+  { size: "1850", cab: "18DC", deck: "1805", bar: "TT-BSG-89", box: "TT-BX-90", fk: 3 },
+  { size: "2150", cab: "21EC", deck: "2105", bar: "TT-BSG-89", box: "TT-BX-90", fk: 3 },
+  { size: "2450", cab: "24SC", deck: "2405", bar: "TT-BSG-67", box: "TT-BX-68", fk: 4 },
 ] as const;
+
+/** Currently live on Shopify: black/white for 16DC, 18DC, 24SC only. */
+const LIVE_SELLABLE: Record<string, string> = {
+  "BDL-TT-1650-SHB": "BND-T-TRAY-16DC-HB-SHB",
+  "BDL-TT-1650-W": "BND-T-TRAY-16DC-HB-W",
+  "BDL-TT-1850-SHB": "BND-T-TRAY-18DC-HB-SHB",
+  "BDL-TT-1850-W": "BND-T-TRAY-18DC-HB-W",
+  "BDL-TT-2450-SHB": "BND-T-TRAY-24SC-HB-SHB",
+  "BDL-TT-2450-W": "BND-T-TRAY-24SC-HB-W",
+};
 
 function withColour(base: string, suffix: string) {
   return `${base}${suffix}`;
@@ -41,8 +51,8 @@ async function main() {
   for (const size of SIZES) {
     for (const colour of COLOURS) {
       const code = `BDL-TT-${size.size}${colour.suffix || "-RAW"}`;
-      const sellableSku = `TT-${size.size}${colour.suffix}`;
-      const name = `T-Tray ${size.size} ${colour.label}`;
+      const sellableSku = LIVE_SELLABLE[code] ?? null;
+      const name = `T-Tray ${size.size} ${size.cab} + HB ${colour.label}`;
 
       const skus = [
         withColour(`T-Tray-${size.deck}`, colour.suffix),
@@ -82,7 +92,7 @@ async function main() {
       const payload = {
         name,
         productFamily: "T_TRAY",
-        active: true,
+        active: Boolean(sellableSku),
         sellableSku,
       };
 

@@ -62,7 +62,15 @@ Bar/box grouping is independent of FK count:
 | 2150 | `T-Tray-2105` | `TT-BSG-89` / `TT-BX-90` | 3 |
 | 2450 | `T-Tray-2405` | `TT-BSG-67` / `TT-BX-68` | 4 |
 
-Seed codes: `BDL-TT-{size}-RAW` / `-SHB` / `-W`. Default `sellableSku`: `TT-{size}` / `TT-{size}-SHB` / `TT-{size}-W` — **change these to match the live Shopify variant SKU** before relying on the Worker.
+Seed codes: `BDL-TT-{size}-RAW` / `-SHB` / `-W`. Live Shopify `sellableSku` (black/white only so far):
+
+| Portal code | Shopify variant SKU |
+|---|---|
+| `BDL-TT-1650-SHB` / `-W` | `BND-T-TRAY-16DC-HB-SHB` / `-W` |
+| `BDL-TT-1850-SHB` / `-W` | `BND-T-TRAY-18DC-HB-SHB` / `-W` |
+| `BDL-TT-2450-SHB` / `-W` | `BND-T-TRAY-24SC-HB-SHB` / `-W` |
+
+Raw alloy, 2150 extra cab, and Inventory Item IDs are not bound until those variants go live.
 
 ---
 
