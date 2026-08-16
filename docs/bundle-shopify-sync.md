@@ -48,10 +48,10 @@ Example: **1850 Sahara Black**
 | Mudguard | `CD-MG-SHB` + `CD-MG-DT-SHB` + `CD-MG-HR-SHB` | 1 pair | alt group `mudguard` |
 | Rear tie-down | `TT-BSG-89-SHB` | 1 pair | single |
 | Toolbox L/R | `TT-BX-90-L-SHB` / `TT-BX-90-R-SHB` | 1 each | single |
-| Fitting kit | `FK` × 3 + `FK-Ex` × 1 | — | shared, colour-agnostic |
+| Fitting kit | `FK` ×3（2450 为 ×4）+ `FK-Ex` ×2 | — | 卡 kits |
+| Fitting kit 其余 | `CXH` + 全部 `TT-BN-*` 各 ×1 | 1 Each | `nonConstraining`：预留/领料要减，网站不算 |
 | Number plate | `TT-PZB-SHB` | 1 | single |
 | Tail light panel | `TT-WDB-SHB` | 1 pair | single |
-| Bolt & nut kits | `TT-BN-*` | TBD | `nonConstraining` when added |
 
 Bar/box grouping is independent of FK count:
 
@@ -125,7 +125,6 @@ Soft BOM is unchanged: saving a sales line still snapshots items. Editing the li
 - Other tray families (schema already supports new `BundleDefinition` rows)
 - Auto-reserve from Shopify webhook
 - Vehicle-fit mudguard pick (`CD-MG-DT` / `HR`) from PDP vehicle field
-- `TT-BN-*` fastener map
 - Safety buffer (subtract 1 kit) — rejected in favour of the dashboard alert
 
 ---
