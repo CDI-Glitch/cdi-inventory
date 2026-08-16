@@ -80,18 +80,20 @@
 - [ ] 合法 HMAC → 200 + 处理
 - [ ] 非法 HMAC → 401
 - [ ] 重复 shopifyOrderId → 200（幂等，不创建重复记录）
-- [ ] `orders/paid` → 创建 SalesRecord (`fully_paid`)
+- [ ] `orders/paid` → 匹配已有销售单并写入 shopifyOrderId（**不**自动建单/预留）
 - [ ] `orders/cancelled` → 转换已有记录为 `cancelled`
-- [ ] Webhook 中的 SKU 在 Portal 不存在 → 创建为 `quote` + 告警
+- [ ] 匹配不到 Portal 单 → 200 确认，不创建 quote
 
 ### 7. Shopify 同步推送
 
-- [ ] 库存变动后自动推送 Available
-- [ ] 成功 → SyncLog status=success
-- [ ] API 错误 → SyncLog status=failed + error 字段
-- [ ] 失败记录被重试（最多 3 次）
-- [ ] 无 shopifyInventoryItemId → 跳过
-- [ ] 推送的 Available 值 = On Hand - Reserved（实时计算）
+- [ ] 库存变动后自动推送 Product Available，并级联刷新引用该 SKU 的 sellable bundle
+- [ ] Product 成功 → SyncLog status=success
+- [ ] API 错误 → SyncLog status=error + error 字段
+- [ ] 无 shopifyInventoryItemId → 跳过 Product 推送
+- [ ] Product 推送的 Available 值 = On Hand - Reserved（实时计算）
+- [ ] Sellable bundle 推送 kits；Worker 对 sellableSku 读 `BundleLocationStock`，不现场算 BOM
+- [ ] 挡泥板 alt group：三款库存相加才卡 kits
+- [ ] `nonConstraining` 组件不降低 kits，但仍写入 snapshot / 预留
 
 ### 8. 到货发货单
 
@@ -124,6 +126,8 @@
 - [ ] 缺货数量准确（Available <= 0）
 - [ ] 同步状态徽章正确（全绿/有失败=红）
 - [ ] 补货告警可点击跳转
+- [ ] Sellable kits 面板显示缓存数量（有 `sellableSku` 的 bundle）
+- [ ] Shared kit bottleneck 仅在同一约束组卡住 ≥2 个可售 bundle 时出现
 
 ### 11. 审计日志
 

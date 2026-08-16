@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
+import { snapshotBundleItems } from "@/lib/bundle-atp";
 import { z } from "zod";
 
 const SalesLineSchema = z.object({
@@ -100,14 +101,7 @@ export async function POST(req: NextRequest) {
       });
       if (!bundle) return NextResponse.json({ error: `Bundle not found: ${line.itemCode}` }, { status: 404 });
       if (!bundle.active) return NextResponse.json({ error: `Bundle inactive: ${line.itemCode}` }, { status: 400 });
-      snapshotByIndex.push(
-        bundle.items.map((i) => ({
-          productId: i.productId,
-          sku: i.product.sku,
-          name: i.product.name,
-          qty: i.qty,
-        }))
-      );
+      snapshotByIndex.push(snapshotBundleItems(bundle.items));
     }
   }
 

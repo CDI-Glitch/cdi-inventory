@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { COMPONENT_ROLES } from "@/lib/constants";
+import { refreshBundleKitsCache } from "@/lib/bundle-atp";
+import { syncBundleToShopify } from "@/lib/shopify-sync";
 
 const CreateBundleSchema = z.object({
   code: z.string().regex(/^[A-Z0-9\-]+$/, "Code must be uppercase letters, numbers, hyphens"),
@@ -15,7 +17,12 @@ const CreateBundleSchema = z.object({
     required: z.boolean().default(true),
     sortOrder: z.number().int(),
     notes: z.string().optional(),
+    nonConstraining: z.boolean().optional(),
+    altGroupKey: z.string().nullable().optional(),
   })).min(1, "Bundle must have at least one component"),
+  sellableSku: z.string().optional().nullable(),
+  shopifyInventoryItemId: z.string().optional().nullable(),
+  shopifyVariantId: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -42,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { code, name, productFamily, items } = parsed.data;
+  const { code, name, productFamily, items, sellableSku, shopifyInventoryItemId, shopifyVariantId } = parsed.data;
 
   const existing = await prisma.bundleDefinition.findUnique({ where: { code } });
   if (existing) return NextResponse.json({ error: "Bundle code already exists" }, { status: 409 });
@@ -64,10 +71,26 @@ export async function POST(req: NextRequest) {
       code,
       name,
       productFamily,
-      items: { create: items },
+      sellableSku: sellableSku?.trim() || null,
+      shopifyInventoryItemId: shopifyInventoryItemId?.trim() || null,
+      shopifyVariantId: shopifyVariantId?.trim() || null,
+      items: { create: items.map((item) => ({
+        ...item,
+        nonConstraining: item.nonConstraining ?? false,
+        altGroupKey: item.altGroupKey?.trim() || null,
+      })) },
     },
     include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
   });
+
+  if (bundle.sellableSku || bundle.shopifyInventoryItemId) {
+    try {
+      await refreshBundleKitsCache(bundle.id);
+      await syncBundleToShopify(bundle.id);
+    } catch (err) {
+      console.error("[POST /api/bundles] kits cache/sync", err);
+    }
+  }
 
   return NextResponse.json(bundle, { status: 201 });
 }

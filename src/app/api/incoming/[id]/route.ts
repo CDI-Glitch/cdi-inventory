@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { INCOMING_TRANSITIONS, type IncomingStatus } from "@/lib/constants";
+import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
 
 const TransitionSchema = z.object({
   status: z.enum(["pending", "shipped", "in_transit", "arrived", "confirmed", "cancelled"]),
@@ -88,6 +89,7 @@ export async function PATCH(
     }
 
     const userId = (session.user as any)?.id ?? "system";
+    const receivedProductIds: string[] = [];
     for (const line of shipment.lines) {
       if (line.qtyReceived <= 0) continue;
       await prisma.inventoryLog.create({
@@ -101,7 +103,9 @@ export async function PATCH(
           notes: `Incoming: ${shipment.poRef} confirmed`,
         },
       });
+      receivedProductIds.push(line.productId);
     }
+    scheduleAfterStockChange(receivedProductIds);
   }
 
   const updated = await prisma.incomingShipment.update({

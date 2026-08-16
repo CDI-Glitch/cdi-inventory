@@ -30,13 +30,14 @@ model Location {
   shopifyLocationId String?
   active            Boolean @default(true)
 
-  inventoryLogs      InventoryLog[]
-  salesRecords       SalesRecord[]
-  generatedMovements GeneratedMovement[]
-  incomingShipments  IncomingShipment[]
-  transfersFrom      Transfer[]          @relation("TransferFrom")
-  transfersTo        Transfer[]          @relation("TransferTo")
-  syncLogs           SyncLog[]
+  inventoryLogs         InventoryLog[]
+  salesRecords          SalesRecord[]
+  generatedMovements    GeneratedMovement[]
+  incomingShipments     IncomingShipment[]
+  transfersFrom         Transfer[]          @relation("TransferFrom")
+  transfersTo           Transfer[]          @relation("TransferTo")
+  syncLogs              SyncLog[]
+  bundleLocationStocks  BundleLocationStock[]
 }
 
 model Product {
@@ -141,28 +142,52 @@ model GeneratedMovement {
 // ─── BUNDLES ─────────────────────────────────────────
 
 model BundleDefinition {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  name          String
-  productFamily String
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
+  id                     String   @id @default(cuid())
+  code                   String   @unique
+  name                   String
+  productFamily          String
+  active                 Boolean  @default(true)
+  // Storefront / Worker lookup key. Null for internal hardware packs that are
+  // not sold as a Shopify product. Unique when set; multiple nulls are allowed.
+  sellableSku            String?  @unique
+  shopifyInventoryItemId String?
+  shopifyVariantId       String?
+  createdAt              DateTime @default(now())
 
-  items BundleItem[]
+  items          BundleItem[]
+  locationStocks BundleLocationStock[]
 }
 
 model BundleItem {
-  id            String  @id @default(cuid())
-  bundleId      String
-  productId     String
-  qty           Int     @default(1)
-  componentRole String
-  required      Boolean @default(true)
-  sortOrder     Int
-  notes         String?
+  id               String  @id @default(cuid())
+  bundleId         String
+  productId        String
+  qty              Int     @default(1)
+  componentRole    String
+  required         Boolean @default(true)
+  sortOrder        Int
+  notes            String?
+  // In BOM for pick/reserve, excluded from kits ATP (e.g. locally buyable fasteners).
+  nonConstraining  Boolean @default(false)
+  // Same key within a bundle = interchangeable SKUs; ATP sums available. Null = unique line.
+  altGroupKey      String?
 
   bundle  BundleDefinition @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   product Product          @relation(fields: [productId], references: [id])
+}
+
+model BundleLocationStock {
+  id                 String   @id @default(cuid())
+  bundleDefinitionId String
+  locationId         String
+  cachedKits         Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  bundle   BundleDefinition @relation(fields: [bundleDefinitionId], references: [id], onDelete: Cascade)
+  location Location         @relation(fields: [locationId], references: [id])
+
+  @@unique([bundleDefinitionId, locationId])
+  @@index([bundleDefinitionId])
 }
 
 // ─── INCOMING (Master-Detail) ────────────────────────

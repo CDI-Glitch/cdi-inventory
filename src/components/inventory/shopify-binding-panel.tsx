@@ -6,9 +6,10 @@ interface Props {
   sku: string;
   shopifyInventoryItemId: string | null;
   shopifyVariantId: string | null;
+  saveUrl?: string;
 }
 
-export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVariantId }: Props) {
+export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVariantId, saveUrl }: Props) {
   const [editing, setEditing] = useState(false);
   const [itemId, setItemId] = useState(shopifyInventoryItemId ?? "");
   const [variantId, setVariantId] = useState(shopifyVariantId ?? "");
@@ -20,8 +21,8 @@ export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVarian
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/products/${encodeURIComponent(sku)}`, {
-        method: "PATCH",
+      const res = await fetch(saveUrl ?? `/api/products/${encodeURIComponent(sku)}`, {
+        method: saveUrl ? "PUT" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shopifyInventoryItemId: itemId.trim() || null,

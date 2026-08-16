@@ -11,6 +11,8 @@ interface BundleItemRow {
   required: boolean;
   sortOrder: number;
   notes: string;
+  nonConstraining: boolean;
+  altGroupKey: string;
 }
 
 interface Props {
@@ -21,6 +23,9 @@ interface Props {
     name: string;
     productFamily: string;
     active: boolean;
+    sellableSku: string | null;
+    shopifyInventoryItemId: string | null;
+    shopifyVariantId: string | null;
     items: {
       id: string;
       productId: string;
@@ -29,6 +34,8 @@ interface Props {
       required: boolean;
       sortOrder: number;
       notes: string | null;
+      nonConstraining: boolean;
+      altGroupKey: string | null;
     }[];
   };
 }
@@ -52,6 +59,8 @@ export function BundleForm({ products, bundle }: Props) {
       required: i.required,
       sortOrder: i.sortOrder,
       notes: i.notes ?? "",
+      nonConstraining: i.nonConstraining,
+      altGroupKey: i.altGroupKey ?? "",
     })) ?? []
   );
   const [loading, setLoading] = useState(false);
@@ -60,7 +69,7 @@ export function BundleForm({ products, bundle }: Props) {
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { productId: "", qty: 1, componentRole: "main_body", required: true, sortOrder: prev.length, notes: "" },
+      { productId: "", qty: 1, componentRole: "main_body", required: true, sortOrder: prev.length, notes: "", nonConstraining: false, altGroupKey: "" },
     ]);
   }
 
@@ -94,7 +103,14 @@ export function BundleForm({ products, bundle }: Props) {
       code: (formData.get("code") as string).toUpperCase().trim(),
       name: formData.get("name"),
       productFamily: formData.get("productFamily"),
-      items: items.map((item, idx) => ({ ...item, sortOrder: idx })),
+      sellableSku: ((formData.get("sellableSku") as string) ?? "").trim() || null,
+      shopifyInventoryItemId: ((formData.get("shopifyInventoryItemId") as string) ?? "").trim() || null,
+      shopifyVariantId: ((formData.get("shopifyVariantId") as string) ?? "").trim() || null,
+      items: items.map((item, idx) => ({
+        ...item,
+        sortOrder: idx,
+        altGroupKey: item.altGroupKey.trim() || null,
+      })),
     };
 
     const url = isEdit ? `/api/bundles/${bundle!.id}` : "/api/bundles";
@@ -153,6 +169,34 @@ export function BundleForm({ products, bundle }: Props) {
             placeholder="Hilux Tray Kit"
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Sellable SKU</label>
+            <input
+              name="sellableSku"
+              defaultValue={bundle?.sellableSku ?? ""}
+              placeholder="Storefront variant SKU"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+            />
+            <p className="mt-1 text-xs text-gray-400">Worker looks this up when it is not a Product SKU.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Shopify inventory item ID</label>
+            <input
+              name="shopifyInventoryItemId"
+              defaultValue={bundle?.shopifyInventoryItemId ?? ""}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Shopify variant ID</label>
+            <input
+              name="shopifyVariantId"
+              defaultValue={bundle?.shopifyVariantId ?? ""}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+            />
+          </div>
         </div>
       </div>
 
@@ -230,6 +274,26 @@ export function BundleForm({ products, bundle }: Props) {
                       onChange={(e) => updateItem(idx, "required", e.target.checked)}
                     />
                     Required
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Alt group</label>
+                  <input
+                    type="text"
+                    value={item.altGroupKey}
+                    onChange={(e) => updateItem(idx, "altGroupKey", e.target.value)}
+                    placeholder="e.g. mudguard"
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono"
+                  />
+                </div>
+                <div className="flex items-end pb-1.5">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={item.nonConstraining}
+                      onChange={(e) => updateItem(idx, "nonConstraining", e.target.checked)}
+                    />
+                    Ignore for kits ATP
                   </label>
                 </div>
               </div>

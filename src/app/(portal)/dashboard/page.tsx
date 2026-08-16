@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAgingReservations } from "@/lib/reservation-aging";
+import { findSharedComponentBottlenecks } from "@/lib/bundle-atp";
 
 const SALES_STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-600",
@@ -70,6 +71,16 @@ export default async function DashboardPage({
   const agingReservations = await getAgingReservations(
     agingLocation ? { locationId: agingLocation.id } : {}
   );
+  const [sharedBottlenecks, sellableBundles] = await Promise.all([
+    findSharedComponentBottlenecks(),
+    prisma.bundleDefinition.findMany({
+      where: { active: true, sellableSku: { not: null } },
+      include: {
+        locationStocks: { include: { location: { select: { name: true } } } },
+      },
+      orderBy: { code: "asc" },
+    }),
+  ]);
   const agingToggleHref = (loc: string) => `/dashboard?loc=${loc}`;
   const inventoryAlertHref = `/inventory?loc=${agingLocation?.name ?? locations[0]?.name ?? ""}&backorder=1`;
 
@@ -223,6 +234,67 @@ export default async function DashboardPage({
           </div>
         )}
       </div>
+
+      {sellableBundles.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-700">Sellable kits (cached)</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              How many complete kits can be built per warehouse. Refreshed when component stock changes.
+            </p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {sellableBundles.map((b) => (
+              <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{b.name}</p>
+                  <p className="text-xs font-mono text-gray-500 mt-0.5">
+                    {b.code}
+                    {b.sellableSku ? ` · ${b.sellableSku}` : ""}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-700">
+                  {b.locationStocks.length === 0
+                    ? "No cache yet"
+                    : b.locationStocks.map((row) => `${row.location.name}: ${row.cachedKits}`).join(" · ")}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sharedBottlenecks.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
+          <div className="px-5 py-3 border-b border-amber-100">
+            <h2 className="text-sm font-semibold text-amber-900">
+              Shared kit bottleneck ({sharedBottlenecks.length})
+            </h2>
+            <p className="text-xs text-amber-800 mt-0.5">
+              These components currently cap kits for two or more Shopify tray variants. Process those orders first — Shopify variants do not share a live pool until reservation is recorded.
+            </p>
+          </div>
+          <div className="divide-y divide-amber-100 bg-white">
+            {sharedBottlenecks.map((alert) => (
+              <div key={`${alert.locationId}:${alert.key}`} className="px-5 py-3">
+                <p className="text-sm font-mono font-medium text-gray-900">
+                  {alert.skus.join(" / ")}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {alert.locationName}
+                  {" · "}
+                  available {alert.available}
+                  {" · "}
+                  kits from this line {alert.kitsFromGroup}
+                </p>
+                <p className="text-xs text-amber-800 mt-1">
+                  Caps {alert.bundleCodes.join(", ")}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Open orders */}

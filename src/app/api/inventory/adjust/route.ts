@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
+import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
 
 const AdjustSchema = z.object({
   productId: z.string().min(1),
@@ -41,6 +42,8 @@ export async function POST(req: NextRequest) {
   const log = await prisma.inventoryLog.create({
     data: { productId, locationId, type, delta, reference, enteredBy: userId, notes },
   });
+
+  scheduleAfterStockChange([productId]);
 
   return NextResponse.json(log, { status: 201 });
 }

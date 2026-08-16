@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
 
 const MovementRowSchema = z.object({
   sku: z.string().min(1),
@@ -192,6 +193,8 @@ export async function PUT(
       movements: { include: { product: true, location: true }, orderBy: { createdAt: "asc" } },
     },
   });
+
+  scheduleAfterStockChange(auditRows.map((a) => a.productId));
 
   return NextResponse.json(updated);
 }

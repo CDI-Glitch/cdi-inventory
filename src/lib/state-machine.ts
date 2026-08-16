@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { VALID_TRANSITIONS, type SalesStatus } from "./constants";
+import { scheduleAfterStockChange } from "./stock-side-effects";
 
 export class InvalidTransitionError extends Error {
   constructor(from: string, to: string) {
@@ -91,12 +92,19 @@ async function reserveStock(record: any, userId: string) {
       // while the record sat in Quote. Fall back to a live lookup only for
       // lines created before the snapshot field existed.
       const snapshot = line.snapshotItems as
-        | { productId: string; sku: string; name: string; qty: number }[]
+        | {
+            productId: string;
+            sku: string;
+            name: string;
+            qty: number;
+            altGroupKey?: string | null;
+          }[]
         | null
         | undefined;
 
       if (snapshot && snapshot.length > 0) {
         for (const item of snapshot) {
+          if (item.altGroupKey) continue;
           qtyMap[item.productId] = {
             qty: (qtyMap[item.productId]?.qty ?? 0) + item.qty * line.qty,
             sku: item.sku,
@@ -110,6 +118,7 @@ async function reserveStock(record: any, userId: string) {
         if (!bundle) throw new Error(`Bundle not found: ${line.itemCode}`);
 
         for (const item of bundle.items) {
+          if (item.altGroupKey) continue;
           if (!item.product.active) {
             throw new Error(`Component SKU inactive: ${item.product.sku}`);
           }
@@ -159,6 +168,8 @@ async function reserveStock(record: any, userId: string) {
       },
     });
   }
+
+  scheduleAfterStockChange(Object.keys(qtyMap));
 }
 
 async function completeStock(record: any, userId: string) {
@@ -184,6 +195,8 @@ async function completeStock(record: any, userId: string) {
       data: { reservedQty: 0 },
     });
   }
+
+  scheduleAfterStockChange(movements.map((m) => m.productId));
 }
 
 async function releaseReservations(salesRecordId: string, recordId: string, userId: string) {
@@ -213,4 +226,6 @@ async function releaseReservations(salesRecordId: string, recordId: string, user
     where: { salesRecordId, reservedQty: { gt: 0 } },
     data: { reservedQty: 0 },
   });
+
+  scheduleAfterStockChange(movements.map((m) => m.productId));
 }

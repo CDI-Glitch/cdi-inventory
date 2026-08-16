@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 import { COMPONENT_ROLES } from "@/lib/constants";
+import { refreshBundleKitsCache } from "@/lib/bundle-atp";
+import { syncBundleToShopify } from "@/lib/shopify-sync";
 
 const UpdateBundleSchema = z.object({
   name: z.string().min(1).optional(),
@@ -16,7 +19,12 @@ const UpdateBundleSchema = z.object({
     required: z.boolean().default(true),
     sortOrder: z.number().int(),
     notes: z.string().optional(),
+    nonConstraining: z.boolean().optional(),
+    altGroupKey: z.string().nullable().optional(),
   })).optional(),
+  sellableSku: z.string().optional().nullable(),
+  shopifyInventoryItemId: z.string().optional().nullable(),
+  shopifyVariantId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -52,7 +60,12 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { items, ...rest } = parsed.data;
+  const { items, sellableSku, shopifyInventoryItemId, shopifyVariantId, ...rest } = parsed.data;
+
+  const header: Prisma.BundleDefinitionUpdateInput = { ...rest };
+  if (sellableSku !== undefined) header.sellableSku = sellableSku?.trim() || null;
+  if (shopifyInventoryItemId !== undefined) header.shopifyInventoryItemId = shopifyInventoryItemId?.trim() || null;
+  if (shopifyVariantId !== undefined) header.shopifyVariantId = shopifyVariantId?.trim() || null;
 
   // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
   if (items !== undefined && items.length > 0) {
@@ -72,15 +85,32 @@ export async function PUT(
   if (items !== undefined) {
     await prisma.bundleItem.deleteMany({ where: { bundleId: id } });
     await prisma.bundleItem.createMany({
-      data: items.map(({ id: _itemId, ...item }) => ({ ...item, bundleId: id })),
+      data: items.map(({ id: _itemId, ...item }) => ({
+        productId: item.productId,
+        qty: item.qty,
+        componentRole: item.componentRole,
+        required: item.required,
+        sortOrder: item.sortOrder,
+        notes: item.notes,
+        nonConstraining: item.nonConstraining ?? false,
+        altGroupKey: item.altGroupKey?.trim() || null,
+        bundleId: id,
+      })),
     });
   }
 
   const bundle = await prisma.bundleDefinition.update({
     where: { id },
-    data: rest,
+    data: header,
     include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
   });
+
+  try {
+    await refreshBundleKitsCache(bundle.id);
+    await syncBundleToShopify(bundle.id);
+  } catch (err) {
+    console.error("[PUT /api/bundles] kits cache/sync", err);
+  }
 
   return NextResponse.json(bundle);
 }

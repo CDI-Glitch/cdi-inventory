@@ -9,7 +9,10 @@ export default async function BundlesPage() {
   if ((session?.user as any)?.role !== "admin") redirect("/dashboard");
 
   const bundles = await prisma.bundleDefinition.findMany({
-    include: { items: true },
+    include: {
+      items: true,
+      locationStocks: { include: { location: { select: { name: true } } } },
+    },
     orderBy: { code: "asc" },
   });
 
@@ -37,7 +40,9 @@ export default async function BundlesPage() {
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Code</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product family</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Sellable SKU</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-600">Components</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Cached kits</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
               </tr>
             </thead>
@@ -51,7 +56,15 @@ export default async function BundlesPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-900">{b.name}</td>
                   <td className="px-4 py-3 text-gray-500">{b.productFamily.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700">{b.sellableSku ?? "—"}</td>
                   <td className="px-4 py-3 text-center">{b.items.length}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600">
+                    {b.locationStocks.length === 0
+                      ? "—"
+                      : b.locationStocks
+                          .map((row) => `${row.location.name}: ${row.cachedKits}`)
+                          .join(" · ")}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className={cn(
                       "rounded-full px-2 py-0.5 text-xs font-medium",

@@ -1,8 +1,8 @@
-# CDI 库存系统 — 设计宪法 v2.1
+# CDI 库存系统 — 设计宪法 v2.2
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-11（逾期预留 / 缺货预警 Aging Reservations & Backorder Alerts — 落地 H#3 曾预留但未实现的仪表板 WARNING）
+> 最后更新：2026-08-16（决策 17 Sellable Bundle / Shopify 派生 kits；Webhook 行为对齐现网）
 
 ---
 
@@ -20,12 +20,13 @@
 | 8 | 安装排期 | 不做（用 Monday.com） | 不是 Portal 该做的事 |
 | 9 | 收款记录 | 不做（用 Zoho Invoice） | 不是 Portal 该做的事 |
 | 10 | 库存/销售默认视图 | 按仓库 Tab 分开展示；editor 默认自己仓库，admin/viewer 默认 All | 避免 Brisbane 和 Sydney 数据混在一起难以阅读 |
-| 11 | Bundle 策略 | Soft BOM + 行级 `snapshotItems`；硬件快捷包优先，整车 BOM 留给 Phase 2 Configurator | 车型/颜色/尺寸组合不可穷举；改 Bundle 定义不得回溯改 quote 期已保存的行 |
+| 11 | Bundle 策略 | Soft BOM + 行级 `snapshotItems`；硬件快捷包与可售 Tray BOM 并存。改 Bundle 定义不得回溯改 quote 期已保存的行 | 车型/颜色/尺寸组合不可穷举；可售 Tray 是另一类 Bundle（决策 17），不破坏快照原则 |
 | 12 | 自动预留审计 | `reserveStock` / `releaseReservations` 每条组件写 `reservation_adjustment`（delta=0） | Audit Log 与手动换料路径一致，避免「有预留但无 Log」误解 |
 | 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
 | 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列）；显示顺序为最远 ETA 在左、最近 ETA 在右（紧贴 On Hand）；`Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(ETA ≤ 该列)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；最近到港贴在当前库存旁更直觉；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
 | 15 | 外购辅材（CONSUMABLE） | 复用现有 Product/InventoryLog/IncomingShipment 表，新增 `category = "CONSUMABLE"`；不做独立表 | 辅材仍需走 Incoming 发货单+Forecast，独立表会被迫复制整套 Incoming/Forecast 逻辑；用 Category 硬性排除 Bundle 与 Sales 已足够隔离 |
 | 16 | 逾期预留 / 缺货预警（Aging Reservations & Backorder Alerts） | 不新增字段，纯派生计算：以 `GeneratedMovement.createdAt`（`deposit_paid` 时创建）算预留年龄；年龄信号（AGING ≥14 天 / STALE ≥21 天）与库存信号（BACKORDERED：Available<0）各自独立展示为两个徽标，不合并成单一"严重等级"；仪表板按仓库筛选（All/Brisbane/Sydney），Inventory 页新增与 Forecast Mode 平行的 `backorder=1` 独立模式（二者互斥，不叠加显示）；缺货行额外查询最近一个在途货柜（复用 Forecast Mode 的合格条件）作为"预计何时补上"提示 | 对齐 ERP 行业惯例的账龄分析（Aging Analysis）+ ATP 例外管理；两个信号分开显示避免"该催客户"和"该催供应链"混淆；数据随订单完成/取消/补货自动从清单消失，不需要人工标记已处理；阈值先写死常量，内部小系统暂不做 Settings 可调项（渐进复杂度原则） |
+| 17 | Sellable Bundle（Tray kits → Shopify） | 不建壳 Product。`BundleDefinition` 持有 `sellableSku` + Shopify ID；kits = MIN(约束组)；替代组求和；`nonConstraining` 不卡 ATP；kits 按仓缓存；PDP 读缓存。共用件窗口接受 + 仪表板预警 | 网站 Tray 是组合件；Portal 零件账不能复制一份假库存。详见 `docs/bundle-shopify-sync.md` |
 
 ---
 
@@ -54,7 +55,7 @@
 
 ---
 
-## B. 数据库 Schema（14 个模型）
+## B. 数据库 Schema（15 个模型）
 
 ### User（用户）
 ```
@@ -148,12 +149,13 @@ id, salesRecordId, productId, locationId, reservedQty, createdAt
 
 ### BundleDefinition（Bundle 定义）
 ```
-id, code(唯一), name, productFamily, active, createdAt
+id, code(唯一), name, productFamily, active,
+sellableSku(唯一, 可空), shopifyInventoryItemId, shopifyVariantId, createdAt
 ```
 
-**设计约定（Soft BOM / 快捷包）：**
-- Phase 1 Bundle = **硬件快捷包**，不是整车穷举 BOM（车型×颜色×尺寸会组合爆炸）
-- CMS 当前包 **不包含** 主车厢 SKU；主车厢单独加 SKU 行；`FK-Ex` 等车型相关件展开后再手动加
+**设计约定（Soft BOM / 快捷包 + 可售 Tray）：**
+- 硬件快捷包：无 `sellableSku`，不推 Shopify（CMS Dual/Single cab 包照旧）
+- 可售 Tray（决策 17）：有 `sellableSku`，kits 派生后缓存并推 Shopify。不建壳 Product
 - 已上线硬件包：
 
 | code | 用途 | 组件（每包 qty） |
@@ -161,13 +163,24 @@ id, code(唯一), name, productFamily, active, createdAt
 | `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1 |
 | `BDL-CMS-HW-SINGLECAB` | Single Cab 硬件快捷包 | FK×4，其余同上 |
 
+- T-Tray 可售包见 `docs/bundle-shopify-sync.md`
 - Phase 2：规则型 Configurator（选车型/配件 → 生成可编辑草案清单），仍应写 `snapshotItems`
 
 ### BundleItem（Bundle 组件）
 ```
-id, bundleId, productId, qty, componentRole, required, sortOrder, notes
+id, bundleId, productId, qty, componentRole, required, sortOrder, notes,
+nonConstraining, altGroupKey
 ```
 componentRole：`main_body | body_attachment | tray_mount | hardware_bracket`
+- `nonConstraining=true`：进预留/领料，不进 kits ATP
+- `altGroupKey`：同 bundle 内同 key 互为替代，ATP 对组内 available 求和；预留不自动占这组（仓库发货时选 SKU）
+
+### BundleLocationStock（kits 缓存）
+```
+id, bundleDefinitionId, locationId, cachedKits, updatedAt
+```
+- 每个可售 bundle × 仓库一行
+- Worker `/api/internal/inventory` 对 `sellableSku` 只读此表，不现场算 BOM
 
 ### IncomingShipment（到货发货单 — 主表）
 ```
@@ -424,14 +437,23 @@ Bundle 管理            ← Bundle 定义（仅 Admin）
 
 ## F. Shopify 集成
 
+**SKU 产品（现网）：** Portal `Product.shopifyInventoryItemId` → `inventorySetQuantities`（Available = On Hand − Reserved）。
+
+**可售 Bundle（决策 17）：** `BundleDefinition` 绑定 Shopify variant；推送值为派生 kits（缓存于 `BundleLocationStock`）。零件变动级联重算。PDP 经 Worker 查 `sellableSku` 时读缓存，不现场展开 BOM。
+
+**Webhook（现网，不是自动建单）：**
+
 ```
-Shopify 客户下单付款 → orders/paid Webhook → Portal 接收（HMAC 验证+去重）
-→ 自动创建 SalesRecord (fully_paid) → 计算 Available → 推送到 Shopify
+Shopify orders/paid → HMAC + ProcessedWebhook 去重
+→ 按 invoice/订单名匹配已有 SalesRecord，写入 shopifyOrderId
+→ 不创建销售单、不预留、不改库存
 ```
 
-- Webhook 安全：HMAC-SHA256
-- 幂等性：ProcessedWebhook 按 shopifyOrderId 去重
-- 失败重试：SyncLog 记录，最多 3 次
+- 结账听 Shopify 上次推送的数字
+- 人工在 Portal 建单并 `deposit_paid` 预留后，kits 才会下降并回推
+- 第二刀（付款即展开 Tray BOM 并预留）明确推迟
+- Webhook 安全：HMAC-SHA256；幂等：ProcessedWebhook
+- 推送失败：Product 路径写 SyncLog；Bundle 路径记服务端 error，不阻断库存写入
 
 ---
 
@@ -464,8 +486,9 @@ Shopify 客户下单付款 → orders/paid Webhook → Portal 接收（HMAC 验�
 | 6 | Shopify 产品被删 | SyncLog 404 → 仪表板告警 |
 | 7 | 调货途中丢失 | 取消调货 + `write_off` |
 | 8 | 初始库存填错 | `stocktake_correction` |
-| 9 | Webhook 含未知 SKU | 创建为 `quote` + 告警 |
+| 9 | Webhook 含未知 SKU | 现网：只尝试匹配已有销售单；匹配不到则只记录 webhook，不建单 |
 | 10 | 到货确认后数量错 | 不撤回；`stocktake_correction` |
+| 11 | 共用件卡住多色 Tray | 仪表板 Shared kit bottleneck；人工尽快预留。不在 Shopify 侧做安全余量扣减 |
 
 ---
 
@@ -549,7 +572,7 @@ c:\Users\CoreD\Desktop\shopify\cdi-inventory\
 │   │   ├── (auth)/login/
 │   │   ├── (portal)/dashboard|inventory|sales|bundles|incoming|transfers|audit-log|settings/
 │   │   └── api/webhooks/shopify/ + api/sync/
-│   ├── lib/db.ts|inventory.ts|state-machine.ts|shopify.ts|auth.ts|constants.ts
+│   ├── lib/db.ts|inventory.ts|bundle-atp.ts|state-machine.ts|shopify-sync.ts|auth.ts|constants.ts
 │   ├── components/
 │   └── types/
 ├── .env.example

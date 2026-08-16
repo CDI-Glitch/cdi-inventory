@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { BundleForm } from "@/components/bundles/bundle-form";
+import { ShopifyBindingPanel } from "@/components/inventory/shopify-binding-panel";
 import Link from "next/link";
 
 export default async function BundleDetailPage({
@@ -17,7 +18,10 @@ export default async function BundleDetailPage({
   const [bundle, products] = await Promise.all([
     prisma.bundleDefinition.findUnique({
       where: { id },
-      include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
+      include: {
+        items: { include: { product: true }, orderBy: { sortOrder: "asc" } },
+        locationStocks: { include: { location: true } },
+      },
     }),
     // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles
     prisma.product.findMany({
@@ -38,6 +42,31 @@ export default async function BundleDetailPage({
         <span className="font-mono font-semibold text-gray-900">{bundle.code}</span>
       </div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit bundle</h1>
+      {bundle.sellableSku && (
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
+          <ShopifyBindingPanel
+            sku={bundle.sellableSku}
+            shopifyInventoryItemId={bundle.shopifyInventoryItemId}
+            shopifyVariantId={bundle.shopifyVariantId}
+            saveUrl={`/api/bundles/${bundle.id}`}
+          />
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Cached kits</h3>
+            {bundle.locationStocks.length === 0 ? (
+              <p className="text-sm text-gray-400">No cache yet. Save the bundle or run Shopify sync.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {bundle.locationStocks.map((row) => (
+                  <li key={row.id} className="flex justify-between">
+                    <span className="text-gray-600">{row.location.name}</span>
+                    <span className="font-mono font-medium">{row.cachedKits}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
       <BundleForm products={products} bundle={bundle} />
     </div>
   );

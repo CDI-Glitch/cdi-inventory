@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
  *
  * Internal endpoint — called only by the cdi-inventory-worker Cloudflare Worker.
  * Requires the x-internal-key header to match PORTAL_INTERNAL_KEY env var.
- * Returns per-location stock status (not exact quantities) for a given SKU.
+ * Looks up Product.sku first, then BundleDefinition.sellableSku (cached kits).
  *
  * Response: { "brisbane": "in_stock"|"out", "sydney": "in_stock"|"out" }
  * Keys are location names lowercased; value is "in_stock" when available > 0, else "out".
@@ -42,44 +42,67 @@ export async function GET(req: NextRequest) {
     select: { id: true },
   });
 
-  if (!product) {
-    return NextResponse.json({ error: "SKU not found" }, { status: 404 });
-  }
-
   const locations = await prisma.location.findMany({
     where: { active: true },
     select: { id: true, name: true },
   });
 
-  const [allLogs, allMovements] = await Promise.all([
-    prisma.inventoryLog.groupBy({
-      by: ["locationId"],
-      where: { productId: product.id },
-      _sum: { delta: true },
-    }),
-    prisma.generatedMovement.groupBy({
-      by: ["locationId"],
-      where: { productId: product.id, reservedQty: { gt: 0 } },
-      _sum: { reservedQty: true },
-    }),
-  ]);
+  if (product) {
+    const [allLogs, allMovements] = await Promise.all([
+      prisma.inventoryLog.groupBy({
+        by: ["locationId"],
+        where: { productId: product.id },
+        _sum: { delta: true },
+      }),
+      prisma.generatedMovement.groupBy({
+        by: ["locationId"],
+        where: { productId: product.id, reservedQty: { gt: 0 } },
+        _sum: { reservedQty: true },
+      }),
+    ]);
 
-  const logMap = new Map<string, number>();
-  for (const log of allLogs) {
-    logMap.set(log.locationId, log._sum.delta ?? 0);
+    const logMap = new Map<string, number>();
+    for (const log of allLogs) {
+      logMap.set(log.locationId, log._sum.delta ?? 0);
+    }
+
+    const movMap = new Map<string, number>();
+    for (const mov of allMovements) {
+      movMap.set(mov.locationId, mov._sum.reservedQty ?? 0);
+    }
+
+    const result: Record<string, string> = {};
+    for (const loc of locations) {
+      const onHand = logMap.get(loc.id) ?? 0;
+      const reserved = movMap.get(loc.id) ?? 0;
+      const available = Math.max(0, onHand - reserved);
+      result[loc.name.toLowerCase()] = available > 0 ? "in_stock" : "out";
+    }
+
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, max-age=30, stale-while-revalidate=60",
+      },
+    });
   }
 
-  const movMap = new Map<string, number>();
-  for (const mov of allMovements) {
-    movMap.set(mov.locationId, mov._sum.reservedQty ?? 0);
+  const bundle = await prisma.bundleDefinition.findFirst({
+    where: { sellableSku: sku, active: true },
+    select: {
+      id: true,
+      locationStocks: { select: { locationId: true, cachedKits: true } },
+    },
+  });
+
+  if (!bundle) {
+    return NextResponse.json({ error: "SKU not found" }, { status: 404 });
   }
 
+  const kitsByLocation = new Map(bundle.locationStocks.map((row) => [row.locationId, row.cachedKits]));
   const result: Record<string, string> = {};
   for (const loc of locations) {
-    const onHand = logMap.get(loc.id) ?? 0;
-    const reserved = movMap.get(loc.id) ?? 0;
-    const available = Math.max(0, onHand - reserved);
-    result[loc.name.toLowerCase()] = available > 0 ? "in_stock" : "out";
+    const kits = Math.max(0, kitsByLocation.get(loc.id) ?? 0);
+    result[loc.name.toLowerCase()] = kits > 0 ? "in_stock" : "out";
   }
 
   return NextResponse.json(result, {

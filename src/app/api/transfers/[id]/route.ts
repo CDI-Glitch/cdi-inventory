@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { TRANSFER_TRANSITIONS, type TransferStatus } from "@/lib/constants";
+import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
 
 const TransitionSchema = z.object({
   status: z.enum(["in_transit", "completed", "cancelled"]),
@@ -80,6 +81,7 @@ export async function PATCH(
         notes: `Transfer from ${transfer.fromLocationId}`,
       },
     });
+    scheduleAfterStockChange([transfer.productId]);
   }
 
   const updated = await prisma.transfer.update({

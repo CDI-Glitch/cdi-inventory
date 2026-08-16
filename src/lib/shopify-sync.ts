@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { randomUUID } from "crypto";
+import { calcBundleKits, refreshBundleKitsCache } from "./bundle-atp";
 
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 const SHOPIFY_CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
@@ -156,8 +157,67 @@ export async function syncProductToShopify(
 }
 
 /**
- * Sync all active products that have Shopify IDs configured.
- * Called from admin UI or scheduled job.
+ * Recalculate kits per warehouse, write BundleLocationStock, then push each
+ * linked location's kits to Shopify. Bundles without a Shopify inventory
+ * item still get a cache refresh (PDP Worker reads the cache).
+ */
+export async function syncBundleToShopify(bundleDefinitionId: string): Promise<void> {
+  const bundle = await prisma.bundleDefinition.findUniqueOrThrow({
+    where: { id: bundleDefinitionId },
+  });
+
+  await refreshBundleKitsCache(bundleDefinitionId);
+
+  if (!bundle.shopifyInventoryItemId) return;
+
+  const locations = await prisma.location.findMany({
+    where: { active: true, shopifyLocationId: { not: null } },
+  });
+
+  for (const location of locations) {
+    const { kits } = await calcBundleKits(bundleDefinitionId, location.id);
+
+    try {
+      const idempotencyKey = randomUUID();
+      const result = await shopifyGraphQL<any>(
+        `mutation SetInventory($input: InventorySetQuantitiesInput!) {
+          inventorySetQuantities(input: $input) @idempotent(key: "${idempotencyKey}") {
+            userErrors { field message }
+          }
+        }`,
+        {
+          input: {
+            reason: "correction",
+            name: "available",
+            quantities: [
+              {
+                inventoryItemId: `gid://shopify/InventoryItem/${bundle.shopifyInventoryItemId}`,
+                locationId: `gid://shopify/Location/${location.shopifyLocationId}`,
+                quantity: kits,
+                changeFromQuantity: null,
+              },
+            ],
+          },
+        }
+      );
+
+      const userErrors = result?.inventorySetQuantities?.userErrors ?? [];
+      if (userErrors.length > 0) {
+        throw new Error(userErrors.map((e: any) => `${e.field}: ${e.message}`).join("; "));
+      }
+    } catch (err) {
+      console.error(
+        `[syncBundleToShopify] ${bundle.code} @ ${location.name} failed`,
+        err
+      );
+      throw err;
+    }
+  }
+}
+
+/**
+ * Sync all active products that have Shopify IDs configured, then all
+ * sellable bundles (cache refresh + Shopify push when linked).
  */
 export async function syncAllToShopify(): Promise<{
   synced: number;
@@ -182,6 +242,20 @@ export async function syncAllToShopify(): Promise<{
       } catch {
         errors++;
       }
+    }
+  }
+
+  const bundles = await prisma.bundleDefinition.findMany({
+    where: { active: true, OR: [{ sellableSku: { not: null } }, { shopifyInventoryItemId: { not: null } }] },
+    select: { id: true },
+  });
+
+  for (const bundle of bundles) {
+    try {
+      await syncBundleToShopify(bundle.id);
+      synced++;
+    } catch {
+      errors++;
     }
   }
 
