@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { UsersPanel } from "@/components/settings/users-panel";
 import { LocationsPanel } from "@/components/settings/locations-panel";
 import { SyncPanel } from "@/components/settings/sync-panel";
+import { asRole, canAccessSettings } from "@/lib/permissions";
 
 export default async function SettingsPage({
   searchParams,
@@ -12,8 +13,8 @@ export default async function SettingsPage({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
-  const role = (session?.user as any)?.role;
-  if (role !== "admin") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessSettings(role)) redirect("/dashboard");
 
   const params = await searchParams;
   const tab = params.tab ?? "users";

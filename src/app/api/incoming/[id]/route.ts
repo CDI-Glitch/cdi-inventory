@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { INCOMING_TRANSITIONS, type IncomingStatus } from "@/lib/constants";
 import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
+import { canAccessIncoming, canWriteIncoming, roleFromSession } from "@/lib/permissions";
 
 const TransitionSchema = z.object({
   status: z.enum(["pending", "shipped", "in_transit", "arrived", "confirmed", "cancelled"]),
@@ -16,6 +17,9 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessIncoming(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const shipment = await prisma.incomingShipment.findUnique({
@@ -36,8 +40,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canWriteIncoming(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const body = await req.json();

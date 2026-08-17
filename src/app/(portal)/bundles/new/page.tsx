@@ -2,10 +2,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { BundleForm } from "@/components/bundles/bundle-form";
+import { asRole, canWriteBundles } from "@/lib/permissions";
 
 export default async function NewBundlePage() {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") redirect("/dashboard");
+  if (!canWriteBundles(asRole((session?.user as any)?.role))) redirect("/dashboard");
 
   const products = await prisma.product.findMany({
     // CONSUMABLE items (bulk hardware, manually deducted) never participate in bundles

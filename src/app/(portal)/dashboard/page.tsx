@@ -3,7 +3,9 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAgingReservations } from "@/lib/reservation-aging";
+import { getStockForProductLocationPairs, getStockForProducts } from "@/lib/inventory";
 import { findSharedComponentBottlenecks } from "@/lib/bundle-atp";
+import { asRole, canSeeDashboardActions } from "@/lib/permissions";
 
 const SALES_STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-600",
@@ -27,7 +29,7 @@ export default async function DashboardPage({
   searchParams: Promise<{ loc?: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
+  const role = asRole((session?.user as any)?.role);
   const params = await searchParams;
   const agingLoc = params.loc ?? "all";
 
@@ -84,24 +86,59 @@ export default async function DashboardPage({
   const agingToggleHref = (loc: string) => `/dashboard?loc=${loc}`;
   const inventoryAlertHref = `/inventory?loc=${agingLocation?.name ?? locations[0]?.name ?? ""}&backorder=1`;
 
-  // Compute available for low-stock check
-  const [allLogs, allMovements] = await Promise.all([
-    prisma.inventoryLog.groupBy({ by: ["productId"], _sum: { delta: true } }),
-    prisma.generatedMovement.groupBy({ by: ["productId"], _sum: { reservedQty: true } }),
-  ]);
+  const productIds = lowStockItems.map((p) => p.id);
+  let lowStock: {
+    id: string;
+    sku: string;
+    name: string;
+    available: number;
+    reorderPoint: number;
+    locationName: string;
+    rowKey: string;
+  }[] = [];
 
-  const logMap = new Map(allLogs.map((l) => [l.productId, l._sum.delta ?? 0]));
-  const movMap = new Map(allMovements.map((m) => [m.productId, m._sum.reservedQty ?? 0]));
-
-  const lowStock = lowStockItems
-    .map((p) => ({
-      ...p,
-      onHand: logMap.get(p.id) ?? 0,
-      reserved: movMap.get(p.id) ?? 0,
-      available: (logMap.get(p.id) ?? 0) - (movMap.get(p.id) ?? 0),
-    }))
-    .filter((p) => p.available <= p.reorderPoint && p.onHand > 0)
-    .slice(0, 5);
+  if (agingLocation) {
+    const stockMap = await getStockForProducts(agingLocation.id, productIds);
+    lowStock = lowStockItems
+      .map((p) => {
+        const s = stockMap.get(p.id) ?? { onHand: 0, reserved: 0, available: 0 };
+        return {
+          id: p.id,
+          sku: p.sku,
+          name: p.name,
+          available: s.available,
+          onHand: s.onHand,
+          reorderPoint: p.reorderPoint,
+          locationName: agingLocation.name,
+          rowKey: `${p.id}:${agingLocation.id}`,
+        };
+      })
+      .filter((p) => p.available <= p.reorderPoint && p.onHand > 0)
+      .slice(0, 5);
+  } else {
+    const pairs = locations.flatMap((loc) =>
+      lowStockItems.map((p) => ({ productId: p.id, locationId: loc.id }))
+    );
+    const stockMap = await getStockForProductLocationPairs(pairs);
+    const rows = [];
+    for (const loc of locations) {
+      for (const p of lowStockItems) {
+        const s = stockMap.get(`${p.id}:${loc.id}`) ?? { onHand: 0, reserved: 0, available: 0 };
+        if (s.available <= p.reorderPoint && s.onHand > 0) {
+          rows.push({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            available: s.available,
+            reorderPoint: p.reorderPoint,
+            locationName: loc.name,
+            rowKey: `${p.id}:${loc.id}`,
+          });
+        }
+      }
+    }
+    lowStock = rows.sort((a, b) => a.available - b.available).slice(0, 5);
+  }
 
   return (
     <div className="space-y-6">
@@ -348,12 +385,12 @@ export default async function DashboardPage({
             ) : (
               <div className="divide-y divide-gray-100">
                 {lowStock.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-5 py-3">
+                  <div key={p.rowKey} className="flex items-center justify-between px-5 py-3">
                     <div>
                       <Link href={`/inventory/${p.sku}`} className="text-sm font-mono font-medium text-[#2563EB] hover:underline">
                         {p.sku}
                       </Link>
-                      <p className="text-xs text-gray-500 mt-0.5">{p.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{p.name} · {p.locationName}</p>
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-orange-600">{p.available}</span>
@@ -366,7 +403,7 @@ export default async function DashboardPage({
           </div>
 
           {/* Incoming */}
-          {role !== "viewer" && (
+          {canSeeDashboardActions(role) && (
             <div className="rounded-lg border border-gray-200 bg-white p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-700">Incoming shipments</h2>

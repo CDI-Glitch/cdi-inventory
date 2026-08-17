@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canAccessIncoming, canWriteIncoming, roleFromSession } from "@/lib/permissions";
 
 const CreateIncomingSchema = z.object({
   supplierName: z.string().min(1),
@@ -30,6 +31,9 @@ async function nextPoRef(): Promise<string> {
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessIncoming(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -58,8 +62,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canWriteIncoming(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
   const parsed = CreateIncomingSchema.safeParse(body);

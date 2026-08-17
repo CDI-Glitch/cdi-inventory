@@ -8,6 +8,7 @@ import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
 import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
 import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor";
 import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
+import { asRole, canEditFulfillment as fulfillmentEditable, canEditSalesRecord } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -31,7 +32,7 @@ export default async function SalesDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
+  const role = asRole((session?.user as any)?.role);
   const { id } = await params;
 
   const record = await prisma.salesRecord.findUnique({
@@ -49,13 +50,9 @@ export default async function SalesDetailPage({
   if (!record) notFound();
 
   const isQuote = record.status === "quote";
-  const canEditHeader = role !== "viewer" && isQuote;
-  const canEditLines = role !== "viewer" && isQuote;
-  const canEditFulfillment =
-    (record.status === "deposit_paid" &&
-      (role === "admin" || role === "editor" || role === "sales")) ||
-    (record.status === "fully_paid" &&
-      (role === "admin" || role === "editor"));
+  const canEditHeader = canEditSalesRecord(role) && isQuote;
+  const canEditLines = canEditSalesRecord(role) && isQuote;
+  const canEditFulfillment = fulfillmentEditable(role, record.status);
   const hasFulfillment = record.movements.some((m) => m.reservedQty > 0);
   const showFulfillmentSection =
     record.status !== "quote" && record.status !== "cancelled";
@@ -259,7 +256,7 @@ export default async function SalesDetailPage({
       </div>
 
       {/* Status actions */}
-      {role !== "viewer" && (
+      {canEditSalesRecord(role) && (
         <SalesStatusActions
           id={record.id}
           currentStatus={record.status}

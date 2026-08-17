@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { canBindShopify, canEditProduct, roleFromSession } from "@/lib/permissions";
 
 const PatchSchema = z.object({
   reorderPoint:           z.number().int().min(0).optional(),
@@ -16,8 +17,8 @@ export async function PATCH(
   { params }: { params: Promise<{ sku: string }> }
 ) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (!session || (role !== "admin" && role !== "editor")) {
+  const role = roleFromSession(session);
+  if (!session || !canEditProduct(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -29,7 +30,7 @@ export async function PATCH(
   }
 
   // Shopify binding fields are admin-only
-  if (role !== "admin" && (parsed.data.shopifyInventoryItemId !== undefined || parsed.data.shopifyVariantId !== undefined)) {
+  if (!canBindShopify(role) && (parsed.data.shopifyInventoryItemId !== undefined || parsed.data.shopifyVariantId !== undefined)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { snapshotBundleItems } from "@/lib/bundle-atp";
 import { z } from "zod";
+import { canEditSalesRecord, roleFromSession } from "@/lib/permissions";
 
 const SalesLineSchema = z.object({
   lineType: z.enum(["sku", "bundle"]),
@@ -23,8 +24,7 @@ export async function PUT(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canEditSalesRecord(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const body = await req.json();

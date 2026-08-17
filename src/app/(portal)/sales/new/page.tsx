@@ -2,10 +2,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { NewSalesForm } from "@/components/sales/new-sales-form";
+import { asRole, canCreateSalesRecord } from "@/lib/permissions";
 
 export default async function NewSalesPage() {
   const session = await auth();
-  if ((session?.user as any)?.role === "viewer") redirect("/sales");
+  if (!canCreateSalesRecord(asRole((session?.user as any)?.role))) redirect("/sales");
 
   const [products, rawBundles, locations] = await Promise.all([
     // CONSUMABLE items (bulk hardware, manually deducted) are not sellable sales lines

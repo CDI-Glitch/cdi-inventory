@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canWriteIncoming, roleFromSession } from "@/lib/permissions";
 
 const EtaSchema = z.object({
   eta: z.string().min(1, "ETA is required"),
@@ -13,8 +14,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role !== "admin" && role !== "editor") {
+  if (!canWriteIncoming(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { getStockForProducts } from "./inventory";
 
 // Same eligibility Forecast Mode and aging reservations use: on the way, ETA known.
 const INCOMING_ELIGIBLE_STATUSES = ["shipped", "in_transit", "arrived"];
@@ -39,27 +40,15 @@ export async function getShortageRows(locationId: string): Promise<ShortageRow[]
 
   if (products.length === 0) return [];
 
-  const [logs, reserved] = await Promise.all([
-    prisma.inventoryLog.groupBy({
-      by: ["productId"],
-      where: { locationId },
-      _sum: { delta: true },
-    }),
-    prisma.generatedMovement.groupBy({
-      by: ["productId"],
-      where: { locationId, reservedQty: { gt: 0 } },
-      _sum: { reservedQty: true },
-    }),
-  ]);
-
-  const onHandMap = new Map(logs.map((l) => [l.productId, l._sum.delta ?? 0]));
-  const reservedMap = new Map(reserved.map((r) => [r.productId, r._sum.reservedQty ?? 0]));
+  const stockMap = await getStockForProducts(
+    locationId,
+    products.map((p) => p.id)
+  );
 
   const shortProducts = products
     .map((p) => {
-      const onHand = onHandMap.get(p.id) ?? 0;
-      const reservedQty = reservedMap.get(p.id) ?? 0;
-      const available = onHand - reservedQty;
+      const stock = stockMap.get(p.id) ?? { onHand: 0, reserved: 0, available: 0 };
+      const { onHand, reserved: reservedQty, available } = stock;
       return { p, onHand, reservedQty, available, shortQty: Math.max(0, reservedQty - onHand) };
     })
     .filter((r) => r.available < 0);

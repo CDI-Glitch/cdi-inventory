@@ -17,6 +17,7 @@ interface BundleItemRow {
 
 interface Props {
   products: { id: string; sku: string; name: string }[];
+  readOnly?: boolean;
   bundle?: {
     id: string;
     code: string;
@@ -47,9 +48,10 @@ const ROLE_LABELS: Record<string, string> = {
   hardware_bracket: "Hardware bracket",
 };
 
-export function BundleForm({ products, bundle }: Props) {
+export function BundleForm({ products, bundle, readOnly = false }: Props) {
   const router = useRouter();
   const isEdit = !!bundle;
+  const locked = readOnly;
 
   const [items, setItems] = useState<BundleItemRow[]>(
     bundle?.items.map((i) => ({
@@ -83,6 +85,7 @@ export function BundleForm({ products, bundle }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (locked) return;
     setLoading(true);
     setError("");
 
@@ -144,7 +147,8 @@ export function BundleForm({ products, bundle }: Props) {
               name="code"
               required
               defaultValue={bundle?.code}
-              readOnly={isEdit}
+              readOnly={isEdit || locked}
+              disabled={locked}
               placeholder="BDL-HILUX-TRAY"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono uppercase disabled:bg-gray-50"
             />
@@ -156,7 +160,8 @@ export function BundleForm({ products, bundle }: Props) {
               required
               defaultValue={bundle?.productFamily}
               placeholder="tray"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50"
+              disabled={locked}
             />
           </div>
         </div>
@@ -167,7 +172,8 @@ export function BundleForm({ products, bundle }: Props) {
             required
             defaultValue={bundle?.name}
             placeholder="Hilux Tray Kit"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50"
+            disabled={locked}
           />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -177,7 +183,8 @@ export function BundleForm({ products, bundle }: Props) {
               name="sellableSku"
               defaultValue={bundle?.sellableSku ?? ""}
               placeholder="Storefront variant SKU"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+              disabled={locked}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
             />
             <p className="mt-1 text-xs text-gray-400">Worker looks this up when it is not a Product SKU.</p>
           </div>
@@ -186,7 +193,8 @@ export function BundleForm({ products, bundle }: Props) {
             <input
               name="shopifyInventoryItemId"
               defaultValue={bundle?.shopifyInventoryItemId ?? ""}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+              disabled={locked}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
             />
           </div>
           <div>
@@ -194,7 +202,8 @@ export function BundleForm({ products, bundle }: Props) {
             <input
               name="shopifyVariantId"
               defaultValue={bundle?.shopifyVariantId ?? ""}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+              disabled={locked}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
             />
           </div>
         </div>
@@ -204,6 +213,7 @@ export function BundleForm({ products, bundle }: Props) {
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">Components ({items.length})</h2>
+          {!locked && (
           <button
             type="button"
             onClick={addItem}
@@ -211,6 +221,7 @@ export function BundleForm({ products, bundle }: Props) {
           >
             + Add component
           </button>
+          )}
         </div>
 
         {items.length === 0 && (
@@ -222,6 +233,7 @@ export function BundleForm({ products, bundle }: Props) {
             <div key={idx} className="rounded-md border border-gray-200 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500">Component {idx + 1}</span>
+                {!locked && (
                 <button
                   type="button"
                   onClick={() => removeItem(idx)}
@@ -229,6 +241,7 @@ export function BundleForm({ products, bundle }: Props) {
                 >
                   Remove
                 </button>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -236,7 +249,8 @@ export function BundleForm({ products, bundle }: Props) {
                   <select
                     value={item.productId}
                     onChange={(e) => updateItem(idx, "productId", e.target.value)}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono"
+                    disabled={locked}
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono disabled:bg-gray-50"
                   >
                     <option value="">Select SKU</option>
                     {products.map((p) => (
@@ -249,7 +263,8 @@ export function BundleForm({ products, bundle }: Props) {
                   <select
                     value={item.componentRole}
                     onChange={(e) => updateItem(idx, "componentRole", e.target.value)}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                    disabled={locked}
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50"
                   >
                     {COMPONENT_ROLES.map((r) => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -263,15 +278,17 @@ export function BundleForm({ products, bundle }: Props) {
                     min={1}
                     value={item.qty}
                     onChange={(e) => updateItem(idx, "qty", Number(e.target.value))}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                    disabled={locked}
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50"
                   />
                 </div>
                 <div className="flex items-end pb-1.5">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={item.required}
                       onChange={(e) => updateItem(idx, "required", e.target.checked)}
+                      disabled={locked}
                     />
                     Required
                   </label>
@@ -283,15 +300,17 @@ export function BundleForm({ products, bundle }: Props) {
                     value={item.altGroupKey}
                     onChange={(e) => updateItem(idx, "altGroupKey", e.target.value)}
                     placeholder="e.g. mudguard"
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono"
+                    disabled={locked}
+                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono disabled:bg-gray-50"
                   />
                 </div>
                 <div className="flex items-end pb-1.5">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={item.nonConstraining}
                       onChange={(e) => updateItem(idx, "nonConstraining", e.target.checked)}
+                      disabled={locked}
                     />
                     Ignore for kits ATP
                   </label>
@@ -304,7 +323,8 @@ export function BundleForm({ products, bundle }: Props) {
                   value={item.notes}
                   onChange={(e) => updateItem(idx, "notes", e.target.value)}
                   placeholder="Optional note"
-                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  disabled={locked}
+                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50"
                 />
               </div>
             </div>
@@ -315,6 +335,7 @@ export function BundleForm({ products, bundle }: Props) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">
+        {!locked && (
         <button
           type="submit"
           disabled={loading}
@@ -322,8 +343,9 @@ export function BundleForm({ products, bundle }: Props) {
         >
           {loading ? "Saving..." : isEdit ? "Save changes" : "Create bundle"}
         </button>
+        )}
         <a href="/bundles" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-          Cancel
+          {locked ? "Back" : "Cancel"}
         </a>
       </div>
     </form>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
 import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
+import { canAdjustStock, roleFromSession } from "@/lib/permissions";
 
 const AdjustSchema = z.object({
   productId: z.string().min(1),
@@ -16,8 +17,7 @@ const AdjustSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (!session || (role !== "admin" && role !== "editor")) {
+  if (!session || !canAdjustStock(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Suspense } from "react";
 import { LocationTabs } from "@/components/ui/location-tabs";
+import { asRole, canAccessIncoming } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -34,8 +35,8 @@ export default async function IncomingPage({
   searchParams: Promise<{ loc?: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessIncoming(role)) redirect("/dashboard");
 
   const params = await searchParams;
 

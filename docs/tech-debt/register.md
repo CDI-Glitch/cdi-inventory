@@ -15,12 +15,12 @@
 
 | ID | 分类 | 一句话风险 | 状态 | 登记日期 | 详情 |
 |---|---|---|---|---|---|
-| TD-01 | 权限 | Incoming 的 GET 接口没检查角色，sales/viewer 绕过网页可直接调 API 看到供应商/成本数据 | 已登记 | 2026-08-17 | [permissions.md#td-01](permissions.md#td-01) |
-| TD-02 | 权限 | Transfers 的 GET 接口同样没检查角色 | 已登记 | 2026-08-17 | [permissions.md#td-02](permissions.md#td-02) |
-| TD-03 | 权限 | 角色判断散落在 sidebar / ~15 个页面 / ~20 个 API route，无共享函数，新增角色容易漏改 | 已登记 | 2026-08-17 | [permissions.md#td-03](permissions.md#td-03) |
-| TD-04 | 权限 | `constitution.md` 权限矩阵缺 `sales` 列，和代码不同步 | 已登记 | 2026-08-17 | [permissions.md#td-04](permissions.md#td-04) |
-| TD-05 | 库存计算 | Forecast / Aging / Factory CSV 三处各自重写库存公式，未调用共享的 `getStock()` | 已登记 | 2026-08-17 | [inventory-calc.md#td-05](inventory-calc.md#td-05) |
-| TD-06 | 库存计算 | Dashboard 低库存卡片没按仓库分组，多仓场景下数字错误 | 已登记 | 2026-08-17 | [inventory-calc.md#td-06](inventory-calc.md#td-06) |
+| TD-01 | 权限 | Incoming 的 GET 接口没检查角色，sales/viewer 绕过网页可直接调 API 看到供应商/成本数据 | 已修复 | 2026-08-17 | [permissions.md#td-01](permissions.md#td-01) |
+| TD-02 | 权限 | Transfers 的 GET 接口同样没检查角色 | 已修复 | 2026-08-17 | [permissions.md#td-02](permissions.md#td-02) |
+| TD-03 | 权限 | 角色判断散落在 sidebar / ~15 个页面 / ~20 个 API route，无共享函数，新增角色容易漏改 | 已修复 | 2026-08-17 | [permissions.md#td-03](permissions.md#td-03) |
+| TD-04 | 权限 | `constitution.md` 权限矩阵缺 `sales` 列，和代码不同步 | 已修复 | 2026-08-17 | [permissions.md#td-04](permissions.md#td-04) |
+| TD-05 | 库存计算 | Forecast / Aging / Factory CSV 三处各自重写库存公式，未调用共享的 `getStock()` | 已修复 | 2026-08-17 | [inventory-calc.md#td-05](inventory-calc.md#td-05) |
+| TD-06 | 库存计算 | Dashboard 低库存卡片没按仓库分组，多仓场景下数字错误 | 已修复 | 2026-08-17 | [inventory-calc.md#td-06](inventory-calc.md#td-06) |
 | TD-07 | 并发/事务 | 库存写操作（预留、调货、到货确认）没有包在 `$transaction` 里 | 待观察 | 2026-08-17 | [concurrency.md#td-07](concurrency.md#td-07) |
 | TD-08 | 并发/事务 | 库存行没有行级锁/乐观锁，并发预留同一 SKU 可能都成功 | 待观察 | 2026-08-17 | [concurrency.md#td-08](concurrency.md#td-08) |
 

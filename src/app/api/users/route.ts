@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { canManageUsers, roleFromSession } from "@/lib/permissions";
 
 const CreateUserSchema = z.object({
   email: z.string().email(),
@@ -13,7 +14,7 @@ const CreateUserSchema = z.object({
 
 export async function GET() {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
+  if (!canManageUsers(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -27,7 +28,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
+  if (!canManageUsers(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

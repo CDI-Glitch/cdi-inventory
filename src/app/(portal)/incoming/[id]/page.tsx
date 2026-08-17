@@ -8,6 +8,7 @@ import { IncomingStatusActions } from "@/components/incoming/incoming-status-act
 import { IncomingLinesEditor } from "@/components/incoming/incoming-lines-editor";
 import { IncomingLinesFullEditor } from "@/components/incoming/incoming-lines-full-editor";
 import { EtaEditor, ShippedAtDisplay } from "@/components/incoming/incoming-date-controls";
+import { asRole, canAccessIncoming, canWriteIncoming, canCorrectShippedAt } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -33,8 +34,8 @@ export default async function IncomingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessIncoming(role)) redirect("/dashboard");
 
   const { id } = await params;
 
@@ -55,8 +56,8 @@ export default async function IncomingDetailPage({
 
   if (!shipment) notFound();
 
-  const canEditEta = (role === "admin" || role === "editor") && !["confirmed", "cancelled"].includes(shipment.status);
-  const isAdmin = role === "admin";
+  const canEditEta = canWriteIncoming(role) && !["confirmed", "cancelled"].includes(shipment.status);
+  const isAdmin = canCorrectShippedAt(role);
 
   // Three-branch edit logic
   const canFullEdit = ["pending", "shipped", "in_transit"].includes(shipment.status);

@@ -5,6 +5,14 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
+  asRole,
+  canAccessAuditLog,
+  canAccessBundles,
+  canAccessIncoming,
+  canAccessSettings,
+  canAccessTransfers,
+} from "@/lib/permissions";
+import {
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -21,21 +29,21 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["viewer", "sales", "editor", "admin"] },
-  { href: "/inventory", label: "Inventory", icon: Package, roles: ["viewer", "sales", "editor", "admin"] },
-  { href: "/sales", label: "Sales", icon: ShoppingCart, roles: ["viewer", "sales", "editor", "admin"] },
-  { href: "/bundles", label: "Bundles", icon: Layers, roles: ["admin"] },
-  { href: "/incoming", label: "Incoming", icon: Truck, roles: ["editor", "admin"] },
-  { href: "/transfers", label: "Transfers", icon: ArrowLeftRight, roles: ["editor", "admin"] },
-  { href: "/audit-log", label: "Audit Log", icon: FileText, roles: ["sales", "editor", "admin"] },
-  { href: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, canShow: () => true },
+  { href: "/inventory", label: "Inventory", icon: Package, canShow: () => true },
+  { href: "/sales", label: "Sales", icon: ShoppingCart, canShow: () => true },
+  { href: "/bundles", label: "Bundles", icon: Layers, canShow: canAccessBundles },
+  { href: "/incoming", label: "Incoming", icon: Truck, canShow: canAccessIncoming },
+  { href: "/transfers", label: "Transfers", icon: ArrowLeftRight, canShow: canAccessTransfers },
+  { href: "/audit-log", label: "Audit Log", icon: FileText, canShow: canAccessAuditLog },
+  { href: "/settings", label: "Settings", icon: Settings, canShow: canAccessSettings },
 ];
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const role = user.role || "viewer";
+  const role = asRole(user.role);
 
-  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const visibleItems = NAV_ITEMS.filter((item) => item.canShow(role));
 
   return (
     <aside className="w-64 flex flex-col bg-[#111827]">

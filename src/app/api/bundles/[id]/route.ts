@@ -6,6 +6,7 @@ import { z } from "zod";
 import { COMPONENT_ROLES } from "@/lib/constants";
 import { refreshBundleKitsCache } from "@/lib/bundle-atp";
 import { syncBundleToShopify } from "@/lib/shopify-sync";
+import { canAccessBundles, canWriteBundles, roleFromSession } from "@/lib/permissions";
 
 const UpdateBundleSchema = z.object({
   name: z.string().min(1).optional(),
@@ -33,6 +34,9 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessBundles(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const bundle = await prisma.bundleDefinition.findUnique({
@@ -49,7 +53,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || !canWriteBundles(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

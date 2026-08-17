@@ -6,6 +6,7 @@ import { getStock } from "@/lib/inventory";
 import { cn } from "@/lib/utils";
 import SKUDetailHeader from "@/components/inventory/sku-detail-header";
 import { ShopifyBindingPanel } from "@/components/inventory/shopify-binding-panel";
+import { asRole, canAdjustStock, canBindShopify } from "@/lib/permissions";
 
 const LOG_TYPE_LABELS: Record<string, string> = {
   opening_stock: "Opening stock",
@@ -25,9 +26,9 @@ export default async function SKUDetailPage({
   params: Promise<{ sku: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role as string | undefined;
-  const canAdjust = role === "admin" || role === "editor";
-  const isAdmin = role === "admin";
+  const role = asRole((session?.user as any)?.role);
+  const canAdjust = canAdjustStock(role);
+  const isAdmin = canBindShopify(role);
 
   const { sku } = await params;
 

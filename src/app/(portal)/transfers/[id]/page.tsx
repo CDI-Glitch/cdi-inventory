@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TransferStatusActions } from "@/components/transfers/transfer-status-actions";
+import { asRole, canAccessTransfers } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -26,8 +27,8 @@ export default async function TransferDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessTransfers(role)) redirect("/dashboard");
 
   const { id } = await params;
   const transfer = await prisma.transfer.findUnique({

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SalesFilters } from "@/components/sales/sales-filters";
 import { LocationTabs } from "@/components/ui/location-tabs";
+import { asRole, canCreateSalesRecord, prefersOwnWarehouseTab } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -27,7 +28,7 @@ export default async function SalesPage({
   searchParams: Promise<{ status?: string; search?: string; loc?: string }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
+  const role = asRole((session?.user as any)?.role);
   const userName = (session?.user as any)?.name ?? "";
   const params = await searchParams;
 
@@ -37,7 +38,7 @@ export default async function SalesPage({
   const activeLoc =
     params.loc !== undefined
       ? params.loc
-      : (role === "editor" || role === "sales")
+      : prefersOwnWarehouseTab(role)
       ? (locations.find((l) => l.name.toLowerCase() === userName.toLowerCase())?.name ?? "")
       : "";
 
@@ -69,7 +70,7 @@ export default async function SalesPage({
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
-        {role !== "viewer" && (
+        {canCreateSalesRecord(role) && (
           <Link
             href="/sales/new"
             className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"

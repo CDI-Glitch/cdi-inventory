@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
+import { canEditFulfillment, roleFromSession } from "@/lib/permissions";
 
 const MovementRowSchema = z.object({
   sku: z.string().min(1),
@@ -25,7 +26,7 @@ export async function PUT(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
+  const role = roleFromSession(session);
 
   const { id } = await params;
   const body = await req.json();
@@ -49,11 +50,7 @@ export async function PUT(
   }
 
   // deposit_paid: sales/editor/admin; fully_paid: editor/admin only
-  const canEdit =
-    (record.status === "deposit_paid" &&
-      ["admin", "editor", "sales"].includes(role)) ||
-    (record.status === "fully_paid" &&
-      ["admin", "editor"].includes(role));
+  const canEdit = canEditFulfillment(role, record.status);
   if (!canEdit) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

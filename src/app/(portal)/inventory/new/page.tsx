@@ -1,11 +1,12 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { NewProductForm } from "@/components/inventory/new-product-form";
+import { asRole, canCreateProduct } from "@/lib/permissions";
 
 export default async function NewProductPage() {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role !== "admin") redirect("/inventory");
+  const role = asRole((session?.user as any)?.role);
+  if (!canCreateProduct(role)) redirect("/inventory");
 
   return (
     <div>

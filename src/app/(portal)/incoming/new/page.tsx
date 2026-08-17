@@ -2,11 +2,12 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { IncomingForm } from "@/components/incoming/incoming-form";
+import { asRole, canWriteIncoming } from "@/lib/permissions";
 
 export default async function NewIncomingPage() {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canWriteIncoming(role)) redirect("/dashboard");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({

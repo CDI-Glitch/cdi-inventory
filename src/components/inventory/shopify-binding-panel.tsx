@@ -7,9 +7,10 @@ interface Props {
   shopifyInventoryItemId: string | null;
   shopifyVariantId: string | null;
   saveUrl?: string;
+  readOnly?: boolean;
 }
 
-export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVariantId, saveUrl }: Props) {
+export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVariantId, saveUrl, readOnly = false }: Props) {
   const [editing, setEditing] = useState(false);
   const [itemId, setItemId] = useState(shopifyInventoryItemId ?? "");
   const [variantId, setVariantId] = useState(shopifyVariantId ?? "");
@@ -62,7 +63,7 @@ export function ShopifyBindingPanel({ sku, shopifyInventoryItemId, shopifyVarian
             {isLinked ? "Linked" : "Not linked"}
           </span>
         </div>
-        {!editing && (
+        {!editing && !readOnly && (
           <button
             onClick={() => setEditing(true)}
             className="text-xs text-blue-600 hover:text-blue-800 font-medium"

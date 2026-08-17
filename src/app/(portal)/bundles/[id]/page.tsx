@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { BundleForm } from "@/components/bundles/bundle-form";
 import { ShopifyBindingPanel } from "@/components/inventory/shopify-binding-panel";
 import Link from "next/link";
+import { asRole, canAccessBundles, canWriteBundles } from "@/lib/permissions";
 
 export default async function BundleDetailPage({
   params,
@@ -12,7 +13,9 @@ export default async function BundleDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessBundles(role)) redirect("/dashboard");
+  const canWrite = canWriteBundles(role);
 
   const { id } = await params;
   const [bundle, products] = await Promise.all([
@@ -41,7 +44,7 @@ export default async function BundleDetailPage({
         <span className="text-gray-300">/</span>
         <span className="font-mono font-semibold text-gray-900">{bundle.code}</span>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit bundle</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{canWrite ? "Edit bundle" : "View bundle"}</h1>
       {bundle.sellableSku && (
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <ShopifyBindingPanel
@@ -49,6 +52,7 @@ export default async function BundleDetailPage({
             shopifyInventoryItemId={bundle.shopifyInventoryItemId}
             shopifyVariantId={bundle.shopifyVariantId}
             saveUrl={`/api/bundles/${bundle.id}`}
+            readOnly={!canWrite}
           />
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Cached kits</h3>
@@ -67,7 +71,7 @@ export default async function BundleDetailPage({
           </div>
         </div>
       )}
-      <BundleForm products={products} bundle={bundle} />
+      <BundleForm products={products} bundle={bundle} readOnly={!canWrite} />
     </div>
   );
 }

@@ -22,7 +22,7 @@
 
 **修复方案：** 给这两个接口补上和网页一致的角色检查（`role !== "viewer" && role !== "sales"` 或改用共享函数，见 TD-03）。
 
-**状态：** 已登记，未修复
+**状态：** 已修复（2026-08-17）— GET 调用 `canAccessIncoming`。
 **登记日期：** 2026-08-17
 
 ---
@@ -39,7 +39,7 @@
 
 **修复方案：** 同 TD-01，补角色检查。
 
-**状态：** 已登记，未修复
+**状态：** 已修复（2026-08-17）— GET 调用 `canAccessTransfers`。
 **登记日期：** 2026-08-17
 
 ---
@@ -64,7 +64,7 @@
 
 **修复方案：** 新建 `src/lib/permissions.ts`，定义 `canAccessIncoming(role)`、`canAccessTransfers(role)`、`canAccessBundles(role)` 等函数，逐步替换 sidebar / 页面 / API 里的内联判断。这个建议本身在 `docs/auth-permissions-runbook.md:231` 已经写过，当时评估"未采纳，仅记录"。
 
-**状态：** 已登记，未修复
+**状态：** 已修复（2026-08-17）— 判断集中在 `src/lib/permissions.ts`。Bundle 菜单仍用 `canWriteBundles`（admin），Step 3 再改为 `canAccessBundles`。
 **登记日期：** 2026-08-17
 
 ---
@@ -81,5 +81,5 @@
 
 **修复方案：** 补上 `sales` 列，同时核对审计日志（Audit Log）权限——代码里 sales 和 editor 都能看，但文档写的是仅 admin，两边需要对齐。
 
-**状态：** 已登记，未修复
+**状态：** 已修复（2026-08-17）— constitution §G 已含 sales 列，Audit Log 以代码为准。
 **登记日期：** 2026-08-17

@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { asRole, canAccessBundles, canWriteBundles } from "@/lib/permissions";
 
 export default async function BundlesPage() {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessBundles(role)) redirect("/dashboard");
 
   const bundles = await prisma.bundleDefinition.findMany({
     include: {
@@ -20,12 +22,14 @@ export default async function BundlesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Bundles</h1>
+        {canWriteBundles(role) && (
         <Link
           href="/bundles/new"
           className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
         >
           + New bundle
         </Link>
+        )}
       </div>
 
       {bundles.length === 0 ? (

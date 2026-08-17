@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canManageLocations, roleFromSession } from "@/lib/permissions";
 
 const UpdateLocationSchema = z.object({
   name: z.string().min(1).optional(),
@@ -14,7 +15,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
+  if (!canManageLocations(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

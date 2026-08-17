@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canCorrectShippedAt, roleFromSession } from "@/lib/permissions";
 
 const ShippedAtSchema = z.object({
   shippedAt: z.string().min(1, "Shipped date is required"),
@@ -23,8 +24,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role !== "admin") {
+  if (!canCorrectShippedAt(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

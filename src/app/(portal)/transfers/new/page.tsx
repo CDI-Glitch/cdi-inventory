@@ -2,11 +2,12 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { TransferForm } from "@/components/transfers/transfer-form";
+import { asRole, canWriteTransfers } from "@/lib/permissions";
 
 export default async function NewTransferPage() {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canWriteTransfers(role)) redirect("/dashboard");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({ where: { active: true }, orderBy: { sku: "asc" } }),

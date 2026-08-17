@@ -228,7 +228,7 @@ SELECT email, role, active FROM "User" ORDER BY email;
 
 **修复：** 6 个文件统一改为 `if (role === "viewer" || role === "sales") redirect("/dashboard")`，与 API 层写法完全一致。不影响 editor/admin 的正常访问，也不需要改 Sidebar 或写入 API（它们本来就是对的）。
 
-**后续建议（未采纳，仅记录）：** 若之后再新增角色或调整某功能的权限范围，应该把"谁能进这个功能"收敛成一两个共享判断函数（如 `canAccessIncoming(role)`），而不是在 6 个文件里各写一份，减少下次漏改的概率。这次未做此重构，只做了最小范围的定点修复。
+**后续（2026-08-17 已实施）：** 权限判断已收敛到 `src/lib/permissions.ts`（`canAccessIncoming` / `canWriteIncoming` / `canAccessTransfers` 等）。Sidebar、页面 redirect、API（含 Incoming/Transfers **GET**）一律调用该文件。GET `/api/incoming*`、`GET /api/transfers*` 原先只查登录、不查角色的漏洞一并堵住。
 
 ---
 
@@ -241,8 +241,9 @@ SELECT email, role, active FROM "User" ORDER BY email;
 - `src/app/api/users/[id]/route.ts`
 - `src/app/(portal)/layout.tsx` / `settings/page.tsx`
 - `src/components/settings/sync-panel.tsx`
-- `src/components/sidebar.tsx` 的 `roles` 白名单
-- `src/app/(portal)/incoming/**/page.tsx`、`src/app/(portal)/transfers/**/page.tsx` 的角色 `redirect` 守卫（见 §11 教训——务必与对应 API 路由的角色检查保持一致）
+- `src/components/sidebar.tsx` 的 `canShow` 函数
+- `src/app/(portal)/incoming/**/page.tsx`、`src/app/(portal)/transfers/**/page.tsx` 的角色 `redirect` 守卫（必须与 `src/lib/permissions.ts` 一致）
+- `src/lib/permissions.ts`（新增角色或改范围时只改这里）
 
 **禁止：**
 

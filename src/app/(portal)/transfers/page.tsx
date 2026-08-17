@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { asRole, canAccessTransfers } from "@/lib/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
@@ -20,8 +21,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default async function TransfersPage() {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role === "viewer" || role === "sales") redirect("/dashboard");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAccessTransfers(role)) redirect("/dashboard");
 
   const transfers = await prisma.transfer.findMany({
     include: { fromLocation: true, toLocation: true, product: true },

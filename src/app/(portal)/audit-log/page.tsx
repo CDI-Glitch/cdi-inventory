@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { INVENTORY_LOG_TYPES } from "@/lib/constants";
 import { AuditFilters } from "@/components/audit/audit-filters";
+import { asRole, canAccessAuditLog } from "@/lib/permissions";
 
 const PAGE_SIZE = 50;
 
@@ -48,8 +49,8 @@ export default async function AuditLogPage({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
-  const role = (session.user as any)?.role;
-  if (role !== "admin" && role !== "editor" && role !== "sales") redirect("/dashboard");
+  const role = asRole((session.user as any)?.role);
+  if (!canAccessAuditLog(role)) redirect("/dashboard");
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1"));

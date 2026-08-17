@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canEditSalesRecord, roleFromSession } from "@/lib/permissions";
 
 const PatchHeaderSchema = z.object({
   customer: z.string().min(1).optional(),
@@ -19,8 +20,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canEditSalesRecord(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const body = await req.json();

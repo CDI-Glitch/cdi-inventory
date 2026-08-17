@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { TRANSFER_TRANSITIONS, type TransferStatus } from "@/lib/constants";
 import { scheduleAfterStockChange } from "@/lib/stock-side-effects";
+import { canAccessTransfers, canWriteTransfers, roleFromSession } from "@/lib/permissions";
 
 const TransitionSchema = z.object({
   status: z.enum(["in_transit", "completed", "cancelled"]),
@@ -15,6 +16,9 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessTransfers(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const transfer = await prisma.transfer.findUnique({
@@ -32,8 +36,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canWriteTransfers(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const body = await req.json();

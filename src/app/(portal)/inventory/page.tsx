@@ -9,6 +9,8 @@ import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
 import { getAgingReservations, type AgingReservationRow } from "@/lib/reservation-aging";
+import { getStockForProducts } from "@/lib/inventory";
+import { asRole, canAdjustStock, canCreateProduct } from "@/lib/permissions";
 
 const FORECAST_ELIGIBLE_STATUSES = ["shipped", "in_transit", "arrived"];
 const FORECAST_MAX_CONTAINERS = 5;
@@ -31,7 +33,7 @@ export default async function InventoryPage({
   }>;
 }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
+  const role = asRole((session?.user as any)?.role);
   const userName = (session?.user as any)?.name ?? "";
   const params = await searchParams;
 
@@ -117,38 +119,17 @@ export default async function InventoryPage({
     orderBy: { sku: "asc" },
   });
 
-  // Always single-location scope
-  const [allLogs, allMovements] = await Promise.all([
-    prisma.inventoryLog.groupBy({
-      by: ["productId"],
-      where: activeLocation ? { locationId: activeLocation.id } : { locationId: locations[0]?.id },
-      _sum: { delta: true },
-    }),
-    prisma.generatedMovement.groupBy({
-      by: ["productId"],
-      where: {
-        reservedQty: { gt: 0 },
-        locationId: activeLocation?.id ?? locations[0]?.id,
-      },
-      _sum: { reservedQty: true },
-    }),
-  ]);
-
-  const logMap = new Map<string, number>();
-  for (const log of allLogs) {
-    logMap.set(log.productId, log._sum.delta ?? 0);
-  }
-  const movMap = new Map<string, number>();
-  for (const mov of allMovements) {
-    movMap.set(mov.productId, mov._sum.reservedQty ?? 0);
-  }
+  const locationId = activeLocation?.id ?? locations[0]?.id ?? "";
+  const stockMap = await getStockForProducts(
+    locationId,
+    products.map((p) => p.id)
+  );
 
   const locationName = activeLocation?.name ?? locations[0]?.name ?? "";
 
   const rows = products.map((product) => {
-    const onHand = logMap.get(product.id) ?? 0;
-    const reserved = movMap.get(product.id) ?? 0;
-    const available = onHand - reserved;
+    const stock = stockMap.get(product.id) ?? { onHand: 0, reserved: 0, available: 0 };
+    const { onHand, reserved, available } = stock;
     const byLocation = { [locationName]: { onHand, reserved, available } };
 
     let status: "OK" | "REORDER" | "OUT_OF_STOCK" = "OK";
@@ -288,7 +269,7 @@ export default async function InventoryPage({
             <ForecastToggle active={forecastActive} href={forecastToggleHref} />
             <BackorderToggle active={backorderActive} href={backorderToggleHref} />
             {backorderActive && activeLoc && <FactoryListButton loc={activeLoc} />}
-            {role === "admin" && (
+            {canCreateProduct(role) && (
               <Link
                 href="/inventory/new"
                 className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8]"
@@ -296,7 +277,7 @@ export default async function InventoryPage({
                 + Add SKU
               </Link>
             )}
-            {(role === "admin" || role === "editor") && (
+            {canAdjustStock(role) && (
               <Link
                 href="/inventory/adjust"
                 className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -336,7 +317,7 @@ export default async function InventoryPage({
           containers={containers}
           backorder={backorderActive}
           agingByProductId={Object.fromEntries(agingByProductId)}
-          canLinkContainers={role === "admin" || role === "editor"}
+          canLinkContainers={canAdjustStock(role)}
         />
       </div>
 

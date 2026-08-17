@@ -2,11 +2,12 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdjustForm } from "@/components/inventory/adjust-form";
+import { asRole, canAdjustStock } from "@/lib/permissions";
 
 export default async function AdjustPage() {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (role !== "admin" && role !== "editor") redirect("/inventory");
+  const role = asRole((session?.user as any)?.role);
+  if (!canAdjustStock(role)) redirect("/inventory");
 
   const [products, locations] = await Promise.all([
     prisma.product.findMany({

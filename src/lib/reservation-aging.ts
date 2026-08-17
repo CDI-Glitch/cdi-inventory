@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { RESERVATION_AGING_WARNING_DAYS, RESERVATION_AGING_CRITICAL_DAYS } from "./constants";
+import { getStockForProductLocationPairs } from "./inventory";
 
 // Same eligibility rule Forecast Mode uses on the Inventory page: containers that are
 // actually on their way (not just "pending" at the supplier) and have a known ETA.
@@ -60,33 +61,16 @@ export async function getAgingReservations(
   const pairs = Array.from(
     new Map(movements.map((m) => [`${m.productId}:${m.locationId}`, { productId: m.productId, locationId: m.locationId }])).values()
   );
-  const productIds = Array.from(new Set(pairs.map((p) => p.productId)));
-  const locationIds = Array.from(new Set(pairs.map((p) => p.locationId)));
-
-  const [logs, allReserved] = await Promise.all([
-    prisma.inventoryLog.groupBy({
-      by: ["productId", "locationId"],
-      where: { productId: { in: productIds }, locationId: { in: locationIds } },
-      _sum: { delta: true },
-    }),
-    prisma.generatedMovement.groupBy({
-      by: ["productId", "locationId"],
-      where: { productId: { in: productIds }, locationId: { in: locationIds }, reservedQty: { gt: 0 } },
-      _sum: { reservedQty: true },
-    }),
-  ]);
-
-  const onHandMap = new Map(logs.map((l) => [`${l.productId}:${l.locationId}`, l._sum.delta ?? 0]));
-  const reservedMap = new Map(allReserved.map((r) => [`${r.productId}:${r.locationId}`, r._sum.reservedQty ?? 0]));
+  const stockMap = await getStockForProductLocationPairs(pairs);
 
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
   const preliminary = movements.map((m) => {
     const key = `${m.productId}:${m.locationId}`;
-    const onHand = onHandMap.get(key) ?? 0;
-    const reserved = reservedMap.get(key) ?? 0;
-    const available = onHand - reserved;
+    const stock = stockMap.get(key) ?? { onHand: 0, reserved: 0, available: 0 };
+    const onHand = stock.onHand;
+    const available = stock.available;
     const ageDays = Math.floor((now - m.createdAt.getTime()) / dayMs);
 
     let ageSignal: AgingReservationRow["ageSignal"] = null;

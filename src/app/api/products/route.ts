@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { CATEGORIES } from "@/lib/constants";
+import { canCreateProduct, roleFromSession } from "@/lib/permissions";
 
 const CreateProductSchema = z.object({
   sku: z.string().regex(/^[A-Z0-9\-]+$/, "SKU must be uppercase letters, numbers, hyphens only"),
@@ -43,8 +44,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
-  if (!session || role !== "admin") {
+  if (!session || !canCreateProduct(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

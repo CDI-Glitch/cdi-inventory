@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { canAccessTransfers, canWriteTransfers, roleFromSession } from "@/lib/permissions";
 
 const CreateTransferSchema = z.object({
   fromLocationId: z.string().min(1),
@@ -16,6 +17,9 @@ const CreateTransferSchema = z.object({
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessTransfers(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -42,8 +46,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = (session.user as any)?.role;
-  if (role === "viewer" || role === "sales") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canWriteTransfers(roleFromSession(session))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
   const parsed = CreateTransferSchema.safeParse(body);

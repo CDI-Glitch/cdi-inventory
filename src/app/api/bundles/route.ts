@@ -5,6 +5,7 @@ import { z } from "zod";
 import { COMPONENT_ROLES } from "@/lib/constants";
 import { refreshBundleKitsCache } from "@/lib/bundle-atp";
 import { syncBundleToShopify } from "@/lib/shopify-sync";
+import { canAccessBundles, canWriteBundles, roleFromSession } from "@/lib/permissions";
 
 const CreateBundleSchema = z.object({
   code: z.string().regex(/^[A-Z0-9\-]+$/, "Code must be uppercase letters, numbers, hyphens"),
@@ -28,6 +29,9 @@ const CreateBundleSchema = z.object({
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessBundles(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const bundles = await prisma.bundleDefinition.findMany({
     include: { items: { include: { product: true }, orderBy: { sortOrder: "asc" } } },
@@ -39,7 +43,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || !canWriteBundles(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

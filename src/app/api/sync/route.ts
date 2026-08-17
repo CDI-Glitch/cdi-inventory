@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { syncAllToShopify } from "@/lib/shopify-sync";
 import { prisma } from "@/lib/db";
+import { canRunSync, roleFromSession } from "@/lib/permissions";
 
 const PAGE_SIZE = 50;
 
@@ -9,7 +10,7 @@ const PAGE_SIZE = 50;
 // ?page=1&pageSize=50
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || !canRunSync(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
 // POST — trigger full sync to Shopify
 export async function POST(_req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || !canRunSync(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -65,7 +66,7 @@ export async function POST(_req: NextRequest) {
 // Admin only
 export async function DELETE(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as any)?.role !== "admin") {
+  if (!session || !canRunSync(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

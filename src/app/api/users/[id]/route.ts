@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { canManageUsers, roleFromSession } from "@/lib/permissions";
 
 const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,7 +18,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   const actorId = (session?.user as any)?.id;
-  if ((session?.user as any)?.role !== "admin") {
+  if (!canManageUsers(roleFromSession(session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
