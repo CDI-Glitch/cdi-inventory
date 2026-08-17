@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-16（决策 17 Sellable Bundle / Shopify 派生 kits；Webhook 行为对齐现网）
+> 最后更新：2026-08-17（决策 17 Sellable Bundle / Shopify 派生 kits；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -530,7 +530,8 @@ Shopify orders/paid → HMAC + ProcessedWebhook 去重
 | 收款/开票 | Zoho Invoice |
 | 完整 ERP | 未来评估 |
 | 条码扫描 | Phase 2+ |
-| 拣货单 | Phase 2 |
+| 拣货单打印 | 已实现：销售单 packlist 页；临时备注不入库。车间协作见 [`docs/kanban-boundary.md`](./kanban-boundary.md) |
+| 车间看板 / 工序进度 | 独立看板软件（未建）。Portal 不存协作记录、不混入 `SalesRecord.status` |
 | Xero 集成 | 未来评估 |
 | Excel 导入（批量） | ✅ 已实现：`scripts/import-*.ts` 脚本体系 |
 

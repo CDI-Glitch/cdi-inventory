@@ -15,5 +15,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | **Sellable Bundle / Shopify kits** | `docs/bundle-shopify-sync.md` | Tray BOM ATP, alt groups, kits cache, Worker lookup |
 | **SKU Master List** | `docs/sku-master-list.md` | All current SKUs with categories and opening stock |
 | **Tech Debt / Architecture Risk Register** | `docs/tech-debt/register.md` | Known architecture risks (permissions, inventory calc duplication, concurrency), status, and review triggers. Check before opening new permission scopes or major features. |
+| **Portal vs workshop Kanban** | `docs/kanban-boundary.md` | What belongs in Portal vs a future shop-floor board. Use before adding workshop notes, tasks, or statuses. |
 
 > ⚠️ The constitution is the authoritative document for this project. Read it before making any structural changes to the database schema, state machine, or permission model.

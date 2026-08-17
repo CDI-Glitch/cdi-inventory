@@ -62,6 +62,9 @@
 - [ ] SKU 类型的销售记录：直接对 Product 预留
 - [ ] Bundle 类型的销售记录：展开所有组件，对每个组件预留
 - [ ] 同一 SKU 既出现在独立行又出现在 Bundle 组件 → Fulfillment 对比 **合并计数**，不误报 mismatch
+- [ ] `deposit_paid` / `fully_paid` / `completed` 可打开 `/sales/[id]/packlist`；quote / cancelled → 404
+- [ ] packlist 整单 / 行级 Notes 刷新后消失（不入库）；打印时整单备注走镜像文字块，不被 textarea 裁切
+- [ ] 车间协作需求是否该进 Portal → 先看 [`kanban-boundary.md`](./kanban-boundary.md)
 
 ### 5. Bundle 展开
 
