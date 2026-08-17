@@ -13,9 +13,9 @@ export default async function PortalLayout({
 
   return (
     <SessionWatcher>
-      <div className="flex h-screen bg-[#F8F9FB]">
+      <div className="flex h-screen bg-[#F8F9FB] print:block print:h-auto print:bg-white">
         <Sidebar user={session.user as any} />
-        <main className="flex-1 overflow-y-auto bg-white p-8">
+        <main className="flex-1 overflow-y-auto bg-white p-8 print:overflow-visible print:p-0">
           {children}
         </main>
       </div>

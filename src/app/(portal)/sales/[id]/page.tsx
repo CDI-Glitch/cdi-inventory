@@ -10,7 +10,12 @@ import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor"
 import { SalesAltGroupPicker } from "@/components/sales/sales-alt-group-picker";
 import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
 import { asRole, canEditFulfillment as fulfillmentEditable, canEditSalesRecord } from "@/lib/permissions";
-import { listAltGroupTasks, unresolvedAltGroupSummary } from "@/lib/alt-group-fulfillment";
+import { unresolvedAltGroupSummary } from "@/lib/alt-group-fulfillment";
+import {
+  buildFulfillmentView,
+  getBundleComponents,
+  isSkuMismatch,
+} from "@/lib/sales-fulfillment-view";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -121,63 +126,7 @@ export default async function SalesDetailPage({
   }));
 
   const dateStr = record.date.toISOString().slice(0, 10);
-  const altGroupTasks =
-    record.status === "deposit_paid" || record.status === "fully_paid"
-      ? listAltGroupTasks(record.lines, record.movements)
-      : [];
-  const completeBlockedReason =
-    record.status === "fully_paid" ? unresolvedAltGroupSummary(altGroupTasks) : null;
 
-  // Resolve a bundle line's components: prefer the BOM snapshot captured when
-  // the line was saved (immune to later BundleDefinition/BundleItem edits),
-  // falling back to the live bundle definition for older lines saved before
-  // the snapshot field existed.
-  function getBundleComponents(line: { itemCode: string; snapshotItems: unknown }) {
-    const snapshot = line.snapshotItems as { sku: string; name: string; qty: number }[] | null;
-    if (snapshot && snapshot.length > 0) return snapshot;
-    return bundleMap[line.itemCode]?.items ?? [];
-  }
-
-  // Build { sku → total qty } from Order lines for mismatch detection.
-  // Bundle lines are expanded into their component SKUs (qty × line.qty) and
-  // accumulated into the SAME map/key as plain SKU lines — so a product that
-  // appears both as a standalone line and inside a bundle is summed correctly
-  // instead of producing a false "SKU not in order lines" mismatch.
-  const orderLineMap: Record<string, number> = {};
-  for (const line of record.lines) {
-    if (line.lineType === "sku") {
-      orderLineMap[line.itemCode] = (orderLineMap[line.itemCode] ?? 0) + line.qty;
-    } else if (line.lineType === "bundle") {
-      for (const item of getBundleComponents(line)) {
-        orderLineMap[item.sku] = (orderLineMap[item.sku] ?? 0) + item.qty * line.qty;
-      }
-    }
-  }
-
-  // Aggregate active movements by SKU (legacy rows may have duplicates before reserveStock merge)
-  const activeMovements = record.movements.filter((m) => m.reservedQty > 0);
-  const fulfillmentBySku = new Map<
-    string,
-    { sku: string; name: string; locationName: string; reservedQty: number; id: string }
-  >();
-  for (const mov of activeMovements) {
-    const existing = fulfillmentBySku.get(mov.product.sku);
-    if (existing) {
-      existing.reservedQty += mov.reservedQty;
-    } else {
-      fulfillmentBySku.set(mov.product.sku, {
-        id: mov.id,
-        sku: mov.product.sku,
-        name: mov.product.name,
-        locationName: mov.location.name,
-        reservedQty: mov.reservedQty,
-      });
-    }
-  }
-  const fulfillmentRows = Array.from(fulfillmentBySku.values());
-
-  // For completed records, fetch the actual deduction log so the Fulfillment table
-  // shows what was really pulled from stock (GeneratedMovement is zeroed out on complete).
   const completedDeductions =
     record.status === "completed"
       ? await prisma.inventoryLog.findMany({
@@ -187,39 +136,23 @@ export default async function SalesDetailPage({
         })
       : [];
 
-  // Aggregate deductions by SKU for display + mismatch
-  const deductionBySku = new Map<
-    string,
-    { id: string; sku: string; name: string; locationName: string; deductedQty: number }
-  >();
-  for (const log of completedDeductions) {
-    const existing = deductionBySku.get(log.product.sku);
-    const qty = Math.abs(log.delta);
-    if (existing) {
-      existing.deductedQty += qty;
-    } else {
-      deductionBySku.set(log.product.sku, {
-        id: log.id,
-        sku: log.product.sku,
-        name: log.product.name,
-        locationName: log.location.name,
-        deductedQty: qty,
-      });
-    }
-  }
-  const deductionRows = Array.from(deductionBySku.values());
-
-  function isSkuMismatch(sku: string, fulfillmentQty: number) {
-    const orderedQty = orderLineMap[sku];
-    return orderedQty === undefined || orderedQty !== fulfillmentQty;
-  }
-
-  const hasAnyFulfillmentMismatch = fulfillmentRows.some((r) =>
-    isSkuMismatch(r.sku, r.reservedQty)
-  );
-  const hasAnyDeductionMismatch = deductionRows.some((r) =>
-    isSkuMismatch(r.sku, r.deductedQty)
-  );
+  const view = buildFulfillmentView({
+    status: record.status,
+    lines: record.lines,
+    movements: record.movements,
+    liveBundles: bundleMap,
+    deductions: completedDeductions,
+  });
+  const {
+    orderLineMap,
+    fulfillmentRows,
+    deductionRows,
+    altGroupTasks,
+    hasAnyFulfillmentMismatch,
+    hasAnyDeductionMismatch,
+  } = view;
+  const completeBlockedReason =
+    record.status === "fully_paid" ? unresolvedAltGroupSummary(altGroupTasks) : null;
 
   return (
     <div className="max-w-3xl">
@@ -320,7 +253,7 @@ export default async function SalesDetailPage({
                       itemName={itemName}
                       qty={line.qty}
                       notes={line.notes}
-                      components={getBundleComponents(line)}
+                      components={getBundleComponents(line, bundleMap)}
                     />
                   );
                 }
@@ -364,13 +297,21 @@ export default async function SalesDetailPage({
                   : "Actual stock reserved / to be pulled — source of truth for deduction"}
               </p>
             </div>
-            {canEditFulfillment && (
-              <SalesMovementsEditor
-                salesRecordId={record.id}
-                existingMovements={record.movements}
-                skuOptions={allProducts}
-              />
-            )}
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/sales/${record.id}/packlist`}
+                className="text-xs font-medium text-blue-600 hover:text-blue-800"
+              >
+                Print pack list
+              </Link>
+              {canEditFulfillment && (
+                <SalesMovementsEditor
+                  salesRecordId={record.id}
+                  existingMovements={record.movements}
+                  skuOptions={allProducts}
+                />
+              )}
+            </div>
           </div>
 
           {record.status !== "completed" && (
@@ -402,7 +343,7 @@ export default async function SalesDetailPage({
                   <tbody>
                     {deductionRows.map((row) => {
                       const orderedQty = orderLineMap[row.sku];
-                      const mismatch = isSkuMismatch(row.sku, row.deductedQty);
+                      const mismatch = isSkuMismatch(orderLineMap, row.sku, row.qty);
                       return (
                         <tr key={row.id} className="border-b border-gray-100 last:border-0">
                           <td className="px-4 py-2 font-mono text-xs text-gray-700">
@@ -411,7 +352,7 @@ export default async function SalesDetailPage({
                           <td className="px-4 py-2 text-gray-600">{row.name}</td>
                           <td className="px-4 py-2 text-gray-500">{row.locationName}</td>
                           <td className="px-4 py-2 text-center tabular-nums font-medium text-gray-500">
-                            {row.deductedQty}
+                            {row.qty}
                           </td>
                           <td className="px-4 py-2 text-center">
                             {mismatch && (
@@ -419,7 +360,7 @@ export default async function SalesDetailPage({
                                 title={
                                   orderedQty === undefined
                                     ? "SKU not in order lines (substituted)"
-                                    : `Order qty: ${orderedQty}, deducted: ${row.deductedQty}`
+                                    : `Order qty: ${orderedQty}, deducted: ${row.qty}`
                                 }
                                 className="text-amber-500 text-xs font-semibold cursor-help"
                               >
@@ -460,7 +401,7 @@ export default async function SalesDetailPage({
                   <tbody>
                     {fulfillmentRows.map((row) => {
                       const orderedQty = orderLineMap[row.sku];
-                      const mismatch = isSkuMismatch(row.sku, row.reservedQty);
+                      const mismatch = isSkuMismatch(orderLineMap, row.sku, row.qty);
                       return (
                         <tr key={row.id} className="border-b border-gray-100 last:border-0">
                           <td className="px-4 py-2 font-mono text-xs text-gray-700">
@@ -469,7 +410,7 @@ export default async function SalesDetailPage({
                           <td className="px-4 py-2 text-gray-600">{row.name}</td>
                           <td className="px-4 py-2 text-gray-500">{row.locationName}</td>
                           <td className="px-4 py-2 text-center tabular-nums font-medium text-orange-600">
-                            {row.reservedQty}
+                            {row.qty}
                           </td>
                           <td className="px-4 py-2 text-center">
                             {mismatch && (
@@ -477,7 +418,7 @@ export default async function SalesDetailPage({
                                 title={
                                   orderedQty === undefined
                                     ? "SKU not in order lines (substituted)"
-                                    : `Order qty: ${orderedQty}, fulfillment qty: ${row.reservedQty}`
+                                    : `Order qty: ${orderedQty}, fulfillment qty: ${row.qty}`
                                 }
                                 className="text-amber-500 text-xs font-semibold cursor-help"
                               >

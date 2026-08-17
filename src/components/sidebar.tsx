@@ -46,7 +46,7 @@ export function Sidebar({ user }: SidebarProps) {
   const visibleItems = NAV_ITEMS.filter((item) => item.canShow(role));
 
   return (
-    <aside className="w-64 flex flex-col bg-[#111827]">
+    <aside className="w-64 flex flex-col bg-[#111827] print:hidden">
       {/* Logo area */}
       <div className="px-6 pt-7 pb-6">
         <img src="/logo-cdi-white.svg" alt="CDI" className="h-8 w-auto" />
