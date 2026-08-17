@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "@/components/ui/custom-select";
 import type { AltGroupTask } from "@/lib/alt-group-fulfillment";
 import { formatAltGroupLabel } from "@/lib/alt-group-fulfillment";
 
@@ -95,21 +96,21 @@ function AltGroupCard({
       </p>
       {canEdit ? (
         <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="text-xs font-medium text-gray-700">
-            SKU
-            <select
+          <div className="min-w-[16rem]">
+            <span className="text-xs font-medium text-gray-700">SKU</span>
+            <CustomSelect
+              name={`alt-pick-${task.lineId}-${task.altGroupKey}`}
               value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              className="mt-1 block min-w-[16rem] rounded border border-gray-300 bg-white px-2 py-1.5 text-sm"
-            >
-              <option value="">Select…</option>
-              {task.candidates.map((c) => (
-                <option key={c.productId} value={c.productId}>
-                  {c.sku} — {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              placeholder="Select…"
+              options={task.candidates.map((c) => ({
+                value: c.productId,
+                label: `${c.sku} — ${c.name}`,
+              }))}
+              onChange={setProductId}
+              fullWidth
+              className="mt-1"
+            />
+          </div>
           <span className="pb-1.5 text-sm tabular-nums text-gray-700">×{task.requiredQty}</span>
           <button
             type="button"
