@@ -108,7 +108,7 @@ Not in this cut: webhook auto-create sales + reserve (second cut).
 |---|---|---|
 | normal line | constrains kits | reserved |
 | `nonConstraining` | ignored | reserved (pick list) |
-| `altGroupKey` set | sum of group | **not** auto-reserved — warehouse chooses SKU on fulfillment |
+| `altGroupKey` set | sum of group | **not** auto-reserved — warehouse picks one SKU on fulfillment. Portal shows a pick-one control per `(sales line, alt group)` and **blocks Completed** until reserved qty for that group meets `qty × line.qty`. |
 
 Soft BOM is unchanged: saving a sales line still snapshots items. Editing the live definition does not rewrite existing quotes.
 

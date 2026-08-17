@@ -7,8 +7,10 @@ import { SalesStatusActions } from "@/components/sales/sales-status-actions";
 import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
 import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
 import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor";
+import { SalesAltGroupPicker } from "@/components/sales/sales-alt-group-picker";
 import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
 import { asRole, canEditFulfillment as fulfillmentEditable, canEditSalesRecord } from "@/lib/permissions";
+import { listAltGroupTasks, unresolvedAltGroupSummary } from "@/lib/alt-group-fulfillment";
 
 const STATUS_STYLES: Record<string, string> = {
   quote: "bg-gray-100 text-gray-700",
@@ -119,6 +121,12 @@ export default async function SalesDetailPage({
   }));
 
   const dateStr = record.date.toISOString().slice(0, 10);
+  const altGroupTasks =
+    record.status === "deposit_paid" || record.status === "fully_paid"
+      ? listAltGroupTasks(record.lines, record.movements)
+      : [];
+  const completeBlockedReason =
+    record.status === "fully_paid" ? unresolvedAltGroupSummary(altGroupTasks) : null;
 
   // Resolve a bundle line's components: prefer the BOM snapshot captured when
   // the line was saved (immune to later BundleDefinition/BundleItem edits),
@@ -261,6 +269,7 @@ export default async function SalesDetailPage({
           id={record.id}
           currentStatus={record.status}
           version={record.version}
+          completeBlockedReason={completeBlockedReason}
         />
       )}
 
@@ -363,6 +372,14 @@ export default async function SalesDetailPage({
               />
             )}
           </div>
+
+          {record.status !== "completed" && (
+            <SalesAltGroupPicker
+              salesRecordId={record.id}
+              tasks={altGroupTasks}
+              canEdit={canEditFulfillment}
+            />
+          )}
 
           {record.status === "completed" ? (
             // Completed: show what was actually deducted from InventoryLog

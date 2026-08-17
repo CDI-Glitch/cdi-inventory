@@ -1,6 +1,11 @@
 import { prisma } from "./db";
 import { VALID_TRANSITIONS, type SalesStatus } from "./constants";
 import { scheduleAfterStockChange } from "./stock-side-effects";
+import {
+  AltGroupUnresolvedError,
+  listAltGroupTasks,
+  unresolvedAltGroupSummary,
+} from "./alt-group-fulfillment";
 
 export class InvalidTransitionError extends Error {
   constructor(from: string, to: string) {
@@ -48,6 +53,10 @@ export async function transitionSalesRecord(
   if (currentStatus === "quote" && newStatus === "deposit_paid") {
     await reserveStock(record, userId);
   } else if (newStatus === "completed") {
+    const summary = unresolvedAltGroupSummary(listAltGroupTasks(record.lines, record.movements));
+    if (summary) {
+      throw new AltGroupUnresolvedError(summary);
+    }
     await completeStock(record, userId);
   } else if (newStatus === "cancelled") {
     await releaseReservations(record.id, record.recordId, userId);

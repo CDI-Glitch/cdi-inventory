@@ -173,7 +173,7 @@ nonConstraining, altGroupKey
 ```
 componentRole：`main_body | body_attachment | tray_mount | hardware_bracket`
 - `nonConstraining=true`：进预留/领料，不进 kits ATP
-- `altGroupKey`：同 bundle 内同 key 互为替代，ATP 对组内 available 求和；预留不自动占这组（仓库发货时选 SKU）
+- `altGroupKey`：同 bundle 内同 key 互为替代，ATP 对组内 available 求和；预留不自动占这组。销售单按 `(lineId, altGroupKey)` 手选一个 SKU 后才写入预留；未凑够数量不能 Completed
 
 ### BundleLocationStock（kits 缓存）
 ```

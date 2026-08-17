@@ -14,9 +14,10 @@ interface Props {
   id: string;
   currentStatus: string;
   version: number;
+  completeBlockedReason?: string | null;
 }
 
-export function SalesStatusActions({ id, currentStatus, version }: Props) {
+export function SalesStatusActions({ id, currentStatus, version, completeBlockedReason }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -84,7 +85,8 @@ export function SalesStatusActions({ id, currentStatus, version }: Props) {
         {nextStatus && NEXT_BTN_LABELS[status] && (
           <button
             onClick={() => transition(nextStatus)}
-            disabled={loading !== null}
+            disabled={loading !== null || (nextStatus === "completed" && !!completeBlockedReason)}
+            title={nextStatus === "completed" && completeBlockedReason ? completeBlockedReason : undefined}
             className="rounded-md bg-[#2563EB] px-3 py-2 text-sm font-medium text-white hover:bg-[#1D4ED8] disabled:opacity-50"
           >
             {loading === nextStatus ? "Updating..." : NEXT_BTN_LABELS[status]}
@@ -104,6 +106,9 @@ export function SalesStatusActions({ id, currentStatus, version }: Props) {
           </button>
         )}
       </div>
+      {completeBlockedReason && nextStatus === "completed" && (
+        <p className="mt-2 text-sm text-amber-700">{completeBlockedReason}</p>
+      )}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
