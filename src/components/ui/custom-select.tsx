@@ -125,8 +125,8 @@ export function CustomSelect({
               onClick={() => select(opt.value)}
               className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors
                 ${internalValue === opt.value
-                  ? "bg-[#2563EB]/5 text-[#2563EB] font-medium"
-                  : "text-gray-700 hover:bg-gray-50"
+                  ? "bg-blue-50 text-[#2563EB] font-medium"
+                  : "text-gray-700 hover:bg-blue-50"
                 }`}
             >
               <span className="w-4 shrink-0">

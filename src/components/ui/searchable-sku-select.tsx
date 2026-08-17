@@ -24,6 +24,7 @@ interface Props {
   onChange: (sku: string) => void;
   /** If true, fills 100% of parent width */
   fullWidth?: boolean;
+  disabled?: boolean;
 }
 
 function highlight(text: string, query: string): React.ReactNode {
@@ -42,7 +43,7 @@ function highlight(text: string, query: string): React.ReactNode {
 const DROPDOWN_MAX_H = 288; // max-h-72 = 288px
 const DROPDOWN_MARGIN = 4;  // gap between trigger and dropdown
 
-export function SearchableSkuSelect({ value, options, placeholder = "Select SKU", onChange, fullWidth = false }: Props) {
+export function SearchableSkuSelect({ value, options, placeholder = "Select SKU", onChange, fullWidth = false, disabled = false }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [pos, setPos] = useState<DropdownPos | null>(null);
@@ -90,6 +91,7 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
   }, [open]);
 
   function handleToggle() {
+    if (disabled) return;
     if (!open) calcPos();
     setOpen((o) => !o);
   }
@@ -191,12 +193,13 @@ export function SearchableSkuSelect({ value, options, placeholder = "Select SKU"
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className={`${fullWidth ? "w-full" : ""} flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        disabled={disabled}
+        className={`${fullWidth ? "w-full" : ""} flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:hover:bg-gray-50 disabled:text-gray-400`}
       >
         <span className={`flex-1 text-left truncate ${hasValue ? "text-gray-900" : "text-gray-400"}`}>
           {triggerLabel}
         </span>
-        {hasValue && (
+        {hasValue && !disabled && (
           <span
             role="button"
             onClick={(e) => { e.stopPropagation(); onChange(""); setOpen(false); }}

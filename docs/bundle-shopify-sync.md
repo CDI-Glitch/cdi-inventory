@@ -48,7 +48,7 @@ Example: **1850 Sahara Black**
 | Mudguard | `CD-MG-SHB` + `CD-MG-DT-SHB` + `CD-MG-HR-SHB` | 1 pair | alt group `mudguard` |
 | Rear tie-down | `TT-BSG-89-SHB` | 1 pair | single |
 | Toolbox L/R | `TT-BX-90-L-SHB` / `TT-BX-90-R-SHB` | 1 each | single |
-| Fitting kit | `FK` ×3（2450 为 ×4）+ `FK-Ex` ×2 + `CXH` ×1 | — | 卡 kits |
+| Fitting kit | `FK` ×3（2450 为 ×4）+ `CXH` ×1 | — | 卡 kits。`FK-Ex` 不进 BOM，偶发在 fulfillment 手动加 |
 | Fitting kit 螺丝 | 全部 `TT-BN-*` 各 ×1 | 1 Each | `nonConstraining`：预留/领料要减，网站不算 |
 | Number plate | `TT-PZB-SHB` | 1 | single |
 | Tail light panel | `TT-WDB-SHB` | 1 pair | single |
@@ -94,7 +94,7 @@ Do not live-calculate BOM on the public Worker path.
 
 ## Shared-component window (accepted)
 
-Shopify variants each store their own available qty. `FK` / `FK-Ex` are shared. Until a Portal reservation exists, two colours can both show kits > 0 against the same physical piece.
+Shopify variants each store their own available qty. `FK` is shared across colours. Until a Portal reservation exists, two colours can both show kits > 0 against the same physical piece.
 
 Mitigation now: Dashboard **Shared kit bottleneck** when one constraining group is the MIN for ≥ 2 sellable bundles at a location. Process those Shopify orders into Portal reservations quickly.
 

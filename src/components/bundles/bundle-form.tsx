@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { COMPONENT_ROLES } from "@/lib/constants";
+import { SearchableSkuSelect } from "@/components/ui/searchable-sku-select";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 interface BundleItemRow {
   productId: string;
@@ -16,7 +18,7 @@ interface BundleItemRow {
 }
 
 interface Props {
-  products: { id: string; sku: string; name: string }[];
+  products: { id: string; sku: string; name: string; category: string }[];
   readOnly?: boolean;
   bundle?: {
     id: string;
@@ -67,6 +69,10 @@ export function BundleForm({ products, bundle, readOnly = false }: Props) {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const skuOptions = products.map((p) => ({ sku: p.sku, name: p.name, category: p.category }));
+  const skuByProductId = Object.fromEntries(products.map((p) => [p.id, p.sku]));
+  const productIdBySku = Object.fromEntries(products.map((p) => [p.sku, p.id]));
+  const roleOptions = COMPONENT_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }));
 
   function addItem() {
     setItems((prev) => [
@@ -246,30 +252,26 @@ export function BundleForm({ products, bundle, readOnly = false }: Props) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">SKU *</label>
-                  <select
-                    value={item.productId}
-                    onChange={(e) => updateItem(idx, "productId", e.target.value)}
+                  <SearchableSkuSelect
+                    value={skuByProductId[item.productId] ?? ""}
+                    options={skuOptions}
+                    placeholder="Select SKU"
+                    onChange={(sku) => updateItem(idx, "productId", productIdBySku[sku] ?? "")}
+                    fullWidth
                     disabled={locked}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono disabled:bg-gray-50"
-                  >
-                    <option value="">Select SKU</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.sku} — {p.name}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Role</label>
-                  <select
+                  <CustomSelect
+                    name={`component-role-${idx}`}
                     value={item.componentRole}
-                    onChange={(e) => updateItem(idx, "componentRole", e.target.value)}
-                    disabled={locked}
-                    className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50"
-                  >
-                    {COMPONENT_ROLES.map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                    ))}
-                  </select>
+                    options={roleOptions}
+                    placeholder="Select role"
+                    onChange={(val) => updateItem(idx, "componentRole", val || "main_body")}
+                    fullWidth
+                    className={locked ? "pointer-events-none opacity-60" : ""}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Qty</label>
