@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAgingReservations } from "@/lib/reservation-aging";
-import { getStockForProductLocationPairs, getStockForProducts } from "@/lib/inventory";
+import { getStockForProductLocationPairs } from "@/lib/inventory";
 import { findSharedComponentBottlenecks } from "@/lib/bundle-atp";
 import { asRole, canSeeDashboardActions } from "@/lib/permissions";
 
@@ -23,15 +23,9 @@ const SALES_STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ loc?: string }>;
-}) {
+export default async function DashboardPage() {
   const session = await auth();
   const role = asRole((session?.user as any)?.role);
-  const params = await searchParams;
-  const agingLoc = params.loc ?? "all";
 
   const [
     totalProducts,
@@ -69,10 +63,7 @@ export default async function DashboardPage({
     prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const agingLocation = agingLoc !== "all" ? locations.find((l) => l.name === agingLoc) : undefined;
-  const agingReservations = await getAgingReservations(
-    agingLocation ? { locationId: agingLocation.id } : {}
-  );
+  const agingReservations = await getAgingReservations();
   const [sharedBottlenecks, sellableBundles] = await Promise.all([
     findSharedComponentBottlenecks(),
     prisma.bundleDefinition.findMany({
@@ -83,10 +74,8 @@ export default async function DashboardPage({
       orderBy: { code: "asc" },
     }),
   ]);
-  const agingToggleHref = (loc: string) => `/dashboard?loc=${loc}`;
-  const inventoryAlertHref = `/inventory?loc=${agingLocation?.name ?? locations[0]?.name ?? ""}&backorder=1`;
+  const inventoryAlertHref = "/inventory?backorder=1";
 
-  const productIds = lowStockItems.map((p) => p.id);
   let lowStock: {
     id: string;
     sku: string;
@@ -97,48 +86,28 @@ export default async function DashboardPage({
     rowKey: string;
   }[] = [];
 
-  if (agingLocation) {
-    const stockMap = await getStockForProducts(agingLocation.id, productIds);
-    lowStock = lowStockItems
-      .map((p) => {
-        const s = stockMap.get(p.id) ?? { onHand: 0, reserved: 0, available: 0 };
-        return {
+  const pairs = locations.flatMap((loc) =>
+    lowStockItems.map((p) => ({ productId: p.id, locationId: loc.id }))
+  );
+  const stockMap = await getStockForProductLocationPairs(pairs);
+  const rows = [];
+  for (const loc of locations) {
+    for (const p of lowStockItems) {
+      const s = stockMap.get(`${p.id}:${loc.id}`) ?? { onHand: 0, reserved: 0, available: 0 };
+      if (s.available <= p.reorderPoint && s.onHand > 0) {
+        rows.push({
           id: p.id,
           sku: p.sku,
           name: p.name,
           available: s.available,
-          onHand: s.onHand,
           reorderPoint: p.reorderPoint,
-          locationName: agingLocation.name,
-          rowKey: `${p.id}:${agingLocation.id}`,
-        };
-      })
-      .filter((p) => p.available <= p.reorderPoint && p.onHand > 0)
-      .slice(0, 5);
-  } else {
-    const pairs = locations.flatMap((loc) =>
-      lowStockItems.map((p) => ({ productId: p.id, locationId: loc.id }))
-    );
-    const stockMap = await getStockForProductLocationPairs(pairs);
-    const rows = [];
-    for (const loc of locations) {
-      for (const p of lowStockItems) {
-        const s = stockMap.get(`${p.id}:${loc.id}`) ?? { onHand: 0, reserved: 0, available: 0 };
-        if (s.available <= p.reorderPoint && s.onHand > 0) {
-          rows.push({
-            id: p.id,
-            sku: p.sku,
-            name: p.name,
-            available: s.available,
-            reorderPoint: p.reorderPoint,
-            locationName: loc.name,
-            rowKey: `${p.id}:${loc.id}`,
-          });
-        }
+          locationName: loc.name,
+          rowKey: `${p.id}:${loc.id}`,
+        });
       }
     }
-    lowStock = rows.sort((a, b) => a.available - b.available).slice(0, 5);
   }
+  lowStock = rows.sort((a, b) => a.available - b.available).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -182,94 +151,6 @@ export default async function DashboardPage({
             )}
           </div>
         ))}
-      </div>
-
-      {/* At-risk reservations — aging deposits and/or backordered stock, per constitution H#3 */}
-      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">
-            At-risk reservations ({agingReservations.length})
-          </h2>
-          <div className="flex items-center gap-0 rounded-md border border-gray-200 overflow-hidden">
-            {["all", ...locations.map((l) => l.name)].map((name) => (
-              <Link
-                key={name}
-                href={agingToggleHref(name)}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium transition-colors",
-                  agingLoc === name
-                    ? "bg-[#2563EB] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
-                )}
-              >
-                {name === "all" ? "All" : name}
-              </Link>
-            ))}
-          </div>
-        </div>
-        {agingReservations.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-gray-400">No aging or backordered reservations</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {agingReservations.slice(0, 10).map((r) => (
-              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
-                <div>
-                  <Link href={`/inventory/${r.sku}`} className="text-sm font-mono font-medium text-[#2563EB] hover:underline">
-                    {r.sku}
-                  </Link>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    <Link href={`/sales/${r.salesRecordDbId}`} className="text-[#2563EB] hover:underline">
-                      {r.recordId}
-                    </Link>
-                    {" · "}
-                    {r.customer}
-                    {" · "}
-                    {r.locationName}
-                  </p>
-                  {r.stockSignal === "BACKORDERED" && (
-                    <p className="text-xs mt-0.5">
-                      {r.nearestIncoming ? (
-                        <span className="text-gray-500">
-                          Next supply: <span className="font-mono">{r.nearestIncoming.poRef}</span>
-                          {" · "}
-                          ETA {new Date(r.nearestIncoming.eta).toLocaleDateString("en-AU", { day: "2-digit", month: "short" })}
-                          {" · "}
-                          +{r.nearestIncoming.qtyOrdered}
-                        </span>
-                      ) : (
-                        <span className="font-medium text-red-600">No incoming stock</span>
-                      )}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {r.ageSignal && (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-                        r.ageSignal === "STALE" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                      )}
-                    >
-                      Aged {r.ageDays}d
-                    </span>
-                  )}
-                  {r.stockSignal === "BACKORDERED" && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 whitespace-nowrap">
-                      Short {Math.abs(r.available)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {agingReservations.length > 0 && (
-          <div className="px-5 py-2.5 border-t border-gray-100">
-            <Link href={inventoryAlertHref} className="text-xs text-[#2563EB] hover:underline">
-              View all in Inventory →
-            </Link>
-          </div>
-        )}
       </div>
 
       {sellableBundles.length > 0 && (

@@ -227,10 +227,10 @@
 - [ ] 某 SKU+仓库 Available 变成负数（不管预留新旧）→ 立刻出现在清单里，带 `BACKORDERED` 标签，即使刚建的新预留也一样
 - [ ] `BACKORDERED` 行若该仓有符合 Forecast 资格的在途货柜 → 显示最近一个的 `poRef`/ETA/数量；若没有 → 显示红色"无在途货柜/None incoming"
 
-**Dashboard 面板：**
-- [ ] 顶部统计卡"At-risk reservations"：数量 > 0 时变红并可点击跳转 Inventory 对应仓库的 Backorder 模式
-- [ ] 面板内 All/Brisbane/Sydney 筛选按钮，点击后 `?loc=` 切换且仅显示该仓库的行
-- [ ] 无逾期/缺货记录时显示"No aging or backordered reservations"，不显示统计卡红色
+**Dashboard：**
+- [ ] 顶部统计卡"At-risk reservations"：数量 > 0 时变红并可点击跳转 `/inventory?backorder=1`
+- [ ] 仪表板不再展示逐行 at-risk 列表
+- [ ] 无逾期/缺货记录时统计卡不显示红色
 
 **Inventory 页 — Backorder alerts 开关：**
 - [ ] 点击"Backorder alerts"按钮直接跳转（无需二次确认弹窗，因为是实时数据非预测）

@@ -25,7 +25,7 @@
 | 13 | Admin 账号隔离 | `dev@` = admin；`admin@cdi.com.au` = editor（老板日常） | Audit Log 操作人可分清；详见 `auth-permissions-runbook.md` |
 | 14 | 未来库存预测（Forecast Mode） | 只读投影，不写入任何数据、不创建预留/pegging 概念；共享货柜列模型（同仓所有 SKU 看到相同的最多 5 个货柜列）；显示顺序为最远 ETA 在左、最近 ETA 在右（紧贴 On Hand）；`Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(ETA ≤ 该列)`；ETA 新建必填（不回溯旧记录）；`shippedAt`（实际发货日）首次在 pending→shipped 时必填，之后普通 editor 锁定，仅 admin 可通过独立纠正接口修改并写 `shipped_at_correction` 审计日志 | 对齐 ERP 行业惯例（Time-Phased ATP）；最近到港贴在当前库存旁更直觉；因为不落库、不建立预留，天生不存在"释放"边界问题；ETA(计划) vs shippedAt(实际) 是 SAP/NetSuite 通用的 Planned/Actual 日期模式 |
 | 15 | 外购辅材（CONSUMABLE） | 复用现有 Product/InventoryLog/IncomingShipment 表，新增 `category = "CONSUMABLE"`；不做独立表 | 辅材仍需走 Incoming 发货单+Forecast，独立表会被迫复制整套 Incoming/Forecast 逻辑；用 Category 硬性排除 Bundle 与 Sales 已足够隔离 |
-| 16 | 逾期预留 / 缺货预警（Aging Reservations & Backorder Alerts） | 不新增字段，纯派生计算：以 `GeneratedMovement.createdAt`（`deposit_paid` 时创建）算预留年龄；年龄信号（AGING ≥14 天 / STALE ≥21 天）与库存信号（BACKORDERED：Available<0）各自独立展示为两个徽标，不合并成单一"严重等级"；仪表板按仓库筛选（All/Brisbane/Sydney），Inventory 页新增与 Forecast Mode 平行的 `backorder=1` 独立模式（二者互斥，不叠加显示）；缺货行额外查询最近一个在途货柜（复用 Forecast Mode 的合格条件）作为"预计何时补上"提示 | 对齐 ERP 行业惯例的账龄分析（Aging Analysis）+ ATP 例外管理；两个信号分开显示避免"该催客户"和"该催供应链"混淆；数据随订单完成/取消/补货自动从清单消失，不需要人工标记已处理；阈值先写死常量，内部小系统暂不做 Settings 可调项（渐进复杂度原则） |
+| 16 | 逾期预留 / 缺货预警（Aging Reservations & Backorder Alerts） | 不新增字段，纯派生计算：以 `GeneratedMovement.createdAt`（`deposit_paid` 时创建）算预留年龄；年龄信号（AGING ≥14 天 / STALE ≥21 天）与库存信号（BACKORDERED：Available<0）各自独立展示为两个徽标，不合并成单一"严重等级"；Dashboard 仅统计卡（有告警时变红，点进 Inventory）；明细在 Inventory 与 Forecast Mode 平行的 `backorder=1` 模式（二者互斥，按仓 Tab 筛选）；缺货行额外查询最近一个在途货柜（复用 Forecast Mode 的合格条件）作为"预计何时补上"提示 | 对齐 ERP 行业惯例的账龄分析（Aging Analysis）+ ATP 例外管理；两个信号分开显示避免"该催客户"和"该催供应链"混淆；数据随订单完成/取消/补货自动从清单消失，不需要人工标记已处理；阈值先写死常量，内部小系统暂不做 Settings 可调项（渐进复杂度原则） |
 | 17 | Sellable Bundle（Tray kits → Shopify） | 不建壳 Product。`BundleDefinition` 持有 `sellableSku` + Shopify ID；kits = MIN(约束组)；替代组求和；`nonConstraining` 不卡 ATP；kits 按仓缓存；PDP 读缓存。共用件窗口接受 + 仪表板预警 | 网站 Tray 是组合件；Portal 零件账不能复制一份假库存。详见 `docs/bundle-shopify-sync.md` |
 
 ---
@@ -370,8 +370,8 @@ Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(所有 ETA ≤ 该�
 - **缺货行自动带出"下一批货何时到"**：`stockSignal = BACKORDERED` 的行会额外查询该 SKU+该仓最近一个符合 Forecast Mode 资格的在途货柜（`status ∈ {shipped, in_transit, arrived} AND eta IS NOT NULL`，取 ETA 最近的一个），展示 `poRef` / ETA / 数量；如果查无结果，展示醒目的"无在途货柜"提示——不用切换到 Forecast Mode 就能判断是"等等就好"还是"真的没货在路上"。
 - **数据自动过期，不需要人工标记已处理**：这不是一张存储的告警表，是每次页面加载都重新查询的实时投影——订单一旦 `completed`/`cancelled`（`GeneratedMovement` 被清空/status 离开 deposit_paid/fully_paid）或库存补足（Available 回正），下次查看时该行自动从清单消失，不存在"忘记关掉旧提醒"的问题。
 - **展示位置**：
-  - Dashboard 新增独立面板"At-risk reservations"，含 All/Brisbane/Sydney 筛选（`?loc=`），以及一张统计卡（有告警时变红）。
-  - Inventory 页新增与 Forecast Mode 平行的独立模式（`?backorder=1`），只显示当前仓库里被标记的 SKU，多两列"Aged"/"Next supply"。两个模式互斥（不叠加显示），避免同一行同时塞入 Forecast 的多货柜列和 Aging 的年龄列导致过挤。
+  - Dashboard 一张统计卡「At-risk reservations」（有告警时变红），点「View all」进 Inventory Backorder。不在仪表板重复工作清单。
+  - Inventory 页新增与 Forecast Mode 平行的独立模式（`?backorder=1`），只显示当前仓库里被标记的 SKU，多两列"Aged"/"Next supply"。两个模式互斥（不叠加显示），避免同一行同时塞入 Forecast 的多货柜列和 Aging 的年龄列导致过挤。仓库筛选在 Inventory 的 Location Tab。
 - **阈值管理**：14 天 / 21 天目前是 `src/lib/constants.ts` 里的常量，不做 Settings 页面可调——内部小系统暂不需要（渐进复杂度原则），真有旺季/淡季调整需求再加。
 - **操作 / 排障手册**：[`docs/aging-reservations-runbook.md`](./aging-reservations-runbook.md)
 

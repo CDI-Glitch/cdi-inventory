@@ -70,7 +70,7 @@ nearestIncoming（仅 BACKORDERED 行查询）
 | `src/lib/reservation-aging.ts` | **唯一计算入口** `getAgingReservations({ locationId? })`；Dashboard 与 Inventory 共用，改阈值/公式只改这里 |
 | `src/lib/constants.ts` | 14 / 21 天阈值 |
 | `src/lib/state-machine.ts` → `reserveStock` | `GeneratedMovement.createdAt` 的写入点（付押金时） |
-| `src/app/(portal)/dashboard/page.tsx` | 「At-risk reservations」面板 + 第 5 张统计卡；`?loc=` 筛选 |
+| `src/app/(portal)/dashboard/page.tsx` | 第 5 张统计卡「At-risk reservations」全仓计数；点进 Inventory Backorder |
 | `src/app/(portal)/inventory/page.tsx` | `backorder=1` 模式：过滤行、与 Forecast 互斥、组装 `agingByProductId` |
 | `src/components/inventory/backorder-toggle.tsx` | 红色「Backorder alerts / Exit alerts」按钮 |
 | `src/components/inventory/inventory-table.tsx` | Backorder 模式下的「Aged」「Next supply」列 |
@@ -86,10 +86,9 @@ nearestIncoming（仅 BACKORDERED 行查询）
 
 ### 4.1 Dashboard
 
-- URL：`/dashboard` 或 `/dashboard?loc=Brisbane` / `Sydney` / `all`（默认 `all`）
-- 统计卡「At-risk reservations」：数量 > 0 时红字 + 红边，点「View all」进 Inventory Backorder 模式
-- 面板：最多展示 10 行；每行两个独立徽标（`Aged Nd` 黄/红、`Short N` 红）；BACKORDERED 行下方显示最近货柜或「No incoming stock」
-- 空状态文案：`No aging or backordered reservations`
+- URL：`/dashboard`
+- 统计卡「At-risk reservations」：全仓计数；数量 > 0 时红字 + 红边，点「View all」进 `/inventory?backorder=1`
+- 仪表板不再列出逐行预留；明细、按仓筛选、Aged/Short 徽标都在 Inventory Backorder
 
 ### 4.2 Inventory Backorder alerts 模式
 
