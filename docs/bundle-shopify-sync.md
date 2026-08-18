@@ -70,7 +70,7 @@ Seed codes: `BDL-TT-{size}-RAW` / `-SHB` / `-W`. Live Shopify variant SKU = the 
 | `BDL-TT-1850-SHB` / `-W` | Dual cab 1850 + headboard |
 | `BDL-TT-2450-SHB` / `-W` | Single cab 2450 + headboard |
 
-Raw alloy, 2150 extra cab, and Inventory Item IDs are not bound until those variants go live. Do not keep a second `BND-T-TRAY-…` SKU on the variant — PDP queries `variant.sku`.
+Raw alloy, 2150 extra cab, and Inventory Item IDs are not bound until those variants go live. Those Portal bundles stay **active** for sales even without `sellableSku`. Do not keep a second `BND-T-TRAY-…` SKU on the variant — PDP queries `variant.sku`.
 
 ---
 

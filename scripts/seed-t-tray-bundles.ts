@@ -1,6 +1,8 @@
 /**
  * Upsert 12 T-Tray sellable bundles (4 sizes × 3 colours).
  * Shopify inventory/variant IDs stay empty until bound in the Portal.
+ * All 12 T-Tray definitions are active for Portal sales; only LIVE_SELLABLE
+ * rows get a sellableSku for Worker / Shopify kits.
  *
  * Run: npx tsx scripts/seed-t-tray-bundles.ts
  */
@@ -106,7 +108,7 @@ async function main() {
       const payload = {
         name,
         productFamily: "T_TRAY",
-        active: Boolean(sellableSku),
+        active: true,
         sellableSku,
       };
 
