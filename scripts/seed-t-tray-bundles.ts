@@ -29,10 +29,12 @@ const SIZES = [
   { size: "2450", cab: "24SC", deck: "2405", bar: "TT-BSG-67", box: "TT-BX-68", fk: 4 },
 ] as const;
 
-/** Currently live on Shopify: black/white for 1650 / 1850 / 2450. SKU = Portal code. */
+/** Currently live on Shopify. SKU = Portal code. */
 const LIVE_SELLABLE: Record<string, string> = {
+  "BDL-TT-1650-RAW": "BDL-TT-1650-RAW",
   "BDL-TT-1650-SHB": "BDL-TT-1650-SHB",
   "BDL-TT-1650-W": "BDL-TT-1650-W",
+  "BDL-TT-1850-RAW": "BDL-TT-1850-RAW",
   "BDL-TT-1850-SHB": "BDL-TT-1850-SHB",
   "BDL-TT-1850-W": "BDL-TT-1850-W",
   "BDL-TT-2450-SHB": "BDL-TT-2450-SHB",
