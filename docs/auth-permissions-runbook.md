@@ -56,6 +56,8 @@
 | `src/app/api/sync/route.ts` | Shopify Sync：admin-only，403 Forbidden |
 | `src/components/settings/sync-panel.tsx` | 客户端必须检查 `res.ok`，禁止把 403 显示成绿色成功 |
 | `src/app/(portal)/settings/page.tsx` | 整页 admin-only；非 admin → redirect `/dashboard` |
+| `src/lib/permissions.ts` | 权限判断集中点（含 `canAccessMobileView`） |
+| `src/app/(mobile)/layout.tsx` | `/m/*` 登录守卫；只读 chrome，不复用桌面 Sidebar |
 
 权限矩阵（谁能干什么）以 `docs/constitution.md` §G 为准，本 runbook 不重复抄写。
 
@@ -243,7 +245,7 @@ SELECT email, role, active FROM "User" ORDER BY email;
 - `src/components/settings/sync-panel.tsx`
 - `src/components/sidebar.tsx` 的 `canShow` 函数
 - `src/app/(portal)/incoming/**/page.tsx`、`src/app/(portal)/transfers/**/page.tsx` 的角色 `redirect` 守卫（必须与 `src/lib/permissions.ts` 一致）
-- `src/lib/permissions.ts`（新增角色或改范围时只改这里）
+- `src/lib/permissions.ts`（新增角色或改范围时只改这里；`/m` 只读边界见 [`mobile-alerts-runbook.md`](./mobile-alerts-runbook.md)）
 
 **禁止：**
 

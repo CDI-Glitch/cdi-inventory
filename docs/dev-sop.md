@@ -31,6 +31,7 @@
 - [ ] 权限/会话热更新相关改动 → 另跑 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §8 全清单
 - [ ] 逾期预留 / 缺货预警相关改动 → 另跑 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §7 + 本文件 §15
 - [ ] sales 直接访问 `/incoming`、`/incoming/[id]`、`/incoming/new`、`/transfers`、`/transfers/[id]`、`/transfers/new` → 全部 redirect 到 `/dashboard`（新增角色时必须同时核对 Sidebar 过滤、页面级 redirect 守卫、写入 API 三层，见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11）
+- [ ] 移动端只读 `/m` 相关改动 → 另跑 [`mobile-alerts-runbook.md`](./mobile-alerts-runbook.md) §5
 
 ### 2. 库存计算
 
@@ -248,6 +249,17 @@
 - [ ] 下载的 CSV 行数 = 该仓 `Available < 0` 的 active SKU 数（不含「仅逾期、有货」行）；屏幕切 Aging only 后再点 Factory list，CSV 仍是 Short 全量
 - [ ] 未登录访问 `/api/inventory/shortage-export?loc=Brisbane` → 401
 - [ ] 缺 `loc` → 400；不存在的仓名 → 404
+
+### 16. 移动端只读库存查询（`/m`，2026-08-23）
+
+> **手册：** [`mobile-alerts-runbook.md`](./mobile-alerts-runbook.md)
+
+- [ ] viewer / sales / editor / admin 均可打开 `/m` 与 `/m/inventory`
+- [ ] 页面无 Adjust / Add SKU / Sales / Incoming 链接；SKU 不可点进详情
+- [ ] Short 模式只有 Available&lt;0，没有 Aged，不请求逾期预留
+- [ ] Forecast 与 Short 底部 Tab 互斥，与桌面一样 Forecast 优先于 backorder
+- [ ] 未登录打开 `/m` → 登录后回到 `/m`
+- [ ] 桌面 `?backorder=1` 的 Aged / Aging only 行为不变
 
 ---
 
@@ -525,7 +537,7 @@ node scripts/bind-shopify-inventory-item-ids.cjs
 **当前已绑定的 SKU 范围（2026-07-27）：**
 - Base Canopy 1000–1800mm（CD-2D-171xx 系列，含 SHB/W/无后缀，33 个 SKU）
 - Base Canopy 1800mm Full Access（CD-3D-17188 系列）
-- LC79 Factory Tray Canopy 1200/1600/1800mm（LC-2D-181x10 系列）
+- LC79 Factory Tray Canopy 1000/1200/1400/1600/1800mm（LC-2D-181x10 系列）
 - Lockable Jerry Can Holder（CD-JCA 系列）
 - Spare Wheel Carrier（CD-SWH 系列）
 

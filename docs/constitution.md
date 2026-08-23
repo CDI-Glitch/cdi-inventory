@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-17（决策 17 Sellable Bundle / Shopify 派生 kits；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-08-23（决策 17 Sellable Bundle；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -389,6 +389,7 @@ Bundle 管理            ← Bundle 定义（仅 Admin）
 调货 (Transfers)       ← 仓库间调拨
 审计日志 (Audit Log)   ← 全局变动时间线（仅 Admin）
 设置 (Settings)        ← 用户/仓库/Shopify（仅 Admin）
+移动端只读 (`/m/*`)    ← 库存查询 + Forecast + 缺货 Short；无写入口、无销售单链接
 ```
 
 ---
@@ -473,6 +474,7 @@ Shopify orders/paid → HMAC + ProcessedWebhook 去重
 | Bundle 新建/改 BOM/Shopify 绑定 | 不能 | 不能 | 不能 | 能 |
 | 审计日志查看 | 不能 | 能 | 能 | 能 |
 | 设置（用户/仓库/Shopify） | 不能 | 不能 | 不能 | 能 |
+| **移动端只读 `/m/*`** | **能（只读）** | **能（只读）** | **能（只读）** | **能（只读）** |
 
 判断函数集中在 `src/lib/permissions.ts`。Sidebar、页面 redirect、API 403 必须调用同一套函数，禁止再写内联 `role === ...`。
 

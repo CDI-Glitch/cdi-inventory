@@ -36,6 +36,8 @@ interface InventoryFiltersProps {
   currentLoc?: string;
   currentForecast?: string;
   currentBackorder?: string;
+  /** Mobile short list: hide All/Short/Aging so aging is never selectable. */
+  hideAlertSelect?: boolean;
 }
 
 export function InventoryFilters({
@@ -47,6 +49,7 @@ export function InventoryFilters({
   currentLoc = "",
   currentForecast = "",
   currentBackorder = "",
+  hideAlertSelect = false,
 }: InventoryFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -75,13 +78,15 @@ export function InventoryFilters({
         onChange={submitForm}
       />
       {currentBackorder ? (
-        <CustomSelect
-          name="alert"
-          value={defaultAlert}
-          options={ALERT_OPTIONS}
-          placeholder="All alerts"
-          onChange={submitForm}
-        />
+        hideAlertSelect ? null : (
+          <CustomSelect
+            name="alert"
+            value={defaultAlert}
+            options={ALERT_OPTIONS}
+            placeholder="All alerts"
+            onChange={submitForm}
+          />
+        )
       ) : (
         <CustomSelect
           name="status"

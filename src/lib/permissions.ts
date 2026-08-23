@@ -98,6 +98,16 @@ export function canSeeDashboardActions(role: Role): boolean {
   return role !== "viewer";
 }
 
+/** Any signed-in role. Mobile chrome is structurally read-only regardless of role. */
+export function canAccessMobileView(role: Role): boolean {
+  return (
+    role === "viewer" ||
+    role === "sales" ||
+    role === "editor" ||
+    role === "admin"
+  );
+}
+
 export function prefersOwnWarehouseTab(role: Role): boolean {
   return role === "editor" || role === "sales";
 }

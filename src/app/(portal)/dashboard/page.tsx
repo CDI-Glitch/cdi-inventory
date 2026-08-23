@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAgingReservations } from "@/lib/reservation-aging";
-import { getStockForProductLocationPairs } from "@/lib/inventory";
+import { getLowStockRows } from "@/lib/dashboard-stats";
 import { findSharedComponentBottlenecks } from "@/lib/bundle-atp";
 import { asRole, canSeeDashboardActions } from "@/lib/permissions";
 
@@ -34,8 +34,6 @@ export default async function DashboardPage() {
     activeSalesRecords,
     recentSales,
     pendingIncoming,
-    lowStockItems,
-    locations,
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.location.count({ where: { active: true } }),
@@ -53,14 +51,6 @@ export default async function DashboardPage() {
     prisma.incomingShipment.count({
       where: { status: { in: ["pending", "shipped", "in_transit", "arrived"] } },
     }),
-    // Low stock: products where aggregate InventoryLog delta is <= reorderPoint
-    // Simplified: get all active products with reorderPoint
-    prisma.product.findMany({
-      where: { active: true },
-      orderBy: { sku: "asc" },
-      take: 50,
-    }),
-    prisma.location.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 
   const agingReservations = await getAgingReservations();
@@ -75,39 +65,7 @@ export default async function DashboardPage() {
     }),
   ]);
   const inventoryAlertHref = "/inventory?backorder=1";
-
-  let lowStock: {
-    id: string;
-    sku: string;
-    name: string;
-    available: number;
-    reorderPoint: number;
-    locationName: string;
-    rowKey: string;
-  }[] = [];
-
-  const pairs = locations.flatMap((loc) =>
-    lowStockItems.map((p) => ({ productId: p.id, locationId: loc.id }))
-  );
-  const stockMap = await getStockForProductLocationPairs(pairs);
-  const rows = [];
-  for (const loc of locations) {
-    for (const p of lowStockItems) {
-      const s = stockMap.get(`${p.id}:${loc.id}`) ?? { onHand: 0, reserved: 0, available: 0 };
-      if (s.available <= p.reorderPoint && s.onHand > 0) {
-        rows.push({
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          available: s.available,
-          reorderPoint: p.reorderPoint,
-          locationName: loc.name,
-          rowKey: `${p.id}:${loc.id}`,
-        });
-      }
-    }
-  }
-  lowStock = rows.sort((a, b) => a.available - b.available).slice(0, 5);
+  const lowStock = await getLowStockRows(5);
 
   return (
     <div className="space-y-6">
