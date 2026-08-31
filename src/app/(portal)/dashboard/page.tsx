@@ -1,3 +1,4 @@
+import React from "react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
@@ -187,6 +188,7 @@ export default async function DashboardPage() {
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <th className="px-5 py-2">Month</th>
+                <th className="px-5 py-2">Type</th>
                 {monthlyDeposits.locations.map((loc) => (
                   <th key={loc.id} className="px-5 py-2 text-right">{loc.name}</th>
                 ))}
@@ -195,15 +197,33 @@ export default async function DashboardPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {monthlyDeposits.months.map((m) => (
-                <tr key={m.monthKey}>
-                  <td className="px-5 py-2 text-gray-900">{m.monthLabel}</td>
-                  {monthlyDeposits.locations.map((loc) => (
-                    <td key={loc.id} className="px-5 py-2 text-right text-gray-700">
-                      {m.byLocation[loc.id] ?? 0}
+                <React.Fragment key={m.monthKey}>
+                  <tr>
+                    <td className="px-5 py-2 text-gray-900" rowSpan={2}>
+                      {m.monthLabel}
                     </td>
-                  ))}
-                  <td className="px-5 py-2 text-right font-semibold text-gray-900">{m.total}</td>
-                </tr>
+                    <td className="px-5 py-2 text-gray-600">Full fit-out</td>
+                    {monthlyDeposits.locations.map((loc) => (
+                      <td key={loc.id} className="px-5 py-2 text-right text-gray-700">
+                        {m.fullFitOut.byLocation[loc.id] ?? 0}
+                      </td>
+                    ))}
+                    <td className="px-5 py-2 text-right font-semibold text-gray-900">
+                      {m.fullFitOut.total}
+                    </td>
+                  </tr>
+                  <tr className="bg-gray-50/40">
+                    <td className="px-5 py-2 text-gray-600">Partial</td>
+                    {monthlyDeposits.locations.map((loc) => (
+                      <td key={loc.id} className="px-5 py-2 text-right text-gray-700">
+                        {m.partial.byLocation[loc.id] ?? 0}
+                      </td>
+                    ))}
+                    <td className="px-5 py-2 text-right font-semibold text-gray-900">
+                      {m.partial.total}
+                    </td>
+                  </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

@@ -93,6 +93,7 @@ model SalesRecord {
   customer       String
   status         String   @default("quote")
   staffNotes     String?
+  isFullFitOut   Boolean  @default(false)
   locationId     String
   shopifyOrderId String?  @unique
   version        Int      @default(1)

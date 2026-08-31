@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-25（Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-08-31（`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -111,7 +111,7 @@ type 枚举：`opening_stock | receive_stock | sales_deduction | adjustment_in |
 ### SalesRecord（销售记录）
 ```
 id, recordId(SR-0001), date, quoteNo, invoiceNo, customer,
-status, staffNotes, locationId, shopifyOrderId(唯一), version, createdAt, updatedAt
+status, staffNotes, isFullFitOut, locationId, shopifyOrderId(唯一), version, createdAt, updatedAt
 ```
 status：`quote | deposit_paid | fully_paid | completed | cancelled`
 
@@ -122,6 +122,7 @@ status：`quote | deposit_paid | fully_paid | completed | cancelled`
   - 填错了唯一出路：cancel 此记录，重新开单
 - `quote` 状态 = Draft，无库存副作用，所有字段（头部 + 行）均可通过 Portal 编辑
 - `deposit_paid` 及之后所有字段均锁定，仅 `invoiceNo` 可在转换动作本身时填入
+- `isFullFitOut`（2026-08-31 新增）：**标注字段**，标记该订单是否为「整车 fit-out」（vs. 部分/配件订单）。不属于 Invoice/履约记录，**在任意状态下都可编辑**，走独立的 `PATCH /api/sales/[id]/annotation` 路由（不复用 `header` 路由的 quote-only 锁），也不参与状态机、不产生任何库存副作用。用于 Dashboard「Monthly deposits」按 Full fit-out / Partial 拆分统计（见 `src/lib/deposit-stats.ts`）
 
 ### SalesLine（销售行）
 ```

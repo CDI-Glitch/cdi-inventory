@@ -1,10 +1,15 @@
 import { prisma } from "./db";
 
+export interface MonthlyDepositBucket {
+  byLocation: Record<string, number>;
+  total: number;
+}
+
 export interface MonthlyDepositRow {
   monthKey: string;
   monthLabel: string;
-  byLocation: Record<string, number>;
-  total: number;
+  fullFitOut: MonthlyDepositBucket;
+  partial: MonthlyDepositBucket;
 }
 
 /**
@@ -37,28 +42,35 @@ export async function getMonthlyDepositCounts(monthsBack = 12): Promise<{
   const records = recordIds.length
     ? await prisma.salesRecord.findMany({
         where: { id: { in: recordIds } },
-        select: { id: true, locationId: true },
+        select: { id: true, locationId: true, isFullFitOut: true },
       })
     : [];
-  const locationByRecord = new Map(records.map((r) => [r.id, r.locationId]));
+  const recordById = new Map(records.map((r) => [r.id, r]));
 
   const cutoff = new Date();
   cutoff.setDate(1);
   cutoff.setHours(0, 0, 0, 0);
   cutoff.setMonth(cutoff.getMonth() - (monthsBack - 1));
 
-  const buckets = new Map<string, Record<string, number>>();
+  const fullBuckets = new Map<string, Record<string, number>>();
+  const partialBuckets = new Map<string, Record<string, number>>();
   for (const e of earliest) {
     const depositAt = e._min.createdAt;
     if (!depositAt || depositAt < cutoff) continue;
-    const locationId = locationByRecord.get(e.salesRecordId);
-    if (!locationId) continue;
+    const record = recordById.get(e.salesRecordId);
+    if (!record) continue;
 
     const monthKey = `${depositAt.getFullYear()}-${String(depositAt.getMonth() + 1).padStart(2, "0")}`;
+    const buckets = record.isFullFitOut ? fullBuckets : partialBuckets;
     const bucket = buckets.get(monthKey) ?? {};
-    bucket[locationId] = (bucket[locationId] ?? 0) + 1;
+    bucket[record.locationId] = (bucket[record.locationId] ?? 0) + 1;
     buckets.set(monthKey, bucket);
   }
+
+  const toBucket = (byLocation: Record<string, number>): MonthlyDepositBucket => ({
+    byLocation,
+    total: Object.values(byLocation).reduce((a, b) => a + b, 0),
+  });
 
   const months: MonthlyDepositRow[] = [];
   const cursor = new Date();
@@ -66,13 +78,11 @@ export async function getMonthlyDepositCounts(monthsBack = 12): Promise<{
   cursor.setHours(0, 0, 0, 0);
   for (let i = 0; i < monthsBack; i++) {
     const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
-    const byLocation = buckets.get(monthKey) ?? {};
-    const total = Object.values(byLocation).reduce((a, b) => a + b, 0);
     months.push({
       monthKey,
       monthLabel: cursor.toLocaleDateString("en-AU", { month: "short", year: "numeric" }),
-      byLocation,
-      total,
+      fullFitOut: toBucket(fullBuckets.get(monthKey) ?? {}),
+      partial: toBucket(partialBuckets.get(monthKey) ?? {}),
     });
     cursor.setMonth(cursor.getMonth() - 1);
   }

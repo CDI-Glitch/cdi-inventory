@@ -7,6 +7,7 @@ import { SalesStatusActions } from "@/components/sales/sales-status-actions";
 import { SalesHeaderEditor } from "@/components/sales/sales-header-editor";
 import { SalesLinesEditor } from "@/components/sales/sales-lines-editor";
 import { SalesMovementsEditor } from "@/components/sales/sales-movements-editor";
+import { FullFitoutToggle } from "@/components/sales/full-fitout-toggle";
 import { SalesAltGroupPicker } from "@/components/sales/sales-alt-group-picker";
 import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
 import { asRole, canEditFulfillment as fulfillmentEditable, canEditSalesRecord } from "@/lib/permissions";
@@ -199,6 +200,9 @@ export default async function SalesDetailPage({
           </span>
           {isQuote && (
             <span className="text-xs text-gray-400 italic">Draft — no stock reserved</span>
+          )}
+          {canEditSalesRecord(role) && (
+            <FullFitoutToggle salesRecordId={record.id} initialValue={record.isFullFitOut} />
           )}
         </div>
 
