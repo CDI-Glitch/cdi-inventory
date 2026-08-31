@@ -10,6 +10,10 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as any);
 
 const LIVE: Record<string, { sellableSku: string; name: string }> = {
+  "BDL-TT-1650-RAW": {
+    sellableSku: "BDL-TT-1650-RAW",
+    name: "T-Tray 1650 Dual Cab + HB Raw Alloy",
+  },
   "BDL-TT-1650-SHB": {
     sellableSku: "BDL-TT-1650-SHB",
     name: "T-Tray 1650 Dual Cab + HB Sahara Black",
@@ -18,6 +22,10 @@ const LIVE: Record<string, { sellableSku: string; name: string }> = {
     sellableSku: "BDL-TT-1650-W",
     name: "T-Tray 1650 Dual Cab + HB Splash White",
   },
+  "BDL-TT-1850-RAW": {
+    sellableSku: "BDL-TT-1850-RAW",
+    name: "T-Tray 1850 Dual Cab + HB Raw Alloy",
+  },
   "BDL-TT-1850-SHB": {
     sellableSku: "BDL-TT-1850-SHB",
     name: "T-Tray 1850 Dual Cab + HB Sahara Black",
@@ -25,6 +33,22 @@ const LIVE: Record<string, { sellableSku: string; name: string }> = {
   "BDL-TT-1850-W": {
     sellableSku: "BDL-TT-1850-W",
     name: "T-Tray 1850 Dual Cab + HB Splash White",
+  },
+  "BDL-TT-2150-RAW": {
+    sellableSku: "BDL-TT-2150-RAW",
+    name: "T-Tray 2150 Extra Cab + HB Raw Alloy",
+  },
+  "BDL-TT-2150-SHB": {
+    sellableSku: "BDL-TT-2150-SHB",
+    name: "T-Tray 2150 Extra Cab + HB Sahara Black",
+  },
+  "BDL-TT-2150-W": {
+    sellableSku: "BDL-TT-2150-W",
+    name: "T-Tray 2150 Extra Cab + HB Splash White",
+  },
+  "BDL-TT-2450-RAW": {
+    sellableSku: "BDL-TT-2450-RAW",
+    name: "T-Tray 2450 Single Cab + HB Raw Alloy",
   },
   "BDL-TT-2450-SHB": {
     sellableSku: "BDL-TT-2450-SHB",

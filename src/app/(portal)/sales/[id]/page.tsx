@@ -11,6 +11,7 @@ import { SalesAltGroupPicker } from "@/components/sales/sales-alt-group-picker";
 import { BundleOrderLineRow } from "@/components/sales/bundle-order-line-row";
 import { asRole, canEditFulfillment as fulfillmentEditable, canEditSalesRecord } from "@/lib/permissions";
 import { unresolvedAltGroupSummary } from "@/lib/alt-group-fulfillment";
+import { previewStockShortages } from "@/lib/state-machine";
 import {
   buildFulfillmentView,
   getBundleComponents,
@@ -151,8 +152,27 @@ export default async function SalesDetailPage({
     hasAnyFulfillmentMismatch,
     hasAnyDeductionMismatch,
   } = view;
-  const completeBlockedReason =
+  const altGroupBlockedReason =
     record.status === "fully_paid" ? unresolvedAltGroupSummary(altGroupTasks) : null;
+
+  // Pre-emptive stock check — same rule enforced server-side in completeStock()
+  // when the "Mark completed" button is actually clicked. Shown here so staff
+  // see the shortage before attempting the transition, not just after it fails.
+  const stockShortages =
+    record.status === "fully_paid" && !altGroupBlockedReason
+      ? await previewStockShortages(
+          record.movements
+            .filter((m) => m.reservedQty > 0)
+            .map((m) => ({ productId: m.productId, locationId: m.locationId, reservedQty: m.reservedQty }))
+        )
+      : [];
+  const stockBlockedReason =
+    stockShortages.length > 0
+      ? `Insufficient stock: ${stockShortages
+          .map((s) => `${s.sku} (on hand ${s.onHand}, need ${s.needed})`)
+          .join(", ")}`
+      : null;
+  const completeBlockedReason = altGroupBlockedReason ?? stockBlockedReason;
 
   return (
     <div className="max-w-3xl">

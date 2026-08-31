@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { transitionSalesRecord, InvalidTransitionError, OptimisticLockError } from "@/lib/state-machine";
+import {
+  transitionSalesRecord,
+  InvalidTransitionError,
+  OptimisticLockError,
+  InsufficientStockError,
+} from "@/lib/state-machine";
 import { AltGroupUnresolvedError } from "@/lib/alt-group-fulfillment";
 import { type SalesStatus } from "@/lib/constants";
 import { z } from "zod";
@@ -64,7 +69,11 @@ export async function PATCH(
     );
     return NextResponse.json(updated);
   } catch (err) {
-    if (err instanceof InvalidTransitionError || err instanceof AltGroupUnresolvedError) {
+    if (
+      err instanceof InvalidTransitionError ||
+      err instanceof AltGroupUnresolvedError ||
+      err instanceof InsufficientStockError
+    ) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
     if (err instanceof OptimisticLockError) {

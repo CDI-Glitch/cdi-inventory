@@ -2,11 +2,11 @@
 
 > 生成时间：2026-07-22  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：221 个活跃 SKU，14 个分类
+> 总计：271 个活跃 SKU，14 个分类
 
 ---
 
-## CANOPY (61)
+## CANOPY (91)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -16,17 +16,32 @@
 | `CD-2D-17128` | 2 Door Base Canopy 1775 x 1200 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-2D-17128-SHB` | 2 Door Base Canopy 1775 x 1200 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17128-W` | 2 Door Base Canopy 1775 x 1200 x 850 Splash White | Each | 0 | 0 | 2 |
+| `CD-2D-17128JKC` | 2 Door Base Canopy 1775 x 1200 x 850 Jack Off Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17128JKC-SHB` | 2 Door Base Canopy 1775 x 1200 x 850 Jack Off Sahara Black | Each | 0 | 0 | 2 |
+| `CD-2D-17128JKC-W` | 2 Door Base Canopy 1775 x 1200 x 850 Jack Off Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17148` | 2 Door Base Canopy 1775 x 1400 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-2D-17148-SHB` | 2 Door Base Canopy 1775 x 1400 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17148-W` | 2 Door Base Canopy 1775 x 1400 x 850 Splash White | Each | 0 | 0 | 2 |
+| `CD-2D-17148JKC` | 2 Door Base Canopy 1775 x 1400 x 850 Jack Off Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17148JKC-SHB` | 2 Door Base Canopy 1775 x 1400 x 850 Jack Off Sahara Black | Each | 0 | 0 | 2 |
+| `CD-2D-17148JKC-W` | 2 Door Base Canopy 1775 x 1400 x 850 Jack Off Splash White | Each | 0 | 0 | 2 |
+| `CD-2D-17158` | 2 Door Base Canopy 1775 x 1500 x 850 Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17158-SHB` | 2 Door Base Canopy 1775 x 1500 x 850 Sahara Black | Each | 0 | 0 | 2 |
+| `CD-2D-17158-W` | 2 Door Base Canopy 1775 x 1500 x 850 Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17168` | 2 Door Base Canopy 1775 x 1600 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-2D-17168H` | 2 Door Base Canopy 1775 x 1600 x 850 Raw Alloy Checker Plate | Each | 0 | 0 | 2 |
 | `CD-2D-17168-SHB` | 2 Door Base Canopy 1775 x 1600 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17168-W` | 2 Door Base Canopy 1775 x 1600 x 850 Splash White | Each | 0 | 0 | 2 |
+| `CD-2D-17168JKC` | 2 Door Base Canopy 1775 x 1600 x 850 Jack Off Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17168JKC-SHB` | 2 Door Base Canopy 1775 x 1600 x 850 Jack Off Sahara Black | Each | 0 | 0 | 2 |
+| `CD-2D-17168JKC-W` | 2 Door Base Canopy 1775 x 1600 x 850 Jack Off Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17188` | 2 Door Base Canopy 1775 x 1800 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-2D-17188H` | 2 Door Base Canopy 1775 x 1800 x 850 Raw Alloy Checker Plate | Each | 0 | 0 | 2 |
 | `CD-2D-17188-SHB` | 2 Door Base Canopy 1775 x 1800 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17188-W` | 2 Door Base Canopy 1775 x 1800 x 850 Splash White | Each | 0 | 0 | 2 |
+| `CD-2D-17188JKC` | 2 Door Base Canopy 1775 x 1800 x 850 Jack Off Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-2D-17188JKC-SHB` | 2 Door Base Canopy 1775 x 1800 x 850 Jack Off Sahara Black | Each | 0 | 0 | 2 |
+| `CD-2D-17188JKC-W` | 2 Door Base Canopy 1775 x 1800 x 850 Jack Off Splash White | Each | 0 | 0 | 2 |
 | `CD-2D-17218` | 2 Door Base Canopy 1775 x 2100 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-2D-17218-SHB` | 2 Door Base Canopy 1775 x 2100 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-2D-17218-W` | 2 Door Base Canopy 1775 x 2100 x 850 Splash White | Each | 0 | 0 | 2 |
@@ -48,22 +63,37 @@
 | `CD-3D-17248` | 3 Door Base Canopy 1775 x 2400 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-3D-17248-SHB` | 3 Door Base Canopy 1775 x 2400 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-3D-17248-W` | 3 Door Base Canopy 1775 x 2400 x 850 Splash White | Each | 0 | 0 | 2 |
+| `LC-2D-181010` | LC79 Jack Off Factory Tray Canopy 1000 Raw Alloy | Each | 0 | 0 | 1 |
+| `LC-2D-181010-BST` | LC79 Jack Off Factory Tray Canopy 1000 Sahara Black Body / Sandy Taupe Doors | Each | 0 | 0 | 1 |
+| `LC-2D-181010-FV` | LC79 Jack Off Factory Tray Canopy 1000 French Vanilla | Each | 0 | 0 | 1 |
+| `LC-2D-181010-G` | LC79 Jack Off Factory Tray Canopy 1000 Graphite | Each | 0 | 0 | 1 |
+| `LC-2D-181010-SHB` | LC79 Jack Off Factory Tray Canopy 1000 Sahara Black | Each | 0 | 0 | 1 |
+| `LC-2D-181010-ST` | LC79 Jack Off Factory Tray Canopy 1000 Sandy Taupe | Each | 0 | 0 | 1 |
+| `LC-2D-181010-W` | LC79 Jack Off Factory Tray Canopy 1000 Splash White | Each | 0 | 0 | 1 |
+| `LC-2D-181210` | LC79 Jack Off Factory Tray Canopy 1200 Raw Alloy | Each | 0 | 0 | 1 |
 | `LC-2D-181210-BST` | LC79 Jack Off Factory Tray Canopy 1200 Sahara Black Body / Sandy Taupe Doors | Each | 0 | 0 | 1 |
+| `LC-2D-181210-FV` | LC79 Jack Off Factory Tray Canopy 1200 French Vanilla | Each | 0 | 0 | 1 |
 | `LC-2D-181210-G` | LC79 Jack Off Factory Tray Canopy 1200 Graphite | Each | 0 | 0 | 1 |
 | `LC-2D-181210-SHB` | LC79 Jack Off Factory Tray Canopy 1200 Sahara Black | Each | 0 | 0 | 1 |
 | `LC-2D-181210-ST` | LC79 Jack Off Factory Tray Canopy 1200 Sandy Taupe | Each | 0 | 0 | 1 |
 | `LC-2D-181210-W` | LC79 Jack Off Factory Tray Canopy 1200 Splash White | Each | 0 | 0 | 1 |
+| `LC-2D-181410` | LC79 Jack Off Factory Tray Canopy 1400 Raw Alloy | Each | 0 | 0 | 1 |
 | `LC-2D-181410-BST` | LC79 Jack Off Factory Tray Canopy 1400 Sahara Black Body / Sandy Taupe Doors | Each | 0 | 0 | 1 |
+| `LC-2D-181410-FV` | LC79 Jack Off Factory Tray Canopy 1400 French Vanilla | Each | 0 | 0 | 1 |
 | `LC-2D-181410-G` | LC79 Jack Off Factory Tray Canopy 1400 Graphite | Each | 0 | 0 | 1 |
 | `LC-2D-181410-SHB` | LC79 Jack Off Factory Tray Canopy 1400 Sahara Black | Each | 0 | 0 | 1 |
 | `LC-2D-181410-ST` | LC79 Jack Off Factory Tray Canopy 1400 Sandy Taupe | Each | 0 | 0 | 1 |
 | `LC-2D-181410-W` | LC79 Jack Off Factory Tray Canopy 1400 Splash White | Each | 0 | 0 | 1 |
+| `LC-2D-181610` | LC79 Jack Off Factory Tray Canopy 1600 Raw Alloy | Each | 0 | 0 | 1 |
 | `LC-2D-181610-BST` | LC79 Jack Off Factory Tray Canopy 1600 Sahara Black Body / Sandy Taupe Doors | Each | 0 | 0 | 1 |
+| `LC-2D-181610-FV` | LC79 Jack Off Factory Tray Canopy 1600 French Vanilla | Each | 0 | 0 | 1 |
 | `LC-2D-181610-G` | LC79 Jack Off Factory Tray Canopy 1600 Graphite | Each | 0 | 0 | 1 |
 | `LC-2D-181610-SHB` | LC79 Jack Off Factory Tray Canopy 1600 Sahara Black | Each | 0 | 0 | 1 |
 | `LC-2D-181610-ST` | LC79 Jack Off Factory Tray Canopy 1600 Sandy Taupe | Each | 0 | 0 | 1 |
 | `LC-2D-181610-W` | LC79 Jack Off Factory Tray Canopy 1600 Splash White | Each | 0 | 0 | 1 |
+| `LC-2D-181810` | LC79 Jack Off Factory Tray Canopy 1800 Raw Alloy | Each | 0 | 0 | 1 |
 | `LC-2D-181810-BST` | LC79 Jack Off Factory Tray Canopy 1800 Sahara Black Body / Sandy Taupe Doors | Each | 0 | 0 | 1 |
+| `LC-2D-181810-FV` | LC79 Jack Off Factory Tray Canopy 1800 French Vanilla | Each | 0 | 0 | 1 |
 | `LC-2D-181810-G` | LC79 Jack Off Factory Tray Canopy 1800 Graphite | Each | 0 | 0 | 1 |
 | `LC-2D-181810-SHB` | LC79 Jack Off Factory Tray Canopy 1800 Sahara Black | Each | 0 | 0 | 1 |
 | `LC-2D-181810-ST` | LC79 Jack Off Factory Tray Canopy 1800 Sandy Taupe | Each | 0 | 0 | 1 |
@@ -83,15 +113,17 @@
 | `CD-SWH-SHB` | Spare Wheel Carrier Sahara Black | Each | 0 | 0 | 10 |
 | `CD-SWH-W` | Spare Wheel Carrier Splash White | Each | 0 | 0 | 10 |
 
-## CHASSIS DRAWER (3)
+## CHASSIS DRAWER (5)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `VTD-12` | 1200mm Long Trundle Drawer | Each | 0 | 0 | 20 |
+| `VTD-12T` | T Profile 1200mm Long Trundle Drawer (Legacy) | Each | 0 | 0 | 0 |
 | `VTD-14` | 1400mm Long Trundle Drawer | Each | 0 | 0 | 20 |
 | `VTD-17` | 1700mm Long Trundle Drawer | Each | 0 | 0 | 20 |
 | `VTD-17C` | C Profile 1700mm Long Trundle Drawer (Legacy) | Each | 9 | 0 | 0 |
 
-## CHASSIS PANEL (16)
+## CHASSIS PANEL (24)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -110,18 +142,23 @@
 | `TT-WDB` | T Profile Tail Light Panel Raw Alloy | Pair | 0 | 0 | 10 |
 | `TT-WDB-SHB` | T Profile Tail Light Panel Sahara Black | Pair | 5 | 0 | 10 |
 | `TT-WDB-W` | T Profile Tail Light Panel Splash White | Pair | 0 | 0 | 10 |
+| `VTD-DTLMB-1775` | C Profile VTD Drawer Panel Raw Alloy | Each | 0 | 0 | 5 |
 | `VTD-DTLMB-1775-SHB` | C Profile VTD Drawer Panel Sahara Black | Each | 0 | 0 | 10 |
 | `VTD-DTLMB-1775-W` | C Profile VTD Drawer Panel Splash White | Each | 0 | 0 | 5 |
 | `VTD-DTLMB-1850` | C Profile VTD Drawer Panel Raw Alloy | Each | 0 | 0 | 10 |
 | `VTD-DTLMB-1850-SHB` | C Profile VTD Drawer Panel Sahara Black | Each | 6 | 0 | 10 |
 | `VTD-DTLMB-1850-W` | C Profile VTD Drawer Panel Splash White | Each | 4 | 0 | 5 |
+| `WDB-DTL` | C Profile Devil Tail Light Panel Raw Alloy | Pair | 0 | 0 | 5 |
 | `WDB-DTL-SHB` | C Profile Devil Tail Light Panel Sahara Black | Pair | 6 | 0 | 10 |
 | `WDB-DTL-W` | C Profile Devil Tail Light Panel Splash White | Pair | 4 | 0 | 5 |
 
-## DROP SIDES (9)
+## DROP SIDES (15)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `TT-DDS-200` | T Profile Drop Down Sides 200mm Raw Alloy | Set | 0 | 0 | 10 |
+| `TT-DDS-200-SHB` | T Profile Drop Down Sides 200mm Sahara Black | Set | 0 | 0 | 10 |
+| `TT-DDS-200-W` | T Profile Drop Down Sides 200mm Splash White | Set | 0 | 0 | 10 |
 | `TT-DDS-1800` | T Profile Drop Down Sides 1800mm Raw Alloy | Set | 0 | 0 | 10 |
 | `TT-DDS-1800-SHB` | T Profile Drop Down Sides 1800mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-1800-W` | T Profile Drop Down Sides 1800mm Splash White | Set | 0 | 0 | 10 |
@@ -131,6 +168,9 @@
 | `TT-DDS-600` | T Profile Drop Down Sides 600mm Raw Alloy | Set | 0 | 0 | 10 |
 | `TT-DDS-600-SHB` | T Profile Drop Down Sides 600mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-600-W` | T Profile Drop Down Sides 600mm Splash White | Set | 0 | 0 | 10 |
+| `TT-DDS-800` | T Profile Drop Down Sides 800mm Raw Alloy | Set | 0 | 0 | 10 |
+| `TT-DDS-800-SHB` | T Profile Drop Down Sides 800mm Sahara Black | Set | 0 | 0 | 10 |
+| `TT-DDS-800-W` | T Profile Drop Down Sides 800mm Splash White | Set | 0 | 0 | 10 |
 
 ## FITTING KIT (10)
 
@@ -177,7 +217,7 @@
 | `CD-RR-1775-300-SHB` | T Tray Rear Rack 1775 x 300 Sahara Black | Each | 0 | 0 | 10 |
 | `CD-RR-1775-300-W` | T Tray Rear Rack 1775 x 300 Splash White | Each | 0 | 0 | 10 |
 
-## ROOF RACK (12)
+## ROOF RACK (18)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -190,9 +230,15 @@
 | `CD-RR` | Roof Rack Bar Channel Raw Alloy | Each | 0 | 0 | 20 |
 | `CD-RR-SHB` | Roof Rack Bar Channel Sahara Black | Each | 20 | 0 | 20 |
 | `CD-RR-W` | Roof Rack Bar Channel Splash White | Each | 10 | 0 | 10 |
+| `CD-RRF` | Roof Rack Flat Bar Raw Alloy | Each | 0 | 0 | 20 |
+| `CD-RRF-SHB` | Roof Rack Flat Bar Sahara Black | Each | 0 | 0 | 20 |
+| `CD-RRF-W` | Roof Rack Flat Bar Splash White | Each | 0 | 0 | 20 |
 | `CMS-RR` | CMS Roof Rack Bar Channel Raw Alloy | Each | 0 | 0 | 20 |
 | `CMS-RR-SHB` | CMS Roof Rack Bar Channel Sahara Black | Each | 0 | 0 | 20 |
 | `CMS-RR-W` | CMS Roof Rack Bar Channel Splash White | Each | 0 | 0 | 20 |
+| `CMS-RRF` | CMS Roof Rack Flat Bar Raw Alloy | Each | 0 | 0 | 20 |
+| `CMS-RRF-SHB` | CMS Roof Rack Flat Bar Sahara Black | Each | 0 | 0 | 20 |
+| `CMS-RRF-W` | CMS Roof Rack Flat Bar Splash White | Each | 0 | 0 | 20 |
 
 ## SERVICE BODY (16)
 
@@ -233,16 +279,20 @@
 | `T-Tray-2405-SHB` | T Tray Deck 1775 x 2405 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-2405-W` | T Tray Deck 1775 x 2405 Splash White | Each | 0 | 0 | 10 |
 
-## UNDERBODY TOOLBOX (54)
+## UNDERBODY TOOLBOX (61)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `BX01-1611-L` | C-Profile Underbody Toolbox 1611 LHS Raw Alloy | Each | 0 | 0 | 5 |
 | `BX01-1611-L-SHB` | C-Profile Underbody Toolbox 1611 LHS Sahara Black | Each | 7 | 0 | 5 |
 | `BX01-1611-L-W` | C-Profile Underbody Toolbox 1611 LHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1611-R` | C-Profile Underbody Toolbox 1611 RHS Raw Alloy | Each | 0 | 0 | 5 |
 | `BX01-1611-R-SHB` | C-Profile Underbody Toolbox 1611 RHS Sahara Black | Each | 7 | 0 | 5 |
 | `BX01-1611-R-W` | C-Profile Underbody Toolbox 1611 RHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1615-L` | C-Profile Underbody Toolbox 1615 LHS Raw Alloy | Each | 0 | 0 | 15 |
 | `BX01-1615-L-SHB` | C-Profile Underbody Toolbox 1615 LHS Sahara Black | Each | 8 | 0 | 15 |
 | `BX01-1615-L-W` | C-Profile Underbody Toolbox 1615 LHS Splash White | Each | 0 | 0 | 15 |
+| `BX01-1615-R` | C-Profile Underbody Toolbox 1615 RHS Raw Alloy | Each | 0 | 0 | 15 |
 | `BX01-1615-R-SHB` | C-Profile Underbody Toolbox 1615 RHS Sahara Black | Each | 8 | 0 | 15 |
 | `BX01-1615-R-W` | C-Profile Underbody Toolbox 1615 RHS Splash White | Each | 0 | 0 | 15 |
 | `BX01-1619-L-SHB` | C-Profile Underbody Toolbox 1619 LHS Sahara Black | Each | 0 | 0 | 15 |
@@ -279,15 +329,18 @@
 | `TT-BX-90-R` | T-Profile Rear Underbody Toolbox 1800/2100 RHS Raw Alloy | Each | 0 | 0 | 10 |
 | `TT-BX-90-R-SHB` | T-Profile Rear Underbody Toolbox 1800/2100 RHS Sahara Black | Each | 6 | 0 | 10 |
 | `TT-BX-90-R-W` | T-Profile Rear Underbody Toolbox 1800/2100 RHS Splash White | Each | 0 | 0 | 10 |
+| `TT-QBSG-30` | Pair T-Tray Front Tie-Down Bar 2100 Raw Alloy | Pair | 0 | 0 | 10 |
+| `TT-QBSG-30-SHB` | Pair T-Tray Front Tie-Down Bar 2100 Sahara Black | Pair | 0 | 0 | 10 |
+| `TT-QBSG-30-W` | Pair T-Tray Front Tie-Down Bar 2100 Splash White | Pair | 0 | 0 | 10 |
 | `TT-QBSG-55L` | Pair T-Tray Front Tie-Down Bar 2400 LHS Raw Alloy | Pair | 0 | 0 | 10 |
 | `TT-QBSG-55L-SHB` | Pair T-Tray Front Tie-Down Bar 2400 LHS Sahara Black | Pair | 0 | 0 | 10 |
 | `TT-QBSG-55L-W` | Pair T-Tray Front Tie-Down Bar 2400 LHS Splash White | Pair | 0 | 0 | 10 |
 | `TT-QBSG-89R` | Pair T-Tray Front Tie-Down Bar 2400 RHS Raw Alloy | Pair | 0 | 0 | 10 |
 | `TT-QBSG-89R-SHB` | Pair T-Tray Front Tie-Down Bar 2400 RHS Sahara Black | Pair | 0 | 0 | 10 |
 | `TT-QBSG-89R-W` | Pair T-Tray Front Tie-Down Bar 2400 RHS Splash White | Pair | 0 | 0 | 10 |
-| `TT-QBX-55-L` | T-Profile Front Underbody Toolbox 2400 LHS Raw Alloy | Each | 0 | 0 | 10 |
-| `TT-QBX-55-L-SHB` | T-Profile Front Underbody Toolbox 2400 LHS Sahara Black | Each | 0 | 0 | 10 |
-| `TT-QBX-55-L-W` | T-Profile Front Underbody Toolbox 2400 LHS Splash White | Each | 0 | 0 | 10 |
+| `TT-QBX-56-L` | T-Profile Front Underbody Toolbox 2400 LHS Raw Alloy | Each | 0 | 0 | 10 |
+| `TT-QBX-56-L-SHB` | T-Profile Front Underbody Toolbox 2400 LHS Sahara Black | Each | 0 | 0 | 10 |
+| `TT-QBX-56-L-W` | T-Profile Front Underbody Toolbox 2400 LHS Splash White | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R` | T-Profile Front Underbody Toolbox 2400 RHS Raw Alloy | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R-SHB` | T-Profile Front Underbody Toolbox 2400 RHS Sahara Black | Each | 0 | 0 | 10 |
 | `TT-QBX-73-R-W` | T-Profile Front Underbody Toolbox 2400 RHS Splash White | Each | 0 | 0 | 10 |

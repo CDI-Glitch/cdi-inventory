@@ -38,6 +38,7 @@ async function main() {
   const staffAccounts = [
     { email: "brisbane@cdi.com", name: "Brisbane", password: "Cdi@Bne2026$", role: "editor" },
     { email: "sydney@cdi.com",   name: "Sydney",   password: "Cdi@Syd2026$", role: "editor" },
+    { email: "cyrus@cdi.com.au", name: "Cyrus",    password: "Cyrus$yd#Inv2026", role: "sales" },
   ];
 
   for (const acc of staffAccounts) {

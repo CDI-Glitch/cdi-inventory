@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-23（决策 17 Sellable Bundle；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-08-25（Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -293,6 +293,17 @@ Available = On Hand - Reserved
 
 无快照表。无缓存值。永远从源头实时计算。
 
+**两阶段写入规则（2026-08-25）：**
+
+| 阶段 | 动作 | 是否硬性校验库存 |
+|---|---|---|
+| 预留（`quote → deposit_paid`） | `reserveStock()` 写 `GeneratedMovement` | 不校验，允许超卖（`Available` 可为负，见 §H#3） |
+| 完成（`fully_paid → completed`） | `completeStock()` 写 `sales_deduction` InventoryLog，实际扣减 On Hand | **硬性校验**：扣减前在同一 `$transaction` 内对每个 `productId+locationId` 取 `pg_advisory_xact_lock` 后重新读取 On Hand，若扣完会 `< 0` 则整单抛 `InsufficientStockError` 回滚，不写任何记录（全有或全无，不做部分完成） |
+
+行业对照：ERP 的 Reserve（软分配 / ATP 承诺）vs Ship Confirm（硬提交，对真实库存过账）两阶段模型。**`Available`（On Hand − Reserved）超卖是设计允许的业务状态；`On Hand` 本身变负不是**——后者代表账本本身出错或超扣实物，Complete 步骤现在会拦下来，而不是像以前一样无条件写穿。
+
+实现见 `src/lib/state-machine.ts` 的 `completeStock()` / `findStockShortages()`；API 层在 `src/app/api/sales/[id]/route.ts` 把 `InsufficientStockError` 转成 400；`/sales/[id]` 详情页在 `fully_paid` 状态下会预先算一次同样的校验（`previewStockShortages()`），提前把「Mark completed」按钮置灰并显示缺货 SKU，不用等点击失败才知道。
+
 ---
 
 ## D2. Forecast Mode（未来库存预测 — 只读投影）
@@ -486,7 +497,7 @@ Shopify orders/paid → HMAC + ProcessedWebhook 去重
 |---|---|---|
 | 1 | 并发修改同一记录 | 乐观锁 → 409 冲突提示 |
 | 2 | Webhook 到达时宕机 | Shopify 48h 重试 + 唯一约束防重复 |
-| 3 | On Hand < Reserved | 允许；仪表板 WARNING（`At-risk reservations` 面板，见 D4）；Shopify 显示缺货 |
+| 3 | On Hand < Reserved（Available 为负，仅发生在预留阶段） | 允许；仪表板 WARNING（`At-risk reservations` 面板，见 D4）；Shopify 显示缺货。**注意**：这条只适用于预留（`reserveStock`），Complete 阶段扣减 On Hand 本身仍会被硬性拦下，见 §D 两阶段写入规则 |
 | 4 | Bundle 修改后对旧订单 | 保存行时已写入 `snapshotItems`；`deposit_paid` 按快照展开，不读新 BOM。无快照的旧行才回退 live 定义。履约层仍可由 Admin 单独调整 |
 | 5 | 标完成但未取走 | `stocktake_correction` 冲正 |
 | 6 | Shopify 产品被删 | SyncLog 404 → 仪表板告警 |
@@ -506,6 +517,7 @@ Shopify orders/paid → HMAC + ProcessedWebhook 去重
 | 2 | 备货时发现需要换料 | 在原单 Fulfillment 层调整（Admin），换料写 `reservation_adjustment` 日志 |
 | 3 | 客户付尾款前核对 | 打开 Sales detail，对比 Order lines（客户订的）和 Fulfillment（实际预留），确认无误后点 Mark completed |
 | 4 | Available 显示负数 | 正常（Back Order 状态，宪法 H#3 允许）；安排补货/调货后负数会自动归正 |
+| 5 | 点 Mark completed 但库存不够扣 | 整单阻断（`InsufficientStockError`），不写任何 `sales_deduction`；On Hand 不会变负（2026-08-25，见 §D 两阶段写入规则）。需先补库存（Adjust/到货）或改预留数量再重试，无 Admin 强行通过通道 |
 
 ---
 

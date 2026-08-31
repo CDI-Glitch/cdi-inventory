@@ -20,9 +20,9 @@ const SKUS = [
   { sku: "TT-BX-68-R-W",   name: "T-Profile Rear Underbody Toolbox 1600/2400 RHS Splash White",  qty: 0, reorderPoint: 10 },
   { sku: "TT-BX-68-R",     name: "T-Profile Rear Underbody Toolbox 1600/2400 RHS Raw Alloy",      qty: 0, reorderPoint: 10 },
   // Front toolbox — 2400 tray LHS
-  { sku: "TT-QBX-55-L-SHB", name: "T-Profile Front Underbody Toolbox 2400 LHS Sahara Black",    qty: 0, reorderPoint: 10 },
-  { sku: "TT-QBX-55-L-W",   name: "T-Profile Front Underbody Toolbox 2400 LHS Splash White",     qty: 0, reorderPoint: 10 },
-  { sku: "TT-QBX-55-L",     name: "T-Profile Front Underbody Toolbox 2400 LHS Raw Alloy",         qty: 0, reorderPoint: 10 },
+  { sku: "TT-QBX-56-L-SHB", name: "T-Profile Front Underbody Toolbox 2400 LHS Sahara Black",    qty: 0, reorderPoint: 10 },
+  { sku: "TT-QBX-56-L-W",   name: "T-Profile Front Underbody Toolbox 2400 LHS Splash White",     qty: 0, reorderPoint: 10 },
+  { sku: "TT-QBX-56-L",     name: "T-Profile Front Underbody Toolbox 2400 LHS Raw Alloy",         qty: 0, reorderPoint: 10 },
   // Front toolbox — 2400 tray RHS
   { sku: "TT-QBX-73-R-SHB", name: "T-Profile Front Underbody Toolbox 2400 RHS Sahara Black",    qty: 0, reorderPoint: 10 },
   { sku: "TT-QBX-73-R-W",   name: "T-Profile Front Underbody Toolbox 2400 RHS Splash White",     qty: 0, reorderPoint: 10 },

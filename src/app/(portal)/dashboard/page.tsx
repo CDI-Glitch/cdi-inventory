@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getAgingReservations } from "@/lib/reservation-aging";
 import { getLowStockRows } from "@/lib/dashboard-stats";
+import { getMonthlyDepositCounts } from "@/lib/deposit-stats";
 import { findSharedComponentBottlenecks } from "@/lib/bundle-atp";
 import { asRole, canSeeDashboardActions } from "@/lib/permissions";
 
@@ -66,6 +67,7 @@ export default async function DashboardPage() {
   ]);
   const inventoryAlertHref = "/inventory?backorder=1";
   const lowStock = await getLowStockRows(5);
+  const monthlyDeposits = await getMonthlyDepositCounts(12);
 
   return (
     <div className="space-y-6">
@@ -171,6 +173,42 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Monthly deposits */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700">Monthly deposits</h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Orders that received a deposit each month, by warehouse. Counts, not dollar amounts.
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th className="px-5 py-2">Month</th>
+                {monthlyDeposits.locations.map((loc) => (
+                  <th key={loc.id} className="px-5 py-2 text-right">{loc.name}</th>
+                ))}
+                <th className="px-5 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {monthlyDeposits.months.map((m) => (
+                <tr key={m.monthKey}>
+                  <td className="px-5 py-2 text-gray-900">{m.monthLabel}</td>
+                  {monthlyDeposits.locations.map((loc) => (
+                    <td key={loc.id} className="px-5 py-2 text-right text-gray-700">
+                      {m.byLocation[loc.id] ?? 0}
+                    </td>
+                  ))}
+                  <td className="px-5 py-2 text-right font-semibold text-gray-900">{m.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Open orders */}

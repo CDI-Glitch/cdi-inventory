@@ -1,10 +1,13 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as any);
 
 const SKUS = [
+  { sku: "VTD-12",  name: "1200mm Long Trundle Drawer",                      qty: 0, reorderPoint: 20 },
+  { sku: "VTD-12T", name: "T Profile 1200mm Long Trundle Drawer (Legacy)",   qty: 0, reorderPoint: 0  },
   { sku: "VTD-14",  name: "1400mm Long Trundle Drawer",                      qty: 0, reorderPoint: 20 },
   { sku: "VTD-17",  name: "1700mm Long Trundle Drawer",                      qty: 0, reorderPoint: 20 },
   { sku: "VTD-17C", name: "C Profile 1700mm Long Trundle Drawer (Legacy)",   qty: 9, reorderPoint: 0  },

@@ -12,12 +12,13 @@
 
 **涉及文件（按操作类型）：**
 - `src/app/api/inventory/adjust/route.ts` — 手动调整库存，单条记录，风险低
-- `src/lib/state-machine.ts` 的 `reserveStock()` / `completeStock()` / `releaseReservations()` — 销售单状态变化时的预留操作，多条记录循环写入，没有事务包裹
+- `src/lib/state-machine.ts` 的 `reserveStock()` / `releaseReservations()` — 销售单状态变化时的预留/释放操作，多条记录循环写入，没有事务包裹
 - `src/app/api/transfers/[id]/route.ts` — 调货完成时依次写"出库"和"入库"两条记录，没有事务包裹，是这几个里风险相对最高的（两条记录逻辑上必须成对出现）
 - `src/app/api/incoming/[id]/route.ts` — 到货确认时循环写多条入库记录，没有事务包裹
 
 **已经有事务保护的例外：**
-`src/app/api/sales/[id]/movements/route.ts`（手动调整预留）已经用了 `$transaction`，说明团队知道这个模式，只是没有推广到全部写操作。
+- `src/app/api/sales/[id]/movements/route.ts`（手动调整预留）已经用了 `$transaction`。
+- `src/lib/state-machine.ts` 的 `completeStock()`（2026-08-25 起）已经改造成 `$transaction` + 对每个 `productId+locationId` 取 `pg_advisory_xact_lock`，扣减前重新读一次 On Hand，不够扣就整单回滚 — 这条不再属于本条目"没有事务包裹"的范围，见下方 TD-08 备注和 `constitution.md` §D 两阶段写入规则。`reserveStock()` / `releaseReservations()` 仍未包事务，风险评估不变。
 
 **为什么现在可以不修（评估依据）：**
 1. 当前是内部小团队手动操作，不是高并发的线上下单场景，写入频率低，"写到一半失败"这种情况概率很小
@@ -40,6 +41,8 @@
 
 **涉及文件：**
 - `src/lib/state-machine.ts` 的 `reserveStock()`（第 145-170 行区域）— 生成预留时没有检查当前可用库存，也没有任何形式的行锁
+
+**范围澄清（2026-08-25）：** 本条目描述的"超卖"specifically 指**预留阶段**（`reserveStock()`）——这部分保持不变，仍按下方评估依据故意不修。**完成阶段**（`completeStock()`，实际扣减 On Hand 的那一步）已经单独加了 `pg_advisory_xact_lock` + 重新读库存校验，见 `constitution.md` §D 两阶段写入规则——那是本条目未覆盖的、且已经解决的另一个问题（On Hand 本身变负，不是 Available 变负）。不要把两者混为一谈。
 
 **已有的部分保护：**
 `SalesRecord` 表有一个 `version` 字段做乐观锁（`prisma/schema.prisma:98`），但这个锁只保护"同一张销售单的状态不能被并发改坏"，**不保护库存数字本身**。两张不同的销售单各自预留同一个 SKU，这个锁完全不起作用。

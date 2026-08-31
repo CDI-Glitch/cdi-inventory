@@ -21,6 +21,79 @@ export class OptimisticLockError extends Error {
   }
 }
 
+export type StockShortage = { sku: string; name: string; onHand: number; needed: number };
+
+export class InsufficientStockError extends Error {
+  shortages: StockShortage[];
+
+  constructor(shortages: StockShortage[]) {
+    const summary = shortages
+      .map((s) => `${s.sku} (on hand ${s.onHand}, need ${s.needed})`)
+      .join(", ");
+    super(`Cannot complete: insufficient physical stock for ${summary}.`);
+    this.name = "InsufficientStockError";
+    this.shortages = shortages;
+  }
+}
+
+/**
+ * Reads current On Hand for each productId+locationId touched by `movements`
+ * and returns any SKU where On Hand can't cover the reserved qty being
+ * deducted. Read-only — safe to call outside a transaction for preview UI,
+ * or inside one (pass `tx`) for the authoritative pre-write check.
+ */
+async function findStockShortages(
+  client: any,
+  movements: { productId: string; locationId: string; reservedQty: number }[]
+): Promise<StockShortage[]> {
+  const needed = new Map<string, { productId: string; locationId: string; qty: number }>();
+  for (const mov of movements) {
+    if (mov.reservedQty <= 0) continue;
+    const key = `${mov.productId}:${mov.locationId}`;
+    const entry = needed.get(key);
+    if (entry) entry.qty += mov.reservedQty;
+    else needed.set(key, { productId: mov.productId, locationId: mov.locationId, qty: mov.reservedQty });
+  }
+  if (needed.size === 0) return [];
+
+  const productIds = [...new Set([...needed.values()].map((e) => e.productId))];
+  const products: { id: string; sku: string; name: string }[] = await client.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, sku: true, name: true },
+  });
+  const productById = new Map(products.map((p) => [p.id, p]));
+
+  const shortages: StockShortage[] = [];
+  for (const { productId, locationId, qty } of needed.values()) {
+    const onHandResult = await client.inventoryLog.aggregate({
+      where: { productId, locationId },
+      _sum: { delta: true },
+    });
+    const onHand = onHandResult._sum.delta ?? 0;
+    if (onHand - qty < 0) {
+      const product = productById.get(productId);
+      shortages.push({
+        sku: product?.sku ?? productId,
+        name: product?.name ?? productId,
+        onHand,
+        needed: qty,
+      });
+    }
+  }
+  return shortages;
+}
+
+/**
+ * Read-only preview for the sales detail page — surfaces the same shortages
+ * that would block `completeStock()`, without acquiring locks or writing
+ * anything. Used to pre-emptively disable the "Mark completed" button.
+ */
+export async function previewStockShortages(
+  movements: { productId: string; locationId: string; reservedQty: number }[]
+): Promise<StockShortage[]> {
+  return findStockShortages(prisma, movements);
+}
+
 export function validateTransition(from: SalesStatus, to: SalesStatus): boolean {
   const allowed = VALID_TRANSITIONS[from];
   return allowed?.includes(to) ?? false;
@@ -185,25 +258,44 @@ async function completeStock(record: any, userId: string) {
   const movements = await prisma.generatedMovement.findMany({
     where: { salesRecordId: record.id, reservedQty: { gt: 0 } },
   });
+  if (movements.length === 0) return;
 
-  for (const mov of movements) {
-    await prisma.inventoryLog.create({
-      data: {
-        productId: mov.productId,
-        locationId: mov.locationId,
-        type: "sales_deduction",
-        delta: -mov.reservedQty,
-        reference: record.recordId,
-        enteredBy: userId,
-        notes: `Auto: completed ${record.recordId}`,
-      },
-    });
+  // Lock every distinct productId+locationId touched by this completion, in a
+  // deterministic order, before re-reading On Hand. Without this, two
+  // concurrent completions on the same SKU+location could both pass the
+  // check and both write — this is the actual fix for the race, not just
+  // the read-then-write check by itself.
+  const lockKeys = [...new Set(movements.map((m) => `${m.productId}:${m.locationId}`))].sort();
 
-    await prisma.generatedMovement.update({
-      where: { id: mov.id },
-      data: { reservedQty: 0 },
-    });
-  }
+  await prisma.$transaction(async (tx) => {
+    for (const key of lockKeys) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+    }
+
+    const shortages = await findStockShortages(tx, movements);
+    if (shortages.length > 0) {
+      throw new InsufficientStockError(shortages);
+    }
+
+    for (const mov of movements) {
+      await tx.inventoryLog.create({
+        data: {
+          productId: mov.productId,
+          locationId: mov.locationId,
+          type: "sales_deduction",
+          delta: -mov.reservedQty,
+          reference: record.recordId,
+          enteredBy: userId,
+          notes: `Auto: completed ${record.recordId}`,
+        },
+      });
+
+      await tx.generatedMovement.update({
+        where: { id: mov.id },
+        data: { reservedQty: 0 },
+      });
+    }
+  });
 
   scheduleAfterStockChange(movements.map((m) => m.productId));
 }
