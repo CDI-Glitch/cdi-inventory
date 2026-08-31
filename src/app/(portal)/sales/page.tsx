@@ -99,6 +99,7 @@ export default async function SalesPage({
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Customer</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Items</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Location</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-600">Type</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
               </tr>
             </thead>
@@ -129,6 +130,15 @@ export default async function SalesPage({
                     })()}
                   </td>
                   <td className="px-4 py-3 text-gray-500">{rec.location.name}</td>
+                  <td className="px-4 py-3 text-center">
+                    {rec.isFullFitOut ? (
+                      <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700">
+                        Full fit-out
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[rec.status])}>
                       {STATUS_LABELS[rec.status]}
