@@ -204,13 +204,22 @@ SELECT email, role, active FROM "User" ORDER BY email;
 4. 老板停留在这个已经"状态卡死"的页面反复重试登录，每次都复用同一批已失效/不匹配的 CSRF 状态，因此无论密码是否正确都必然失败（`src/app/login/page.tsx` 的 `signIn(..., { redirect:false })` 对任何 `result.error` 统一显示 "Invalid email or password"，看不出真实原因）。
 5. 手动删除 URL 后缀并重新访问，强制浏览器发起一次全新请求，重新拿到一套匹配的登录令牌，问题消失。第 5 步"为什么单纯刷新无效、必须改动地址栏"未能在代码层完全证实，最可能是浏览器缓存/bfcache 命中了旧状态，但这属于浏览器黑盒行为。
 
-**结论与后续处理：**
+**结论与后续处理（2026-07-30 首次评估）：**
 
-- 这是一次性的**测试副作用**，不是持续性的生产 bug；正常运营中没人会频繁手动切换 admin 权限，基本不会复现。
-- 但底层机制是真实存在的边界情况：**任何账号在"正在使用中"的状态下被停用/降级，都有极小概率触发同样的自动登出 CSRF 竞态**，导致该用户卡在一个需要手动清空地址栏才能恢复的登录页。
-- 严重程度低（只影响被操作的那一个账号，不影响别人，恢复方法简单），**评估后决定不做代码修复**，仅记录在此供未来排查参考。
-- 若未来真的要停用一个"当前在线"的在职员工账号，可提前口头提示对方：若登录报错，直接清空地址栏重新输入网址即可，无需修改代码。
-- 排除的错误假设：曾怀疑是 `AUTH_SECRET`/`NEXTAUTH_SECRET` 命名不一致（v4→v5 迁移遗留）导致全局 CSRF 失效，但该假设被推翻——若是全局配置问题，删除后缀重新访问同一台服务器应该复现同样的错误，而实际观察是重新访问后立即成功，说明问题是这一次的会话/令牌状态卡死，而非服务器配置缺失。`AUTH_SECRET` 命名是否规范仍值得顺手确认，但不是这次事故的成因。
+- 当时判断为一次性的**测试副作用**，不是持续性的生产 bug；正常运营中没人会频繁手动切换 admin 权限，基本不会复现。
+- **评估后决定不做代码修复**，仅记录在此供未来排查参考。
+- 排除的错误假设：曾怀疑是 `AUTH_SECRET`/`NEXTAUTH_SECRET` 命名不一致（v4→v5 迁移遗留）导致全局 CSRF 失效，但该假设被推翻——若是全局配置问题，删除后缀重新访问同一台服务器应该复现同样的错误，而实际观察是重新访问后立即成功，说明问题是这一次的会话/令牌状态卡死，而非服务器配置缺失。
+
+**2026-09-01 更新——复现频率升高，已修复：**
+
+上面 2026-07-30 的评估把这归为"admin 降级测试期间的极小概率边界情况"，但后续反馈是**用户一切换网络（WiFi ↔ 流量，或短暂断网）就会触发同一条链路**，说明真正的触发条件远比"账号被停用"宽得多——`session-watcher.tsx` 的 `RoleWatcher` 只要看到 `useSession()` 的 `status` 变成 `"unauthenticated"` 就无条件自动登出，而这个 `status` 本身并不可靠：
+
+- **真正的根因（已对照 NextAuth v5 源码 `packages/next-auth/src/lib/client.ts` 的 `fetchData()` 确认）：** 该函数无论是"请求真的发出去了，服务器确认没有会话"，还是"请求本身网络失败/超时/离线"，两种情况都统一 `catch` 后返回同一个 `null`，`useSession()` 完全区分不出来。网络切换的瞬间发生的请求失败，会被误判为"真的被登出了"。
+- 这与另一个主流 Auth 库 `better-auth` 修过的 issue 是同一类 bug：[Session is set to null on network reconnect (mobile)](https://github.com/better-auth/better-auth/issues/8420)，官方修复（[PR #8437](https://github.com/better-auth/better-auth/pull/8437)）采用的做法是 stale-while-revalidate：只有服务器明确确认"没有会话"才清空登录态，网络层错误则保留原状态、等下一轮重试。
+
+**修复方式（`src/components/session-watcher.tsx`）：** `RoleWatcher` 看到 `status === "unauthenticated"` 后不再直接调用 `signOut()`，而是先用自己的 `fetch("/api/auth/session", { cache: "no-store" })` 独立复核一次——fetch 本身抛错（网络问题）就当作"还不确定"，维持现状等下一轮轮询；只有 fetch 正常完成且确认没有 `user` 才认定是真的登出。真正登出时也改用 `signOut({ redirect: false })` + 手动 `router.replace("/login")`，不再让 NextAuth 自己的重定向路径有机会拼出 `?error=MissingCSRF`。`src/app/login/page.tsx` 同时加了兜底：一进页面就清掉 URL 里残留的 `?error=...`，且把 `MissingCSRF` 和"密码错误"分开显示，不再一律显示"Invalid email or password"。
+
+- 这个修改**不影响权限即时生效**：真正的强制点在 `src/lib/auth.ts` 的 `jwt()` 回调，每次服务器端调用 `auth()`（任何页面加载、任何 API 请求）都会重新查一次数据库的 `active`/`role`，与 `session-watcher.tsx` 这层纯 UX 便利逻辑无关。改动只影响"停留在原地什么都不做的那个浏览器 Tab，多久会自己弹回登录页"，不影响"这个人下一次做任何实质操作时是否会被服务器拦截"。
 
 ---
 

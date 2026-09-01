@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function safeCallbackUrl(raw: string | null): string {
   if (!raw) return "/dashboard";
@@ -18,6 +18,20 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // A stale ?error=... in the URL (e.g. left over from an auto sign-out that
+  // itself hit a network/CSRF hiccup) can make retries look like they keep
+  // failing for no reason. Strip it on mount so every visit starts from a
+  // clean, fresh navigation instead of whatever state the browser cached.
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      const params = new URLSearchParams(searchParams);
+      params.delete("error");
+      const query = params.toString();
+      router.replace(query ? `/login?${query}` : "/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -31,7 +45,11 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError(
+        result.error === "MissingCSRF"
+          ? "Session expired — please refresh the page and try again."
+          : "Invalid email or password"
+      );
       setLoading(false);
     } else {
       router.push(safeCallbackUrl(searchParams.get("callbackUrl")));
