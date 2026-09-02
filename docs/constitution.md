@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-08-31（`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-09-02（修正 §D 硬锁上线日期为 2026-08-31 commit `276eb6a`，并记录 TT-BN-DNP/FK/FKT 负库存系锁上线前 SR-0053 遗留、非绕过；`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -294,7 +294,7 @@ Available = On Hand - Reserved
 
 无快照表。无缓存值。永远从源头实时计算。
 
-**两阶段写入规则（2026-08-25）：**
+**两阶段写入规则（数据清理 2026-08-25，代码硬锁上线 2026-08-31 commit `276eb6a`）：**
 
 | 阶段 | 动作 | 是否硬性校验库存 |
 |---|---|---|
@@ -302,6 +302,8 @@ Available = On Hand - Reserved
 | 完成（`fully_paid → completed`） | `completeStock()` 写 `sales_deduction` InventoryLog，实际扣减 On Hand | **硬性校验**：扣减前在同一 `$transaction` 内对每个 `productId+locationId` 取 `pg_advisory_xact_lock` 后重新读取 On Hand，若扣完会 `< 0` 则整单抛 `InsufficientStockError` 回滚，不写任何记录（全有或全无，不做部分完成） |
 
 行业对照：ERP 的 Reserve（软分配 / ATP 承诺）vs Ship Confirm（硬提交，对真实库存过账）两阶段模型。**`Available`（On Hand − Reserved）超卖是设计允许的业务状态；`On Hand` 本身变负不是**——后者代表账本本身出错或超扣实物，Complete 步骤现在会拦下来，而不是像以前一样无条件写穿。
+
+**日期注意：** 2026-08-25 那一轮（`scripts/fix-negative-onhand-bne-2026-08-25.ts`）只是**数据清理**（把当时已经存在的负数用 `stocktake_correction` 归零），`completeStock()` 里真正的代码硬锁是 6 天后的 2026-08-31（commit `276eb6a`）才上线。这个时间差曾造成一次误判：2026-09-02 发现 `TT-BN-DNP`/`TT-BN-FK`/`TT-BN-FKT` 又变成 -1，一开始怀疑硬锁被绕过，追查后确认是 **SR-0053 在 2026-08-28 完成时**（硬锁还没上线）踩进了这个 6 天窗口——不是新 bug，锁本身在上线后没有再放出过一条 `sales_deduction`。见 `scripts/fix-negative-onhand-tt-bn-2026-09-02.ts`。
 
 实现见 `src/lib/state-machine.ts` 的 `completeStock()` / `findStockShortages()`；API 层在 `src/app/api/sales/[id]/route.ts` 把 `InsufficientStockError` 转成 400；`/sales/[id]` 详情页在 `fully_paid` 状态下会预先算一次同样的校验（`previewStockShortages()`），提前把「Mark completed」按钮置灰并显示缺货 SKU，不用等点击失败才知道。
 

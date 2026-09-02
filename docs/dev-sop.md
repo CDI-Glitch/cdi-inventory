@@ -42,7 +42,7 @@
 - [ ] REORDER / OUT_OF_STOCK 状态判断正确
 - [ ] 两个仓库的库存互相独立
 - [ ] 预留阶段（quote→deposit_paid）仍允许 Available 变负（不要误改成硬性拦截）
-- [ ] Mark completed 时库存不够扣 → 整单阻断，报 `InsufficientStockError`，列出缺货 SKU；不写任何 `sales_deduction`；On Hand 不会变负（2026-08-25，见 `constitution.md` §D）
+- [ ] Mark completed 时库存不够扣 → 整单阻断，报 `InsufficientStockError`，列出缺货 SKU；不写任何 `sales_deduction`；On Hand 不会变负（硬锁上线 2026-08-31，见 `constitution.md` §D）
 - [ ] `/sales/[id]` 详情页在 `fully_paid` 状态下应提前算出同样的缺货并把「Mark completed」置灰（`previewStockShortages`），不是只能等点击失败
 
 ### 3. 手动调整
