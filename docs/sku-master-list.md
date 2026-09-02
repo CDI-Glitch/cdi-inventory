@@ -415,6 +415,7 @@
 | `CSM0041` | CB005_A legacy | Each | 0 | 0 | 50 |
 | `CSM0042` | CB005_B legacy | Each | 0 | 0 | 50 |
 | `CSM0043` | SB028 legacy | Each | 0 | 0 | 50 |
+| `CSM0044` | 欧标弹片螺母30*M6 | Each | 0 | 0 | 50 |
 | `WH-TL-HILUX` | Hilux Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-TRITON` | Triton Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-RANGER-PX` | PX Ranger Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
