@@ -1,6 +1,6 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22  
+> 生成时间：2026-07-22（2026-09-07 更新：`CSM0013` 挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
 > 总计：272 个活跃 SKU，14 个分类
 
@@ -173,10 +173,11 @@
 | `TT-DDS-800-SHB` | T Profile Drop Down Sides 800mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-800-W` | T Profile Drop Down Sides 800mm Splash White | Set | 0 | 0 | 10 |
 
-## FITTING KIT (10)
+## FITTING KIT (11)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `CSM0013` | 挡泥皮 | Each | 10 | 256 | 50 |
 | `CXH` | Under Body Harness Cover | Each | 32 | 0 | 50 |
 | `FK` | Fitting Kit | Each | 192 | 0 | 100 |
 | `FK-Ex` | Fitting Kit Extension | Each | 1 | 0 | 100 |
@@ -385,7 +386,6 @@
 | `CSM0010` | 欧标弹片螺母30*M8 | Each | 0 | 0 | 50 |
 | `CSM0011` | M12*40*40*4垫片 | Each | 0 | 0 | 50 |
 | `CSM0012` | 达克罗螺丝M12*80 | Each | 0 | 0 | 50 |
-| `CSM0013` | 挡泥皮 | Each | 0 | 0 | 50 |
 | `CSM0014` | SB02C legacy | Each | 0 | 0 | 50 |
 | `CSM0015` | SB021 legacy | Each | 0 | 0 | 50 |
 | `CSM0016` | SB023 legacy | Each | 0 | 0 | 50 |
@@ -434,8 +434,8 @@
 
 | Bundle code | Name | Components |
 |---|---|---|
-| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1 |
-| `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上 |
+| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1，CSM0013×2（挡泥皮，nonConstraining） |
+| `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上（含 CSM0013×2） |
 
-说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。
+说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。`CSM0013` 挡泥皮 2026-09-07 起从 CONSUMABLE 改为 FITTING_KIT，同步加入这 2 个快捷包及全部 12 个 T-Tray sellable bundle（qty 2，`nonConstraining: true`，不进 kits ATP 计算，行为对齐 `TT-BN-*`）。
 

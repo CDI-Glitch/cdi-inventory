@@ -80,6 +80,7 @@ async function main() {
         "TT-BN-FKT",
         "TT-BN-HB",
         "TT-BN-HBL",
+        "CSM0013",
         withColour("TT-PZB", colour.suffix),
         withColour("TT-WDB", colour.suffix),
       ];
@@ -106,6 +107,7 @@ async function main() {
         { sku: "TT-BN-FKT", qty: 1, componentRole: "hardware_bracket", altGroupKey: null, nonConstraining: true },
         { sku: "TT-BN-HB", qty: 1, componentRole: "hardware_bracket", altGroupKey: null, nonConstraining: true },
         { sku: "TT-BN-HBL", qty: 1, componentRole: "hardware_bracket", altGroupKey: null, nonConstraining: true },
+        { sku: "CSM0013", qty: 2, componentRole: "hardware_bracket", altGroupKey: null, nonConstraining: true },
         { sku: withColour("TT-PZB", colour.suffix), qty: 1, componentRole: "body_attachment", altGroupKey: null, nonConstraining: false },
         { sku: withColour("TT-WDB", colour.suffix), qty: 1, componentRole: "body_attachment", altGroupKey: null, nonConstraining: false },
       ];
