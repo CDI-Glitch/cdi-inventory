@@ -578,6 +578,7 @@ Shopify orders/paid → HMAC + ProcessedWebhook 去重
 | `import-roof-racks.ts` | ROOF_RACK | 12 | ✅ |
 | `import-rear-racks.ts` | REAR_RACK | 3 | ✅ |
 | `import-jerry-spare.ts` | CANOPY_ACCESSORY | 6 | ✅ |
+| `import-cl-wtl.ts` | CANOPY_ACCESSORY | 1 | ✅ |
 
 ---
 

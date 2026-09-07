@@ -2,7 +2,7 @@
 
 > 生成时间：2026-07-22  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：271 个活跃 SKU，14 个分类
+> 总计：272 个活跃 SKU，14 个分类
 
 ---
 
@@ -102,10 +102,11 @@
 | `R3D-17188JKCB` | 1.8m 3-Door Jack Off Canopy Scylla Black (Legacy) | Each | 3 | 0 | 0 |
 | `R3D-17188JKCW` | 1.8m 3-Door Jack Off Canopy Splash White (Legacy) | Each | 3 | 0 | 0 |
 
-## CANOPY ACCESSORY (6)
+## CANOPY ACCESSORY (7)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `CL-WTL` | Whale Tail Lock with Central Locking | Each | 0 | 0 | 10 |
 | `CD-JCA` | Jerry Can Holder with Lid Raw Alloy | Each | 0 | 0 | 20 |
 | `CD-JCA-SHB` | Jerry Can Holder with Lid Sahara Black | Each | 0 | 0 | 20 |
 | `CD-JCA-W` | Jerry Can Holder with Lid Splash White | Each | 0 | 0 | 20 |
