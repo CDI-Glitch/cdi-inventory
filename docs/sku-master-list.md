@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：273 个活跃 SKU，15 个分类
+> 总计：279 个活跃 SKU，15 个分类
 
 ---
 
@@ -281,7 +281,7 @@
 | `T-Tray-2405-SHB` | T Tray Deck 1775 x 2405 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-2405-W` | T Tray Deck 1775 x 2405 Splash White | Each | 0 | 0 | 10 |
 
-## UNDERBODY TOOLBOX (61)
+## UNDERBODY TOOLBOX (67)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -313,6 +313,12 @@
 | `BX01-1819-L-W` | C-Profile Underbody Toolbox 1819 LHS Splash White | Each | 0 | 0 | 15 |
 | `BX01-1819-R-SHB` | C-Profile Underbody Toolbox 1819 RHS Sahara Black | Each | 0 | 0 | 15 |
 | `BX01-1819-R-W` | C-Profile Underbody Toolbox 1819 RHS Splash White | Each | 0 | 0 | 15 |
+| `BX01-QBX-490-L` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 LHS Raw Alloy | Each | 0 | 0 | 2 |
+| `BX01-QBX-490-L-SHB` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 LHS Sahara Black | Each | 0 | 0 | 2 |
+| `BX01-QBX-490-L-W` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 LHS Splash White | Each | 0 | 0 | 2 |
+| `BX01-QBX-490-R` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 RHS Raw Alloy | Each | 0 | 0 | 2 |
+| `BX01-QBX-490-R-SHB` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 RHS Sahara Black | Each | 0 | 0 | 2 |
+| `BX01-QBX-490-R-W` | 2100 Service Body Next Gen Ranger P703 Underbody Toolbox 490 RHS Splash White | Each | 0 | 0 | 2 |
 | `TT-BSG-67` | Pair T-Tray Rear Tie-Down Bar 1600/2400 Raw Alloy | Pair | 0 | 0 | 10 |
 | `TT-BSG-67-SHB` | Pair T-Tray Rear Tie-Down Bar 1600/2400 Sahara Black | Pair | 0 | 0 | 10 |
 | `TT-BSG-67-W` | Pair T-Tray Rear Tie-Down Bar 1600/2400 Splash White | Pair | 0 | 0 | 10 |
