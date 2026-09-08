@@ -1,6 +1,6 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：`CSM0013` 挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
 > 总计：272 个活跃 SKU，14 个分类
 
@@ -177,8 +177,8 @@
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
-| `CSM0013` | 挡泥皮 | Each | 10 | 256 | 50 |
 | `CXH` | Under Body Harness Cover | Each | 32 | 0 | 50 |
+| `DNP` | 挡泥皮 (Mud Flap Panel) | Each | 10 | 256 | 50 |
 | `FK` | Fitting Kit | Each | 192 | 0 | 100 |
 | `FK-Ex` | Fitting Kit Extension | Each | 1 | 0 | 100 |
 | `TT-BN-BSG` | Bolt & Nut Kit — BSG | Set | 0 | 0 | 10 |
@@ -434,8 +434,8 @@
 
 | Bundle code | Name | Components |
 |---|---|---|
-| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1，CSM0013×2（挡泥皮，nonConstraining） |
-| `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上（含 CSM0013×2） |
+| `BDL-CMS-HW-DUALCAB` | CMS hardware pack — Dual / Extra Cab | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1，DNP×2（挡泥皮，nonConstraining） |
+| `BDL-CMS-HW-SINGLECAB` | CMS hardware pack — Single Cab | FK×4，其余同上（含 DNP×2） |
 
-说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。`CSM0013` 挡泥皮 2026-09-07 起从 CONSUMABLE 改为 FITTING_KIT，同步加入这 2 个快捷包及全部 12 个 T-Tray sellable bundle（qty 2，`nonConstraining: true`，不进 kits ATP 计算，行为对齐 `TT-BN-*`）。
+说明：不含主车厢 SKU；`FK-Ex` 等车型相关件在展开后按需手动加。保存销售行时 BOM 写入 `SalesLine.snapshotItems`。挡泥皮 2026-09-07 起从 CONSUMABLE 改为 FITTING_KIT，同步加入这 2 个快捷包及全部 12 个 T-Tray sellable bundle（qty 2，`nonConstraining: true`，不进 kits ATP 计算，行为对齐 `TT-BN-*`）；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`（不带 `TT-` 前缀，因为同时给 Service Body 使用，非 Tray 专属；`DNP` 沿用 `TT-BN-DNP` 螺丝包名字里已有的代号）。
 

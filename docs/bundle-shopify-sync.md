@@ -2,7 +2,8 @@
 
 > Companion to `docs/constitution.md` decision 17.
 > Status: implemented 2026-08-16. T-Tray BOM data seeded via `scripts/seed-t-tray-bundles.ts`; Shopify IDs still bound in Portal.
-> Update 2026-09-07: `CSM0013`（挡泥皮）added to all 12 T-Tray bundles + 2 CMS Hardware Kit shortcut packs (qty 2, `nonConstraining`); moved from `CONSUMABLE` to `FITTING_KIT` category to pass the Bundle-component API gate. Kits/Shopify push unaffected (verified unchanged before/after).
+> Update 2026-09-07: 挡泥皮 (then `CSM0013`) added to all 12 T-Tray bundles + 2 CMS Hardware Kit shortcut packs (qty 2, `nonConstraining`); moved from `CONSUMABLE` to `FITTING_KIT` category to pass the Bundle-component API gate. Kits/Shopify push unaffected (verified unchanged before/after).
+> Update 2026-09-08: renamed `CSM0013` → `DNP` (no `TT-` prefix — also used on Service Body, not Tray-exclusive; reuses the code fragment already embedded in `TT-BN-DNP`, its bolt & nut kit).
 
 ---
 
@@ -51,7 +52,7 @@ Example: **1850 Sahara Black**
 | Toolbox L/R | `TT-BX-90-L-SHB` / `TT-BX-90-R-SHB` | 1 each | single |
 | Fitting kit | `FK` ×3（2450 为 ×4）+ `CXH` ×1 | — | 卡 kits。`FK-Ex` 不进 BOM，偶发在 fulfillment 手动加 |
 | Fitting kit 螺丝 | 全部 `TT-BN-*` 各 ×1 | 1 Each | `nonConstraining`：预留/领料要减，网站不算 |
-| Mud flap | `CSM0013`（挡泥皮）×2 | 2 Each | `nonConstraining`，同上；2026-09-07 从 CONSUMABLE 移入 FITTING_KIT 才能进 BOM |
+| Mud flap | `DNP`（挡泥皮，2026-09-08 前叫 `CSM0013`）×2 | 2 Each | `nonConstraining`，同上；2026-09-07 从 CONSUMABLE 移入 FITTING_KIT 才能进 BOM；不带 `TT-` 前缀因同时给 Service Body 使用 |
 | Number plate | `TT-PZB-SHB` | 1 | single |
 | Tail light panel | `TT-WDB-SHB` | 1 pair | single |
 

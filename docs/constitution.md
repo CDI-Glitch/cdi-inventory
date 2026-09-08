@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-09-07（`CSM0013` 挡泥皮从 CONSUMABLE 改为 FITTING_KIT，纳入 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包 BOM，qty 2 / nonConstraining，见 §D3 例外记录；此前 2026-09-02 修正 §D 硬锁上线日期为 2026-08-31 commit `276eb6a`，并记录 TT-BN-DNP/FK/FKT 负库存系锁上线前 SR-0053 遗留、非绕过；`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-09-08（挡泥皮 SKU 由 `CSM0013` 改名为 `DNP`，不带 `TT-` 前缀因同时给 Service Body 使用；2026-09-07 从 CONSUMABLE 改为 FITTING_KIT，纳入 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包 BOM，qty 2 / nonConstraining，见 §D3 例外记录；此前 2026-09-02 修正 §D 硬锁上线日期为 2026-08-31 commit `276eb6a`，并记录 TT-BN-DNP/FK/FKT 负库存系锁上线前 SR-0053 遗留、非绕过；`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
@@ -161,8 +161,8 @@ sellableSku(唯一, 可空), shopifyInventoryItemId, shopifyVariantId, createdAt
 
 | code | 用途 | 组件（每包 qty） |
 |---|---|---|
-| `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1，CSM0013×2 |
-| `BDL-CMS-HW-SINGLECAB` | Single Cab 硬件快捷包 | FK×4，其余同上（含 CSM0013×2） |
+| `BDL-CMS-HW-DUALCAB` | Dual / Extra Cab 硬件快捷包 | FK×3，TT-BN-BX/MG×1，TT-BN-DNP×1，TT-BN-FK×1，TT-BN-FKT×1，CXH×1，DNP×2 |
+| `BDL-CMS-HW-SINGLECAB` | Single Cab 硬件快捷包 | FK×4，其余同上（含 DNP×2） |
 
 - T-Tray 可售包见 `docs/bundle-shopify-sync.md`
 - Phase 2：规则型 Configurator（选车型/配件 → 生成可编辑草案清单），仍应写 `snapshotItems`
@@ -356,7 +356,7 @@ Future Available[ETA] = On Hand − Reserved + Σ qtyOrdered(所有 ETA ≤ 该�
 
 **为什么不用独立表**：`IncomingLine.productId` 已经是无 Category 限制的通用 FK，Forecast Mode/ETA/shippedAt 全部挂在这条关系上；独立表意味着要么把整套 Incoming/Forecast 复制一份，要么让 `IncomingLine` 支持多态外键（Prisma 不直接支持，需手写兼容层）。一个 Category 字段 + 两处硬性排除，已经达到"不跟 Bundle 互斥/绑定规则挂钩、靠手动扣减"的全部诉求，且零额外维护成本。
 
-**例外记录（2026-09-07）**：`CSM0013`（挡泥皮）从 `CONSUMABLE` 改为 `FITTING_KIT`，不再走本节的硬性排除规则。原因：该 SKU 实际用量跟每台 Tray/CMS Hardware Kit 固定绑定（每单 2 片），不是"采购量大、消耗跟具体车/Bundle 无固定对应"的典型辅材场景，改为正式纳入 BOM 更准确。纳入方式对齐 `TT-BN-*`（Bolt & Nut Kit）：`BundleItem.nonConstraining = true`，进 BOM 参与预留/扣减，但排除在 kits ATP 计算之外，不影响 Shopify 库存显示。涉及 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包，脚本见 `scripts/recategorize-csm0013-fitting-kit.ts`、`scripts/seed-t-tray-bundles.ts`、`scripts/add-csm0013-to-cms-hw-bundles.ts`。不代表其余 CSM#### 辅材需要类似处理，逐 SKU 按实际用量模式判断。
+**例外记录（2026-09-07，SKU 于 2026-09-08 改名）**：挡泥皮（原 `CSM0013`，现 `DNP`）从 `CONSUMABLE` 改为 `FITTING_KIT`，不再走本节的硬性排除规则。原因：该 SKU 实际用量跟每台 Tray/CMS Hardware Kit 固定绑定（每单 2 片），不是"采购量大、消耗跟具体车/Bundle 无固定对应"的典型辅材场景，改为正式纳入 BOM 更准确。纳入方式对齐 `TT-BN-*`（Bolt & Nut Kit）：`BundleItem.nonConstraining = true`，进 BOM 参与预留/扣减，但排除在 kits ATP 计算之外，不影响 Shopify 库存显示。涉及 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包，脚本见 `scripts/recategorize-csm0013-fitting-kit.ts`、`scripts/seed-t-tray-bundles.ts`、`scripts/add-csm0013-to-cms-hw-bundles.ts`（历史脚本按运行时的 `CSM0013` sku 保留原样）、`scripts/rename-csm0013-to-dnp.ts`。**SKU 改名理由**：挡泥皮同时给 Tray 和 Service Body 使用，不是 Tray 专属，改用不带 `TT-` 前缀的 `DNP`（沿用 `TT-BN-DNP` 螺丝包名字里已有的代号），跟 `FK`/`CXH` 这类跨产品通用件命名风格一致。不代表其余 CSM#### 辅材需要类似处理，逐 SKU 按实际用量模式判断。
 
 ---
 
