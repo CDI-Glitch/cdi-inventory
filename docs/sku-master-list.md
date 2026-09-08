@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：272 个活跃 SKU，14 个分类
+> 总计：273 个活跃 SKU，15 个分类
 
 ---
 
@@ -427,6 +427,14 @@
 | `WH-TL-AMAROK` | Amarok Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-COLORADO` | Colorado Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-MUSSO` | Musso Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+
+---
+
+## WATER TANK (1)
+
+| SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
+|-----|------|------|:---:|:---:|:---:|
+| `DSX-40L` | 40L Stainless Steel Under Body Water Tank | Each | 0 | 0 | 5 |
 
 ---
 
