@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：291 个活跃 SKU，15 个分类
+> 总计：315 个活跃 SKU，15 个分类
 
 ---
 
@@ -293,10 +293,22 @@
 | `T-Tray-2405-SHB` | T Tray Deck 1775 x 2405 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-2405-W` | T Tray Deck 1775 x 2405 Splash White | Each | 0 | 0 | 10 |
 
-## UNDERBODY TOOLBOX (67)
+## UNDERBODY TOOLBOX (91)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
+| `BX01-1600-L` | C-Profile Underbody Toolbox 1600 LHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1600-L-SHB` | C-Profile Underbody Toolbox 1600 LHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1600-L-W` | C-Profile Underbody Toolbox 1600 LHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1600-R` | C-Profile Underbody Toolbox 1600 RHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1600-R-SHB` | C-Profile Underbody Toolbox 1600 RHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1600-R-W` | C-Profile Underbody Toolbox 1600 RHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1609-L` | C-Profile Underbody Toolbox 1609 LHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1609-L-SHB` | C-Profile Underbody Toolbox 1609 LHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1609-L-W` | C-Profile Underbody Toolbox 1609 LHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1609-R` | C-Profile Underbody Toolbox 1609 RHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1609-R-SHB` | C-Profile Underbody Toolbox 1609 RHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1609-R-W` | C-Profile Underbody Toolbox 1609 RHS Splash White | Each | 0 | 0 | 5 |
 | `BX01-1611-L` | C-Profile Underbody Toolbox 1611 LHS Raw Alloy | Each | 0 | 0 | 5 |
 | `BX01-1611-L-SHB` | C-Profile Underbody Toolbox 1611 LHS Sahara Black | Each | 7 | 0 | 5 |
 | `BX01-1611-L-W` | C-Profile Underbody Toolbox 1611 LHS Splash White | Each | 0 | 0 | 5 |
@@ -313,6 +325,18 @@
 | `BX01-1619-L-W` | C-Profile Underbody Toolbox 1619 LHS Splash White | Each | 0 | 0 | 15 |
 | `BX01-1619-R-SHB` | C-Profile Underbody Toolbox 1619 RHS Sahara Black | Each | 0 | 0 | 15 |
 | `BX01-1619-R-W` | C-Profile Underbody Toolbox 1619 RHS Splash White | Each | 0 | 0 | 15 |
+| `BX01-1800-L` | C-Profile Underbody Toolbox 1800 LHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1800-L-SHB` | C-Profile Underbody Toolbox 1800 LHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1800-L-W` | C-Profile Underbody Toolbox 1800 LHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1800-R` | C-Profile Underbody Toolbox 1800 RHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1800-R-SHB` | C-Profile Underbody Toolbox 1800 RHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1800-R-W` | C-Profile Underbody Toolbox 1800 RHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1809-L` | C-Profile Underbody Toolbox 1809 LHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1809-L-SHB` | C-Profile Underbody Toolbox 1809 LHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1809-L-W` | C-Profile Underbody Toolbox 1809 LHS Splash White | Each | 0 | 0 | 5 |
+| `BX01-1809-R` | C-Profile Underbody Toolbox 1809 RHS Raw Alloy | Each | 0 | 0 | 5 |
+| `BX01-1809-R-SHB` | C-Profile Underbody Toolbox 1809 RHS Sahara Black | Each | 0 | 0 | 5 |
+| `BX01-1809-R-W` | C-Profile Underbody Toolbox 1809 RHS Splash White | Each | 0 | 0 | 5 |
 | `BX01-1811-L-SHB` | C-Profile Underbody Toolbox 1811 LHS Sahara Black | Each | 5 | 0 | 5 |
 | `BX01-1811-L-W` | C-Profile Underbody Toolbox 1811 LHS Splash White | Each | 0 | 0 | 5 |
 | `BX01-1811-R-SHB` | C-Profile Underbody Toolbox 1811 RHS Sahara Black | Each | 5 | 0 | 5 |
