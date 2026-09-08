@@ -100,6 +100,8 @@
 - [ ] Product 推送的 Available 值 = On Hand - Reserved（实时计算）
 - [ ] Sellable bundle 推送 kits；Worker 对 sellableSku 读 `BundleLocationStock`，不现场算 BOM
 - [ ] 挡泥板 alt group：三款库存相加才卡 kits
+- [ ] 面板 alt group（`TT-PZB` + `TT-MB`，2026-09-08 起）：`TT-PZB` 断货、`TT-MB` 有货时 Tray 仍应显示有货；kits 只能因为新增替代选项变大或不变，不能变小
+- [ ] 面板 alt group 涉及的销售单：Complete 前必须在 `SalesAltGroupPicker` 手动选定 `TT-PZB` 或 `TT-MB`，否则 `AltGroupUnresolvedError` 拦截；抽屉 addon 仍与 Portal 脱钩、维持恒定有货，不受此改动影响（细节见 `bundle-shopify-sync.md` §Panel alt-group）
 - [ ] `nonConstraining` 组件不降低 kits，但仍写入 snapshot / 预留
 
 ### 8. 到货发货单

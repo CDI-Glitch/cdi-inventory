@@ -94,6 +94,11 @@ function AltGroupCard({
         Not reserved automatically. Select the SKU the warehouse will pick ({task.requiredQty} needed for {task.itemCode}).
         Completed is blocked until this is saved.
       </p>
+      {task.altGroupKey === "panel" && (
+        <p className="mt-1 text-xs text-amber-700">
+          Prefer TT-PZB when it has stock — keep TT-MB available for drawer-addon orders.
+        </p>
+      )}
       {canEdit ? (
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <div className="min-w-[16rem]">

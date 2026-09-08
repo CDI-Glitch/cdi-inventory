@@ -2,7 +2,7 @@
 
 > 所有架构决策已确认。本文档为最终规格说明。
 > 状态：已审计通过 — 2026-07-19
-> 最后更新：2026-09-08（挡泥皮 SKU 由 `CSM0013` 改名为 `DNP`，不带 `TT-` 前缀因同时给 Service Body 使用；2026-09-07 从 CONSUMABLE 改为 FITTING_KIT，纳入 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包 BOM，qty 2 / nonConstraining，见 §D3 例外记录；此前 2026-09-02 修正 §D 硬锁上线日期为 2026-08-31 commit `276eb6a`，并记录 TT-BN-DNP/FK/FKT 负库存系锁上线前 SR-0053 遗留、非绕过；`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；决策 17 Sellable Bundle；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
+> 最后更新：2026-09-08（决策 17 Sellable Bundle 新增"面板 alt-group"临时方案：`TT-PZB`/`TT-MB` 两个独立面板 SKU 合并为同一 `altGroupKey: "panel"`，解决 `TT-PZB` 断货挡住整台 Tray 的问题，抽屉 addon 库存本轮维持与 Portal 脱钩、恒定有货，已知限制见 `docs/bundle-shopify-sync.md` §Panel alt-group；挡泥皮 SKU 由 `CSM0013` 改名为 `DNP`，不带 `TT-` 前缀因同时给 Service Body 使用；2026-09-07 从 CONSUMABLE 改为 FITTING_KIT，纳入 12 个 T-Tray sellable bundle + 2 个 CMS Hardware Kit 快捷包 BOM，qty 2 / nonConstraining，见 §D3 例外记录；此前 2026-09-02 修正 §D 硬锁上线日期为 2026-08-31 commit `276eb6a`，并记录 TT-BN-DNP/FK/FKT 负库存系锁上线前 SR-0053 遗留、非绕过；`SalesRecord.isFullFitOut` 标注字段，见 §B SalesRecord；Complete 时硬性校验 On Hand，见 §D 与 §H#3；移动端只读 `/m/*` 见 `docs/mobile-alerts-runbook.md`；Webhook 行为对齐现网；拣货单打印 + 车间看板边界见 `docs/kanban-boundary.md`）
 
 ---
 
