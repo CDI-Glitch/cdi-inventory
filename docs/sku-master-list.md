@@ -1,12 +1,12 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：282 个活跃 SKU，15 个分类
+> 总计：291 个活跃 SKU，15 个分类
 
 ---
 
-## CANOPY (94)
+## CANOPY (103)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -54,12 +54,21 @@
 | `CD-3DB-17168` | 3 Door Base Canopy 1775 x 1600 x 850 Half Dogbox Driver Side Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-3DB-17168-SHB` | 3 Door Base Canopy 1775 x 1600 x 850 Half Dogbox Driver Side Sahara Black | Each | 0 | 0 | 2 |
 | `CD-3DB-17168-W` | 3 Door Base Canopy 1775 x 1600 x 850 Half Dogbox Driver Side Splash White | Each | 0 | 0 | 2 |
+| `CD-4DB-17168` | 4 Door Base Canopy 1775 x 1600 x 850 Full Dogbox Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-4DB-17168-SHB` | 4 Door Base Canopy 1775 x 1600 x 850 Full Dogbox Sahara Black | Each | 0 | 0 | 2 |
+| `CD-4DB-17168-W` | 4 Door Base Canopy 1775 x 1600 x 850 Full Dogbox Splash White | Each | 0 | 0 | 2 |
 | `CD-3D-17188` | 3 Door Base Canopy 1775 x 1800 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-3D-17188JKC` | 3 Door Base Canopy 1775 x 1800 x 850 Jack Off Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-3D-17188JKC-SHB` | 3 Door Base Canopy 1775 x 1800 x 850 Jack Off Sahara Black | Each | 0 | 0 | 2 |
 | `CD-3D-17188JKC-W` | 3 Door Base Canopy 1775 x 1800 x 850 Jack Off Splash White | Each | 0 | 0 | 2 |
 | `CD-3D-17188-SHB` | 3 Door Base Canopy 1775 x 1800 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-3D-17188-W` | 3 Door Base Canopy 1775 x 1800 x 850 Splash White | Each | 0 | 0 | 2 |
+| `CD-3DB-17188` | 3 Door Base Canopy 1775 x 1800 x 850 Half Dogbox Driver Side Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-3DB-17188-SHB` | 3 Door Base Canopy 1775 x 1800 x 850 Half Dogbox Driver Side Sahara Black | Each | 0 | 0 | 2 |
+| `CD-3DB-17188-W` | 3 Door Base Canopy 1775 x 1800 x 850 Half Dogbox Driver Side Splash White | Each | 0 | 0 | 2 |
+| `CD-4DB-17188` | 4 Door Base Canopy 1775 x 1800 x 850 Full Dogbox Raw Alloy | Each | 0 | 0 | 2 |
+| `CD-4DB-17188-SHB` | 4 Door Base Canopy 1775 x 1800 x 850 Full Dogbox Sahara Black | Each | 0 | 0 | 2 |
+| `CD-4DB-17188-W` | 4 Door Base Canopy 1775 x 1800 x 850 Full Dogbox Splash White | Each | 0 | 0 | 2 |
 | `CD-3D-17218` | 3 Door Base Canopy 1775 x 2100 x 850 Raw Alloy | Each | 0 | 0 | 2 |
 | `CD-3D-17218-SHB` | 3 Door Base Canopy 1775 x 2100 x 850 Sahara Black | Each | 0 | 0 | 2 |
 | `CD-3D-17218-W` | 3 Door Base Canopy 1775 x 2100 x 850 Splash White | Each | 0 | 0 | 2 |
