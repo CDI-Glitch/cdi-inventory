@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { CATEGORIES } from "@/lib/constants";
-import { canCreateProduct, roleFromSession } from "@/lib/permissions";
+import { canCreateProduct, canEditProduct, roleFromSession } from "@/lib/permissions";
 
 const CreateProductSchema = z.object({
   sku: z.string().regex(/^[A-Z0-9\-]+$/, "SKU must be uppercase letters, numbers, hyphens only"),
@@ -38,6 +38,15 @@ export async function GET(req: NextRequest) {
     },
     orderBy: { sku: "asc" },
   });
+
+  // adminNotes and Shopify binding IDs are internal admin/editor detail,
+  // not part of the read surface for viewer/sales roles.
+  if (!canEditProduct(roleFromSession(session))) {
+    const stripped = products.map(
+      ({ adminNotes, shopifyInventoryItemId, shopifyVariantId, ...rest }) => rest
+    );
+    return NextResponse.json(stripped);
+  }
 
   return NextResponse.json(products);
 }

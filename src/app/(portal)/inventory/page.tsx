@@ -8,7 +8,7 @@ import { FactoryListButton } from "@/components/inventory/factory-list-button";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
-import { asRole, canAdjustStock, canCreateProduct } from "@/lib/permissions";
+import { asRole, canAccessIncoming, canAdjustStock, canCreateProduct } from "@/lib/permissions";
 import { buildInventoryView, INVENTORY_PAGE_SIZE } from "@/lib/inventory-view";
 
 export default async function InventoryPage({
@@ -107,7 +107,9 @@ export default async function InventoryPage({
           <div className="flex gap-2">
             <ForecastToggle active={view.forecastActive} href={forecastToggleHref} />
             <BackorderToggle active={view.backorderActive} href={backorderToggleHref} />
-            {view.backorderActive && activeLoc && <FactoryListButton loc={activeLoc} />}
+            {view.backorderActive && activeLoc && canAccessIncoming(role) && (
+              <FactoryListButton loc={activeLoc} />
+            )}
             {canCreateProduct(role) && (
               <Link
                 href="/inventory/new"

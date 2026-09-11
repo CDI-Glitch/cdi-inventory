@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getShortageRows } from "@/lib/shortage-report";
+import { canAccessIncoming, roleFromSession } from "@/lib/permissions";
 
 function csvCell(value: string | number): string {
   const text = String(value);
@@ -20,6 +21,11 @@ function formatEta(iso: string) {
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Each row includes the nearest incoming shipment's PO ref/ETA/qty —
+  // that is incoming-shipment data, gated the same as /api/incoming.
+  if (!canAccessIncoming(roleFromSession(session))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const locName = req.nextUrl.searchParams.get("loc")?.trim() ?? "";
   if (!locName) {
