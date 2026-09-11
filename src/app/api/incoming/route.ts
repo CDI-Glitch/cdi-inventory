@@ -19,7 +19,11 @@ const CreateIncomingSchema = z.object({
 });
 
 async function nextPoRef(): Promise<string> {
+  // Filter by prefix rather than taking the latest row unconditionally —
+  // guards against producing "PO-NaN" if a row with a different poRef
+  // prefix is ever the most recently created row.
   const last = await prisma.incomingShipment.findFirst({
+    where: { poRef: { startsWith: "PO-" } },
     orderBy: { createdAt: "desc" },
     select: { poRef: true },
   });

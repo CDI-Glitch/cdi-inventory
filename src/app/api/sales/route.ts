@@ -24,7 +24,12 @@ const CreateSalesSchema = z.object({
 });
 
 async function nextRecordId(): Promise<string> {
+  // Filter by prefix rather than taking the latest row unconditionally —
+  // guards against producing "SR-NaN" if a record with a different
+  // recordId prefix (e.g. a manually-imported or legacy row) is ever the
+  // most recently created row.
   const last = await prisma.salesRecord.findFirst({
+    where: { recordId: { startsWith: "SR-" } },
     orderBy: { createdAt: "desc" },
     select: { recordId: true },
   });

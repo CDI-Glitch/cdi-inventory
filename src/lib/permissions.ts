@@ -65,11 +65,14 @@ export function canBindShopify(role: Role): boolean {
 }
 
 export function canCreateSalesRecord(role: Role): boolean {
-  return role !== "viewer";
+  // Explicit whitelist: any future role added to ROLES defaults to no
+  // access unless listed here, instead of silently inheriting permission
+  // via a `!== "viewer"` blacklist.
+  return role === "sales" || role === "editor" || role === "admin";
 }
 
 export function canEditSalesRecord(role: Role): boolean {
-  return role !== "viewer";
+  return role === "sales" || role === "editor" || role === "admin";
 }
 
 export function canEditFulfillment(role: Role, status: string): boolean {
@@ -95,7 +98,7 @@ export function canRunSync(role: Role): boolean {
 }
 
 export function canSeeDashboardActions(role: Role): boolean {
-  return role !== "viewer";
+  return role === "sales" || role === "editor" || role === "admin";
 }
 
 /** Any signed-in role. Mobile chrome is structurally read-only regardless of role. */
