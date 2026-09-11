@@ -28,6 +28,8 @@
 - [ ] Viewer 访问 /inventory/adjust → 403
 - [ ] Editor 访问 /settings → 403
 - [ ] Session 过期 → 重定向到登录页
+- [ ] **新增任何 API route 时：必须显式角色白名单**（调用 `permissions.ts` 的 `can*` 函数，或写明允许的角色列表）。禁止 `if (!session)` 单独作为鉴权，禁止 `role !== "xxx"` 反向排除写法——新增角色时默认必须无权限，而不是默认继承权限
+- [ ] Viewer/sales 直调 `GET /api/inventory/shortage-export`、`GET /api/products` → 前者应 403（内含到货 PO/ETA 数据，走 `canAccessIncoming`）；后者应返回时不含 `adminNotes`/Shopify 绑定字段
 - [ ] 权限/会话热更新相关改动 → 另跑 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §8 全清单
 - [ ] 逾期预留 / 缺货预警相关改动 → 另跑 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §7 + 本文件 §15
 - [ ] sales 直接访问 `/incoming`、`/incoming/[id]`、`/incoming/new`、`/transfers`、`/transfers/[id]`、`/transfers/new` → 全部 redirect 到 `/dashboard`（新增角色时必须同时核对 Sidebar 过滤、页面级 redirect 守卫、写入 API 三层，见 [`auth-permissions-runbook.md`](./auth-permissions-runbook.md) §11）
@@ -306,6 +308,7 @@
 | 2026-08-13 | 工厂无法用浏览器打印 Backorder 屏排产（overflow + 分页截断）；需要按 SKU 汇总的下料清单 | 试用版 CSV：`getShortageRows` + `/api/inventory/shortage-export`；Backorder 模式「Factory list」。见 [`aging-reservations-runbook.md`](./aging-reservations-runbook.md) §4.3 |
 | 2026-08-13 | Backorder 警报需要按「缺货 / 逾期」分开看，但不能把 Reorder 请回来，也不能让工厂文件跟屏幕筛选走 | Inventory `alert=` 三档（默认 All）；Factory list 仍只出 Available&lt;0 |
 | 2026-08-14 | Confirm 无弹窗 + Received 不能超收，经理在 shipped 改 Ordered 掩盖工厂偏差；PO-0004 已 Confirm 无法在页面改 | arrived「Receive remaining as ordered」+ Confirm 核对弹窗；允许超收。PO-0004 用 `scripts/fix-po-0004-receive.cjs` 留痕纠正（先 dry-run，`--apply` 才写库） |
+| 2026-09-11 | 全面审计发现两类存量隐患：① `canCreateSalesRecord`/`canEditSalesRecord`/`canSeeDashboardActions` 用 `role !== "viewer"` 反向写法，新增角色会静默获得权限；② `GET /api/inventory/shortage-export`（含到货 PO/ETA）与 `GET /api/products`（含 `adminNotes`/Shopify 绑定字段）只检查登录状态未检查角色，viewer/sales 直调 API 可绕过页面拿到本不该看的数据；③ `nextRecordId`/`nextPoRef` 取最新一条记录时未按前缀过滤，若曾出现异前缀记录会产出 `SR-NaN`/`PO-NaN` | ①③ 改为显式白名单/`startsWith` 前缀过滤；② 补 `canAccessIncoming`/`canEditProduct` 校验，Inventory 页 Factory list 按钮同步收紧可见性 |
 
 ---
 
