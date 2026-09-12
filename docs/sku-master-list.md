@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：315 个活跃 SKU，15 个分类
+> 总计：318 个活跃 SKU，15 个分类
 
 ---
 
@@ -165,13 +165,16 @@
 | `WDB-DTL-SHB` | C Profile Devil Tail Light Panel Sahara Black | Pair | 6 | 0 | 10 |
 | `WDB-DTL-W` | C Profile Devil Tail Light Panel Splash White | Pair | 4 | 0 | 5 |
 
-## DROP SIDES (15)
+## DROP SIDES (18)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
 | `TT-DDS-200` | T Profile Drop Down Sides 200mm Raw Alloy | Set | 0 | 0 | 10 |
 | `TT-DDS-200-SHB` | T Profile Drop Down Sides 200mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-200-W` | T Profile Drop Down Sides 200mm Splash White | Set | 0 | 0 | 10 |
+| `TT-DDS-300` | T Profile Drop Down Sides 300mm Raw Alloy | Set | 0 | 0 | 10 |
+| `TT-DDS-300-SHB` | T Profile Drop Down Sides 300mm Sahara Black | Set | 0 | 0 | 10 |
+| `TT-DDS-300-W` | T Profile Drop Down Sides 300mm Splash White | Set | 0 | 0 | 10 |
 | `TT-DDS-1800` | T Profile Drop Down Sides 1800mm Raw Alloy | Set | 0 | 0 | 10 |
 | `TT-DDS-1800-SHB` | T Profile Drop Down Sides 1800mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-1800-W` | T Profile Drop Down Sides 1800mm Splash White | Set | 0 | 0 | 10 |
