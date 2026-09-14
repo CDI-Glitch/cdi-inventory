@@ -382,15 +382,12 @@ TCP 层面（`Test-NetConnection`）完全通，但 Prisma 拒绝连接。
 **标准模板（所有新 import 脚本必须使用此结构）：**
 
 ```typescript
+import "dotenv/config";
 import { Pool } from "pg";
 import { randomBytes } from "crypto";
 
 const pool = new Pool({
-  host: "tokaido.proxy.rlwy.net",
-  port: 43176,
-  user: "postgres",
-  password: process.env.DB_PASS || "SHufVETPyuJhEckjrUldCjPZPkxrkVvv",
-  database: "railway",
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 

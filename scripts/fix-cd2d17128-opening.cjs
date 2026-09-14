@@ -2,13 +2,10 @@
 // This corrects the missing opening stock entry (SKU was sold via SR-0001 before stock was recorded)
 const { Pool } = require('pg');
 const { randomBytes } = require('crypto');
+require('dotenv').config();
 
 const pool = new Pool({
-  host: 'tokaido.proxy.rlwy.net',
-  port: 43176,
-  user: 'postgres',
-  password: 'SHufVETPyuJhEckjrUldCjPZPkxrkVvv',
-  database: 'railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 

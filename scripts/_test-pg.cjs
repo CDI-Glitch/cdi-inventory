@@ -1,12 +1,9 @@
 // Quick connectivity test for Railway Postgres
 // Run: node scripts/_test-pg.cjs
 const { Pool } = require('pg');
+require('dotenv').config();
 const pool = new Pool({
-  host: 'tokaido.proxy.rlwy.net',
-  port: 43176,
-  user: 'postgres',
-  password: 'SHufVETPyuJhEckjrUldCjPZPkxrkVvv',
-  database: 'railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 pool.query('SELECT count(*) as cnt FROM "Product"')

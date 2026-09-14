@@ -4,15 +4,12 @@
  *
  * Run: npx tsx scripts/import-tt-dds-300.ts
  */
+import "dotenv/config";
 import { Pool } from "pg";
 import { randomBytes } from "crypto";
 
 const pool = new Pool({
-  host: "tokaido.proxy.rlwy.net",
-  port: 43176,
-  user: "postgres",
-  password: process.env.DB_PASS || "SHufVETPyuJhEckjrUldCjPZPkxrkVvv",
-  database: "railway",
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
   connectionTimeoutMillis: 15000,
 });

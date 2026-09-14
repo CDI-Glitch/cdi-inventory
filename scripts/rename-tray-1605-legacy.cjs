@@ -1,9 +1,9 @@
 // Rename T-Tray-1605-SHB to match Ttay-1805-SHB Legacy naming convention
 // Run: node scripts/rename-tray-1605-legacy.cjs
 const { Pool } = require('pg');
+require('dotenv').config();
 const pool = new Pool({
-  host: 'tokaido.proxy.rlwy.net', port: 43176, user: 'postgres',
-  password: 'SHufVETPyuJhEckjrUldCjPZPkxrkVvv', database: 'railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 

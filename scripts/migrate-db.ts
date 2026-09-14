@@ -3,13 +3,14 @@
  * Run with: npx tsx scripts/migrate-db.ts
  */
 
+import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const OLD_URL =
-  "postgresql://postgres:FhEiTgHKlOAZinwwkotoaGBxFwjEzdDh@centerbeam.proxy.rlwy.net:52876/railway";
-const NEW_URL =
-  "postgresql://postgres:SHufVETPyuJhEckjrUldCjPZPkxrkVvv@tokaido.proxy.rlwy.net:43176/railway";
+// One-time migration, already run — both passwords below are long rotated/invalid.
+// Kept for historical reference; set OLD_DATABASE_URL/NEW_DATABASE_URL in .env to re-run.
+const OLD_URL = process.env.OLD_DATABASE_URL || "";
+const NEW_URL = process.env.NEW_DATABASE_URL || "";
 
 function makeClient(url: string) {
   const adapter = new PrismaPg({ connectionString: url });

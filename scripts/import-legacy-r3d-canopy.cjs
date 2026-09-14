@@ -2,13 +2,10 @@
 // Run: node scripts/import-legacy-r3d-canopy.cjs
 const { Pool } = require('pg');
 const { randomBytes } = require('crypto');
+require('dotenv').config();
 
 const pool = new Pool({
-  host: 'tokaido.proxy.rlwy.net',
-  port: 43176,
-  user: 'postgres',
-  password: 'SHufVETPyuJhEckjrUldCjPZPkxrkVvv',
-  database: 'railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 

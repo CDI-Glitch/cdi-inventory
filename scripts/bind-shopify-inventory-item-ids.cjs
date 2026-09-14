@@ -3,13 +3,15 @@
 // Excludes: Tray, PKG, Trundle Drawer, Add-on accessories, Dev product.
 
 const { Pool } = require('pg');
+require('dotenv').config({ path: '.env' });
+
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: set DATABASE_URL in .env (do not hardcode the password in this file)');
+  process.exit(1);
+}
 
 const pool = new Pool({
-  host: 'tokaido.proxy.rlwy.net',
-  port: 43176,
-  user: 'postgres',
-  password: 'SHufVETPyuJhEckjrUldCjPZPkxrkVvv',
-  database: 'railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
