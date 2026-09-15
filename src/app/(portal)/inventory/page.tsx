@@ -5,10 +5,11 @@ import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { ForecastToggle } from "@/components/inventory/forecast-toggle";
 import { BackorderToggle } from "@/components/inventory/backorder-toggle";
 import { FactoryListButton } from "@/components/inventory/factory-list-button";
+import { FullExportButton } from "@/components/inventory/full-export-button";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
-import { asRole, canAccessIncoming, canAdjustStock, canCreateProduct } from "@/lib/permissions";
+import { asRole, canAccessIncoming, canAdjustStock, canCreateProduct, canEditProduct } from "@/lib/permissions";
 import { buildInventoryView, INVENTORY_PAGE_SIZE } from "@/lib/inventory-view";
 
 export default async function InventoryPage({
@@ -110,6 +111,7 @@ export default async function InventoryPage({
             {view.backorderActive && activeLoc && canAccessIncoming(role) && (
               <FactoryListButton loc={activeLoc} />
             )}
+            {canEditProduct(role) && <FullExportButton />}
             {canCreateProduct(role) && (
               <Link
                 href="/inventory/new"
