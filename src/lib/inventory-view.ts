@@ -17,6 +17,7 @@ export interface InventoryRow {
   name: string;
   category: string;
   unit: string;
+  reorderPoint: number;
   byLocation: Record<string, { onHand: number; reserved: number; available: number }>;
   totalOnHand: number;
   totalReserved: number;

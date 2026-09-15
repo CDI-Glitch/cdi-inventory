@@ -5,7 +5,7 @@ import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { ForecastToggle } from "@/components/inventory/forecast-toggle";
 import { BackorderToggle } from "@/components/inventory/backorder-toggle";
 import { FactoryListButton } from "@/components/inventory/factory-list-button";
-import { FullExportButton } from "@/components/inventory/full-export-button";
+import { ExportViewButton } from "@/components/inventory/export-view-button";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
@@ -100,6 +100,18 @@ export default async function InventoryPage({
   }
   const backorderToggleHref = `/inventory?${backorderToggleParams.toString()}`;
 
+  const exportParams = new URLSearchParams();
+  if (activeLoc) exportParams.set("loc", activeLoc);
+  if (params.category) exportParams.set("category", params.category);
+  if (params.search) exportParams.set("search", params.search);
+  if (view.backorderActive) {
+    exportParams.set("backorder", "1");
+    if (view.alertMode !== "all") exportParams.set("alert", view.alertMode);
+  } else if (params.status) {
+    exportParams.set("status", params.status);
+  }
+  const exportHref = `/api/inventory/export?${exportParams.toString()}`;
+
   return (
     <div className="-m-8 flex h-screen flex-col">
       <div className="shrink-0 bg-white px-8 pt-8 pb-3">
@@ -111,7 +123,6 @@ export default async function InventoryPage({
             {view.backorderActive && activeLoc && canAccessIncoming(role) && (
               <FactoryListButton loc={activeLoc} />
             )}
-            {canEditProduct(role) && <FullExportButton />}
             {canCreateProduct(role) && (
               <Link
                 href="/inventory/new"
@@ -128,6 +139,7 @@ export default async function InventoryPage({
                 Adjust Stock
               </Link>
             )}
+            {canEditProduct(role) && <ExportViewButton href={exportHref} />}
           </div>
         </div>
 
