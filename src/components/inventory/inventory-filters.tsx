@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { CATEGORIES } from "@/lib/constants";
 
@@ -38,6 +38,7 @@ interface InventoryFiltersProps {
   currentBackorder?: string;
   /** Mobile short list: hide All/Short/Aging so aging is never selectable. */
   hideAlertSelect?: boolean;
+  trailing?: ReactNode;
 }
 
 export function InventoryFilters({
@@ -50,6 +51,7 @@ export function InventoryFilters({
   currentForecast = "",
   currentBackorder = "",
   hideAlertSelect = false,
+  trailing,
 }: InventoryFiltersProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -59,61 +61,63 @@ export function InventoryFilters({
   }
 
   return (
-    <form ref={formRef} method="GET" className="flex flex-wrap gap-2 mb-4">
-      {/* Preserve current location tab and forecast mode across filter submissions */}
-      {currentLoc && <input type="hidden" name="loc" value={currentLoc} />}
-      {currentForecast && <input type="hidden" name="forecast" value={currentForecast} />}
-      {currentBackorder && <input type="hidden" name="backorder" value={currentBackorder} />}
-      <input
-        name="search"
-        defaultValue={defaultSearch}
-        placeholder="Search SKU or name..."
-        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm w-48 focus:outline-none"
-      />
-      <CustomSelect
-        name="category"
-        value={defaultCategory}
-        options={CATEGORY_OPTIONS}
-        placeholder="All categories"
-        onChange={submitForm}
-      />
-      {currentBackorder ? (
-        hideAlertSelect ? null : (
-          <CustomSelect
-            name="alert"
-            value={defaultAlert}
-            options={ALERT_OPTIONS}
-            placeholder="All alerts"
-            onChange={submitForm}
-          />
-        )
-      ) : (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <form ref={formRef} method="GET" className="flex flex-wrap gap-2">
+        {currentLoc && <input type="hidden" name="loc" value={currentLoc} />}
+        {currentForecast && <input type="hidden" name="forecast" value={currentForecast} />}
+        {currentBackorder && <input type="hidden" name="backorder" value={currentBackorder} />}
+        <input
+          name="search"
+          defaultValue={defaultSearch}
+          placeholder="Search SKU or name..."
+          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm w-48 focus:outline-none"
+        />
         <CustomSelect
-          name="status"
-          value={defaultStatus}
-          options={STATUS_OPTIONS}
-          placeholder="All statuses"
+          name="category"
+          value={defaultCategory}
+          options={CATEGORY_OPTIONS}
+          placeholder="All categories"
           onChange={submitForm}
         />
-      )}
-      {currentForecast && (
-        <label className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            name="incomingOnly"
-            value="1"
-            defaultChecked={defaultIncomingOnly === "1"}
+        {currentBackorder ? (
+          hideAlertSelect ? null : (
+            <CustomSelect
+              name="alert"
+              value={defaultAlert}
+              options={ALERT_OPTIONS}
+              placeholder="All alerts"
+              onChange={submitForm}
+            />
+          )
+        ) : (
+          <CustomSelect
+            name="status"
+            value={defaultStatus}
+            options={STATUS_OPTIONS}
+            placeholder="All statuses"
             onChange={submitForm}
           />
-          Incoming only
-        </label>
-      )}
-      <button
-        type="submit"
-        className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
-      >
-        Filter
-      </button>
-    </form>
+        )}
+        {currentForecast && (
+          <label className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              name="incomingOnly"
+              value="1"
+              defaultChecked={defaultIncomingOnly === "1"}
+              onChange={submitForm}
+            />
+            Incoming only
+          </label>
+        )}
+        <button
+          type="submit"
+          className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+        >
+          Filter
+        </button>
+      </form>
+      {trailing ? <div className="ml-auto flex flex-wrap items-center gap-2">{trailing}</div> : null}
+    </div>
   );
 }

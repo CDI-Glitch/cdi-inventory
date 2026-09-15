@@ -36,16 +36,20 @@ export function ForecastToggle({ active, href }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        className="inline-flex items-center gap-1.5 rounded-md bg-[#14B8A6] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0D9488]"
+        className={
+          active
+            ? "inline-flex items-center gap-1.5 rounded-md bg-[#14B8A6] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#0D9488]"
+            : "inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+        }
       >
         {active ? (
           <>
-            <X size={15} strokeWidth={2.25} aria-hidden="true" />
+            <X size={14} strokeWidth={2.25} aria-hidden="true" />
             Exit forecast
           </>
         ) : (
           <>
-            <TrendingUp size={15} strokeWidth={2.25} aria-hidden="true" />
+            <TrendingUp size={14} strokeWidth={2.25} aria-hidden="true" />
             Forecast
           </>
         )}

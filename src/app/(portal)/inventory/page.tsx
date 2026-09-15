@@ -4,8 +4,7 @@ import { InventoryTable } from "@/components/inventory/inventory-table";
 import { InventoryFilters } from "@/components/inventory/inventory-filters";
 import { ForecastToggle } from "@/components/inventory/forecast-toggle";
 import { BackorderToggle } from "@/components/inventory/backorder-toggle";
-import { FactoryListButton } from "@/components/inventory/factory-list-button";
-import { ExportViewButton } from "@/components/inventory/export-view-button";
+import { ExportMenu } from "@/components/inventory/export-menu";
 import { LocationTabs } from "@/components/ui/location-tabs";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
@@ -112,17 +111,23 @@ export default async function InventoryPage({
   }
   const exportHref = `/api/inventory/export?${exportParams.toString()}`;
 
+  const exportOptions: { label: string; href: string }[] = [];
+  if (view.backorderActive && activeLoc && canAccessIncoming(role)) {
+    exportOptions.push({
+      label: "Factory list",
+      href: `/api/inventory/shortage-export?loc=${encodeURIComponent(activeLoc)}`,
+    });
+  }
+  if (canEditProduct(role)) {
+    exportOptions.push({ label: "Export SKUs", href: exportHref });
+  }
+
   return (
     <div className="-m-8 flex h-screen flex-col">
       <div className="shrink-0 bg-white px-8 pt-8 pb-3">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <div className="flex gap-2">
-            <ForecastToggle active={view.forecastActive} href={forecastToggleHref} />
-            <BackorderToggle active={view.backorderActive} href={backorderToggleHref} />
-            {view.backorderActive && activeLoc && canAccessIncoming(role) && (
-              <FactoryListButton loc={activeLoc} />
-            )}
             {canCreateProduct(role) && (
               <Link
                 href="/inventory/new"
@@ -139,7 +144,6 @@ export default async function InventoryPage({
                 Adjust Stock
               </Link>
             )}
-            {canEditProduct(role) && <ExportViewButton href={exportHref} />}
           </div>
         </div>
 
@@ -154,6 +158,13 @@ export default async function InventoryPage({
           currentLoc={activeLoc}
           currentForecast={view.forecastActive ? "1" : undefined}
           currentBackorder={view.backorderActive ? "1" : undefined}
+          trailing={
+            <>
+              <ForecastToggle active={view.forecastActive} href={forecastToggleHref} />
+              <BackorderToggle active={view.backorderActive} href={backorderToggleHref} />
+              {exportOptions.length > 0 && <ExportMenu options={exportOptions} />}
+            </>
+          }
         />
       </div>
 
