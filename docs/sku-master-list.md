@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：321 个活跃 SKU，18 个分类
+> 总计：323 个活跃 SKU，18 个分类
 
 ---
 
@@ -424,7 +424,7 @@
 
 ## CONSUMABLE
 
-辅材/耗材：不进 Bundle / Sales SKU 行；手动 Adjust 扣减。CSM#### = 五金递增代号；WH-TL-* = 车型尾灯即插即用线束。
+辅材/耗材：不进 Bundle / Sales SKU 行；手动 Adjust 扣减。CSM#### = 五金递增代号；WH-TL-* = 车型尾灯即插即用线束；LPA-* = park-aid 即插即用延长线束。
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -482,6 +482,8 @@
 | `WH-TL-AMAROK` | Amarok Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-COLORADO` | Colorado Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-MUSSO` | Musso Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
+| `LPA-01` | Park-aid plug-in extension loom | Each | 0 | 0 | 30 |
+| `LPA-02` | Park-aid plug-in extension loom | Each | 0 | 0 | 30 |
 
 ---
 
