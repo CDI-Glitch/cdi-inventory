@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms；2026-09-18 新增 `T-Tray-{1605,1805,2105,2405}F` × 3 色平板货架）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：323 个活跃 SKU，18 个分类
+> 总计：335 个活跃 SKU，18 个分类
 
 ---
 
@@ -278,7 +278,9 @@
 | `CMS-3D-18249-SHB` | 3 Door Service Body 1850 x 2400 Sahara Black Lite | Each | 0 | 0 | 3 |
 | `CMS-3D-18249-W` | 3 Door Service Body 1850 x 2400 Splash White Lite | Each | 0 | 0 | 3 |
 
-## TRAY DECK (13)
+## TRAY DECK (25)
+
+无 F 后缀 = 现款花纹板（checker plate）。`F` = 平板（flat plate）。Legacy `Ttay-1805-SHB` 保持不动。Sellable Bundle 本轮不改。
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -286,15 +288,27 @@
 | `T-Tray-1605` | T Tray Deck 1775 x 1605 Raw Alloy | Each | 0 | 0 | 10 |
 | `T-Tray-1605-SHB` | T Tray Deck 1775 x 1605 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-1605-W` | T Tray Deck 1775 x 1605 Splash White | Each | 0 | 0 | 10 |
+| `T-Tray-1605F` | T Tray Deck 1775 x 1605 Flat Plate Raw Alloy | Each | 0 | 0 | 10 |
+| `T-Tray-1605F-SHB` | T Tray Deck 1775 x 1605 Flat Plate Sahara Black | Each | 0 | 0 | 10 |
+| `T-Tray-1605F-W` | T Tray Deck 1775 x 1605 Flat Plate Splash White | Each | 0 | 0 | 10 |
 | `T-Tray-1805` | T Tray Deck 1775 x 1805 Raw Alloy | Each | 0 | 0 | 10 |
 | `T-Tray-1805-SHB` | T Tray Deck 1775 x 1805 Sahara Black | Each | 5 | 0 | 10 |
 | `T-Tray-1805-W` | T Tray Deck 1775 x 1805 Splash White | Each | 0 | 0 | 10 |
+| `T-Tray-1805F` | T Tray Deck 1775 x 1805 Flat Plate Raw Alloy | Each | 0 | 0 | 10 |
+| `T-Tray-1805F-SHB` | T Tray Deck 1775 x 1805 Flat Plate Sahara Black | Each | 0 | 0 | 10 |
+| `T-Tray-1805F-W` | T Tray Deck 1775 x 1805 Flat Plate Splash White | Each | 0 | 0 | 10 |
 | `T-Tray-2105` | T Tray Deck 1775 x 2105 Raw Alloy | Each | 0 | 0 | 10 |
 | `T-Tray-2105-SHB` | T Tray Deck 1775 x 2105 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-2105-W` | T Tray Deck 1775 x 2105 Splash White | Each | 0 | 0 | 10 |
+| `T-Tray-2105F` | T Tray Deck 1775 x 2105 Flat Plate Raw Alloy | Each | 0 | 0 | 10 |
+| `T-Tray-2105F-SHB` | T Tray Deck 1775 x 2105 Flat Plate Sahara Black | Each | 0 | 0 | 10 |
+| `T-Tray-2105F-W` | T Tray Deck 1775 x 2105 Flat Plate Splash White | Each | 0 | 0 | 10 |
 | `T-Tray-2405` | T Tray Deck 1775 x 2405 Raw Alloy | Each | 0 | 0 | 10 |
 | `T-Tray-2405-SHB` | T Tray Deck 1775 x 2405 Sahara Black | Each | 0 | 0 | 10 |
 | `T-Tray-2405-W` | T Tray Deck 1775 x 2405 Splash White | Each | 0 | 0 | 10 |
+| `T-Tray-2405F` | T Tray Deck 1775 x 2405 Flat Plate Raw Alloy | Each | 0 | 0 | 10 |
+| `T-Tray-2405F-SHB` | T Tray Deck 1775 x 2405 Flat Plate Sahara Black | Each | 0 | 0 | 10 |
+| `T-Tray-2405F-W` | T Tray Deck 1775 x 2405 Flat Plate Splash White | Each | 0 | 0 | 10 |
 
 ## UNDERBODY TOOLBOX (91)
 
