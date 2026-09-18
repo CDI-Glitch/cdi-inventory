@@ -89,6 +89,7 @@ adminNotes, shopifyInventoryItemId, shopifyVariantId, createdAt, updatedAt
 | `ROOF_RACK` | 车顶架 |
 | `REAR_RACK` | 后架 |
 | `CANOPY_ACCESSORY` | Canopy 配件（Jerry Can / Spare Wheel 等） |
+| `GENERAL_ACCESSORY` | 杂货/通用配件（可销售、可进 Bundle；与 §D3 CONSUMABLE 硬排除无关） |
 | `FITTING_KIT` | 安装套件（Bolt & Nut Kit / FK） |
 | `UNISTRUT` | C Channel 导轨（Canopy Top C Channel） |
 | `DROP_SIDES` | 侧栏板 |

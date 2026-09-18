@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：318 个活跃 SKU，15 个分类
+> 总计：321 个活跃 SKU，18 个分类
 
 ---
 
@@ -413,6 +413,15 @@
 | `4122*1800-SHB` | 41*22 C Channel 1800mm Sahara Black | Each | 0 | 0 | 10 |
 | `4122*1800-W` | 41*22 C Channel 1800mm Splash White | Each | 0 | 0 | 10 |
 
+## GENERAL ACCESSORY (2)
+
+杂货/通用配件：可上销售单、可进 Bundle。与 CONSUMABLE 硬排除无关。套装（吊环+Channel Nut）尚未建 Bundle。
+
+| SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
+|-----|------|------|:---:|:---:|:---:|
+| `TDR` | Tie-Down Ring 绑绳环 (M8*15) | Each | 0 | 0 | 10 |
+| `TDR-CN` | Tray Tie-Down Ring Channel Nut | Each | 0 | 0 | 10 |
+
 ## CONSUMABLE
 
 辅材/耗材：不进 Bundle / Sales SKU 行；手动 Adjust 扣减。CSM#### = 五金递增代号；WH-TL-* = 车型尾灯即插即用线束。
@@ -462,6 +471,7 @@
 | `CSM0042` | CB005_B legacy | Each | 0 | 0 | 50 |
 | `CSM0043` | SB028 legacy | Each | 0 | 0 | 50 |
 | `CSM0044` | 欧标弹片螺母30*M6 | Each | 0 | 0 | 50 |
+| `CSM0045` | 304非标平垫 M8*20*2.0 | Each | 0 | 0 | 50 |
 | `WH-TL-HILUX` | Hilux Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-TRITON` | Triton Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
 | `WH-TL-RANGER-PX` | PX Ranger Tail Light Plug & Play Harness | Each | 0 | 0 | 30 |
