@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms；2026-09-18 新增 `T-Tray-{1605,1805,2105,2405}F` × 3 色平板货架；2026-09-18 `CSM0010` 原地升级为 `TDR-CN`，CONSUMABLE → GENERAL_ACCESSORY，空壳 `TDR-CN` 删除）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms；2026-09-18 新增 `T-Tray-{1605,1805,2105,2405}F` × 3 色平板货架；2026-09-18 `CSM0010` 原地升级为 `TDR-CN`，CONSUMABLE → GENERAL_ACCESSORY，空壳 `TDR-CN` 删除；2026-09-18 新增 `FK-SHORT`）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：334 个活跃 SKU，18 个分类
+> 总计：335 个活跃 SKU，18 个分类
 
 ---
 
@@ -188,7 +188,7 @@
 | `TT-DDS-800-SHB` | T Profile Drop Down Sides 800mm Sahara Black | Set | 0 | 0 | 10 |
 | `TT-DDS-800-W` | T Profile Drop Down Sides 800mm Splash White | Set | 0 | 0 | 10 |
 
-## FITTING KIT (11)
+## FITTING KIT (12)
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
@@ -196,6 +196,7 @@
 | `DNP` | 挡泥皮 (Mud Flap Panel) | Each | 10 | 256 | 50 |
 | `FK` | Fitting Kit | Each | 192 | 0 | 100 |
 | `FK-Ex` | Fitting Kit Extension | Each | 1 | 0 | 100 |
+| `FK-SHORT` | Fitting Kit Short | Each | 0 | 0 | 100 |
 | `TT-BN-BSG` | Bolt & Nut Kit — BSG | Set | 0 | 0 | 10 |
 | `TT-BN-BX/MG` | Bolt & Nut Kit — Under Tray Toolbox & Mud Guards | Set | 0 | 0 | 10 |
 | `TT-BN-DNP` | Bolt & Nut Kit — MF | Set | 0 | 0 | 10 |
