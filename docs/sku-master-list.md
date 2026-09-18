@@ -1,8 +1,8 @@
 # CDI Inventory — SKU Master List
 
-> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms；2026-09-18 新增 `T-Tray-{1605,1805,2105,2405}F` × 3 色平板货架）  
+> 生成时间：2026-07-22（2026-09-07 更新：挡泥皮从 CONSUMABLE 移入 FITTING_KIT，并纳入 T-Tray / CMS Hardware Kit BOM；2026-09-08 SKU 由 `CSM0013` 改名为 `DNP`；2026-09-08 新增 WATER_TANK 分类，首个 SKU `DSX-40L`；2026-09-08 新增 `BX01-QBX-490-L/R` × 3 色，2100 Service Body Next Gen Ranger P703 前置箱；2026-09-08 新增 `CD-3DB-17168` × 3 色，3 Door Base Canopy 1775x1600x850 Half Dogbox Driver Side；2026-09-08 新增 `CD-3DB-17188`（半狗笼 1800）、`CD-4DB-17168`/`CD-4DB-17188`（全狗笼 1600/1800，不标注 driver side）× 3 色；2026-09-09 新增 `BX01-1600/1609/1800/1809` × L/R × 3 色，C-Profile Underbody Toolbox；2026-09-12 新增 `TT-DDS-300` × 3 色，T Profile Drop Down Sides 300mm；2026-09-18 新增 `GENERAL_ACCESSORY` 分类与 `TDR` / `TDR-CN`，以及 `CSM0045` 304非标平垫；2026-09-18 新增 `LPA-01`/`LPA-02` park-aid extension looms；2026-09-18 新增 `T-Tray-{1605,1805,2105,2405}F` × 3 色平板货架；2026-09-18 `CSM0010` 原地升级为 `TDR-CN`，CONSUMABLE → GENERAL_ACCESSORY，空壳 `TDR-CN` 删除）  
 > 用途：供 Codex/Claude 对比哪些 SKU 已录入、哪些缺失  
-> 总计：335 个活跃 SKU，18 个分类
+> 总计：334 个活跃 SKU，18 个分类
 
 ---
 
@@ -429,12 +429,12 @@
 
 ## GENERAL ACCESSORY (2)
 
-杂货/通用配件：可上销售单、可进 Bundle。与 CONSUMABLE 硬排除无关。套装（吊环+Channel Nut）尚未建 Bundle。
+杂货/通用配件：可上销售单、可进 Bundle。与 CONSUMABLE 硬排除无关。套装（吊环+Channel Nut）尚未建 Bundle。`TDR-CN` 于 2026-09-18 由 `CSM0010` 原地改名升级（删除空壳后改 SKU/分类，On Hand 账本不变）。
 
 | SKU | Name | Unit | On Hand (BNE) | On Hand (SYD) | Reorder |
 |-----|------|------|:---:|:---:|:---:|
 | `TDR` | Tie-Down Ring 绑绳环 (M8*15) | Each | 0 | 0 | 10 |
-| `TDR-CN` | Tray Tie-Down Ring Channel Nut | Each | 0 | 0 | 10 |
+| `TDR-CN` | Tray Tie-Down Ring Channel Nut (欧标弹片螺母30*M8) | Each | 0 | 17 | 10 |
 
 ## CONSUMABLE
 
@@ -451,7 +451,6 @@
 | `CSM0007` | 尼龙垫片M13*50*25 | Each | 404 | 0 | 50 |
 | `CSM0008` | 弹簧螺母M8 35x20x6mm | Each | 0 | 0 | 50 |
 | `CSM0009` | T型螺丝M8X24X1.25 (34X20X6) | Each | 0 | 0 | 50 |
-| `CSM0010` | 欧标弹片螺母30*M8 | Each | 0 | 0 | 50 |
 | `CSM0011` | M12*40*40*4垫片 | Each | 0 | 0 | 50 |
 | `CSM0012` | 达克罗螺丝M12*80 | Each | 0 | 0 | 50 |
 | `CSM0014` | SB02C legacy | Each | 0 | 0 | 50 |

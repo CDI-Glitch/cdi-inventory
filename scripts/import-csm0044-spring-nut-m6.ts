@@ -1,5 +1,5 @@
 /**
- * Add European-standard spring nut 30*M6 (pair to existing CSM0010 30*M8).
+ * Add European-standard spring nut 30*M6 (pair to TDR-CN / former CSM0010 30*M8).
  * Run: npx tsx scripts/import-csm0044-spring-nut-m6.ts
  */
 import { PrismaClient } from "../src/generated/prisma/client";
